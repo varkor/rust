@@ -1256,6 +1256,23 @@ impl Clean<TyParamBound> for hir::TyParamBound {
     }
 }
 
+#[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Debug)]
+pub struct ConstParam {
+    pub name: String,
+    pub did: DefId,
+    pub ty: Type,
+}
+
+impl Clean<ConstParam> for hir::ConstParam {
+    fn clean(&self, cx: &DocContext) -> ConstParam {
+        ConstParam {
+            name: self.name.clean(cx),
+            did: cx.tcx.hir.local_def_id(self.id),
+            ty: self.ty.clean(cx),
+        }
+    }
+}
+
 fn external_path_params(cx: &DocContext, trait_did: Option<DefId>, has_self: bool,
                         bindings: Vec<TypeBinding>, substs: &Substs) -> PathParameters {
     let lifetimes = substs.regions().filter_map(|v| v.clean(cx)).collect();
@@ -1566,6 +1583,7 @@ impl<'tcx> Clean<Type> for ty::ProjectionTy<'tcx> {
 pub enum GenericParam {
     Lifetime(Lifetime),
     Type(TyParam),
+    Const(ConstParam),
 }
 
 impl Clean<GenericParam> for hir::GenericParam {
@@ -1573,6 +1591,7 @@ impl Clean<GenericParam> for hir::GenericParam {
         match *self {
             hir::GenericParam::Lifetime(ref l) => GenericParam::Lifetime(l.clean(cx)),
             hir::GenericParam::Type(ref t) => GenericParam::Type(t.clean(cx)),
+            hir::GenericParam::Const(ref c) => GenericParam::Const(c.clean(cx)),
         }
     }
 }

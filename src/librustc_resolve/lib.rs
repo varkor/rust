@@ -796,7 +796,10 @@ impl<'a, 'tcx> Visitor<'tcx> for Resolver<'a> {
 
         for param in &generics.params {
             match *param {
-                GenericParam::Lifetime(_) => self.visit_generic_param(param),
+                GenericParam::Lifetime(_) |
+                GenericParam::Const(_) => {
+                    self.visit_generic_param(param);
+                }
                 GenericParam::Type(ref ty_param) => {
                     for bound in &ty_param.bounds {
                         self.visit_ty_param_bound(bound);

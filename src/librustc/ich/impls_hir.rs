@@ -205,9 +205,17 @@ impl_stable_hash_for!(struct hir::TyParam {
     synthetic
 });
 
+impl_stable_hash_for!(struct hir::ConstParam {
+    name,
+    id,
+    ty,
+    span
+});
+
 impl_stable_hash_for!(enum hir::GenericParam {
     Lifetime(lifetime_def),
-    Type(ty_param)
+    Type(ty_param),
+    Const(const_param)
 });
 
 impl_stable_hash_for!(struct hir::Generics {

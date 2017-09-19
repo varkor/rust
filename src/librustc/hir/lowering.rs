@@ -1585,6 +1585,15 @@ impl<'a> LoweringContext<'a> {
         }
     }
 
+    fn lower_const_param(&mut self, cp: &ConstParam) -> hir::ConstParam {
+        hir::ConstParam {
+            name: self.lower_ident(cp.ident),
+            id: self.lower_node_id(cp.id).node_id,
+            ty: self.lower_ty(&cp.ty, ImplTraitContext::Disallowed),
+            span: cp.span,
+        }
+    }
+
     fn lower_lifetime(&mut self, l: &Lifetime) -> hir::Lifetime {
         let name = match self.lower_ident(l.ident) {
             x if x == "'_" => hir::LifetimeName::Underscore,
@@ -1645,6 +1654,9 @@ impl<'a> LoweringContext<'a> {
                         ty_param,
                         add_bounds.get(&ty_param.id).map_or(&[][..], |x| &x)
                     ))
+                }
+                GenericParam::Const(ref const_param) => {
+                    hir::GenericParam::Const(self.lower_const_param(const_param))
                 }
             })
             .collect()

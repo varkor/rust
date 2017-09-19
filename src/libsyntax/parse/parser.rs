@@ -15,7 +15,7 @@ use ast::Unsafety;
 use ast::{Mod, Arg, Arm, Attribute, BindingMode, TraitItemKind};
 use ast::Block;
 use ast::{BlockCheckMode, CaptureBy, Movability};
-use ast::{Constness, Crate};
+use ast::{Constness, ConstParam, Crate};
 use ast::Defaultness;
 use ast::EnumDef;
 use ast::{Expr, ExprKind, RangeLimits};
@@ -4635,11 +4635,27 @@ impl<'a> Parser<'a> {
         }))
     }
 
+    fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, ConstParam> {
+        let span = self.span;
+        self.expect_keyword(keywords::Const)?;
+        let ident = self.parse_ident()?;
+        self.expect(&token::Colon)?;
+        let ty = self.parse_ty()?;
+
+        Ok(ConstParam {
+            attrs: preceding_attrs.into(),
+            ident,
+            id: ast::DUMMY_NODE_ID,
+            ty,
+            span,
+        })
+    }
+
     /// Parses (possibly empty) list of lifetime and type parameters, possibly including
     /// trailing comma and erroneous trailing attributes.
     pub fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
         let mut params = Vec::new();
-        let mut seen_ty_param = false;
+        let mut seen_non_lifetime_param = false;
         loop {
             let attrs = self.parse_outer_attributes()?;
             if self.check_lifetime() {
@@ -4655,18 +4671,26 @@ impl<'a> Parser<'a> {
                     lifetime,
                     bounds,
                 }));
-                if seen_ty_param {
+                if seen_non_lifetime_param {
                     self.span_err(self.prev_span,
-                        "lifetime parameters must be declared prior to type parameters");
+                        "lifetime parameters must be declared prior to type and const parameters");
                 }
+            } else if self.check_keyword(keywords::Const) {
+                params.push(ast::GenericParam::Const(self.parse_const_param(attrs)?));
+                seen_non_lifetime_param = true;
             } else if self.check_ident() {
                 // Parse type parameter.
                 params.push(ast::GenericParam::Type(self.parse_ty_param(attrs)?));
-                seen_ty_param = true;
+                seen_non_lifetime_param = true;
             } else {
                 // Check for trailing attributes and stop parsing.
                 if !attrs.is_empty() {
-                    let param_kind = if seen_ty_param { "type" } else { "lifetime" };
+                    let param_kind = if seen_non_lifetime_param {
+                        "type and const"
+                    } else {
+                        "lifetime"
+                    };
+
                     self.span_err(attrs[0].span,
                         &format!("trailing attribute after {} parameters", param_kind));
                 }
@@ -5483,6 +5507,7 @@ impl<'a> Parser<'a> {
                 .filter_map(|param| match *param {
                     ast::GenericParam::Lifetime(_) => None,
                     ast::GenericParam::Type(ref t) => Some(t.span),
+                    ast::GenericParam::Const(ref c) => Some(c.span),
                 })
                 .next();
 

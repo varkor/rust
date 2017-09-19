@@ -728,6 +728,11 @@ pub fn walk_generic_param<'v, V: Visitor<'v>>(visitor: &mut V, param: &'v Generi
             walk_list!(visitor, visit_ty_param_bound, &ty_param.bounds);
             walk_list!(visitor, visit_ty, &ty_param.default);
         }
+        GenericParam::Const(ref const_param) => {
+            visitor.visit_id(const_param.id);
+            visitor.visit_name(const_param.span, const_param.name);
+            visitor.visit_ty(&const_param.ty);
+        }
     }
 }
 

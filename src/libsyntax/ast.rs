@@ -315,9 +315,19 @@ pub struct TyParam {
 }
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
+pub struct ConstParam {
+    pub attrs: ThinVec<Attribute>,
+    pub ident: Ident,
+    pub id: NodeId,
+    pub ty: P<Ty>,
+    pub span: Span,
+}
+
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub enum GenericParam {
     Lifetime(LifetimeDef),
     Type(TyParam),
+    Const(ConstParam),
 }
 
 impl GenericParam {
@@ -331,6 +341,13 @@ impl GenericParam {
     pub fn is_type_param(&self) -> bool {
         match *self {
             GenericParam::Type(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_const_param(&self) -> bool {
+        match *self {
+            GenericParam::Const(_) => true,
             _ => false,
         }
     }

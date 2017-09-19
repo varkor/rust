@@ -478,6 +478,12 @@ pub fn walk_ty_param_bound<'a, V: Visitor<'a>>(visitor: &mut V, bound: &'a TyPar
     }
 }
 
+pub fn walk_const_param<'a, V: Visitor<'a>>(visitor: &mut V, param: &'a ConstParam) {
+    visitor.visit_ident(param.span, param.ident);
+    visitor.visit_ty(&param.ty);
+    walk_list!(visitor, visit_attribute, &*param.attrs);
+}
+
 pub fn walk_generic_param<'a, V: Visitor<'a>>(visitor: &mut V, param: &'a GenericParam) {
     match *param {
         GenericParam::Lifetime(ref l) => {
@@ -490,6 +496,11 @@ pub fn walk_generic_param<'a, V: Visitor<'a>>(visitor: &mut V, param: &'a Generi
             walk_list!(visitor, visit_ty_param_bound, &t.bounds);
             walk_list!(visitor, visit_ty, &t.default);
             walk_list!(visitor, visit_attribute, &*t.attrs);
+        }
+        GenericParam::Const(ref c) => {
+            visitor.visit_ident(c.span, c.ident);
+            visitor.visit_ty(&c.ty);
+            walk_list!(visitor, visit_attribute, &*c.attrs);
         }
     }
 }

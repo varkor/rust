@@ -142,6 +142,16 @@ impl fmt::Display for clean::GenericParam {
 
                 Ok(())
             }
+            clean::GenericParam::Const(ref cp) => {
+                f.write_str("const ")?;
+                f.write_str(&cp.name)?;
+
+                if f.alternate() {
+                    write!(f, ": {:#}", cp.ty)
+                } else {
+                    write!(f, ":&nbsp;{}", cp.ty)
+                }
+            }
         }
     }
 }

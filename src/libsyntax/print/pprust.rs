@@ -2869,6 +2869,7 @@ impl<'a> State<'a> {
                     s.print_lifetime_bounds(&lifetime_def.lifetime, &lifetime_def.bounds)
                 },
                 ast::GenericParam::Type(ref ty_param) => s.print_ty_param(ty_param),
+                ast::GenericParam::Const(ref const_param) => s.print_const_param(const_param),
             }
         })?;
 
@@ -2888,6 +2889,14 @@ impl<'a> State<'a> {
             }
             _ => Ok(())
         }
+    }
+
+    pub fn print_const_param(&mut self, param: &ast::ConstParam) -> io::Result<()> {
+        self.print_outer_attributes_inline(&param.attrs)?;
+        self.word_space("const")?;
+        self.print_ident(param.ident)?;
+        self.word_space(":")?;
+        self.print_type(&param.ty)
     }
 
     pub fn print_where_clause(&mut self, where_clause: &ast::WhereClause)

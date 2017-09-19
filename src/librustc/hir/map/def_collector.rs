@@ -198,6 +198,13 @@ impl<'a> visit::Visitor<'a> for DefCollector<'a> {
                     REGULAR_SPACE
                 );
             }
+            GenericParam::Const(ref const_param) => {
+                self.create_def(
+                    const_param.id,
+                    DefPathData::ConstParam(const_param.ident.name.as_str()),
+                    REGULAR_SPACE
+                );
+            }
         }
 
         visit::walk_generic_param(self, param);

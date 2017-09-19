@@ -2038,6 +2038,7 @@ impl<'a> State<'a> {
                 match *param {
                     hir::GenericParam::Lifetime(ref ld) => s.print_lifetime_def(ld),
                     hir::GenericParam::Type(ref tp) => s.print_ty_param(tp),
+                    hir::GenericParam::Const(ref cp) => s.print_const_param(cp),
                 }
             })?;
 
@@ -2057,6 +2058,13 @@ impl<'a> State<'a> {
             }
             _ => Ok(()),
         }
+    }
+
+    pub fn print_const_param(&mut self, param: &hir::ConstParam) -> io::Result<()> {
+        self.word_space("const")?;
+        self.print_name(param.name)?;
+        self.word_space(":")?;
+        self.print_type(&param.ty)
     }
 
     pub fn print_where_clause(&mut self, where_clause: &hir::WhereClause) -> io::Result<()> {

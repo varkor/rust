@@ -655,6 +655,20 @@ impl Sig for ast::Generics {
                     text.push_str(&t_text);
                     text.push(',');
                 }
+                ast::GenericParam::Const(ref c) => {
+                    let mut c_text = c.ident.to_string();
+                    defs.push(SigElement {
+                        id: id_from_node_id(c.id, scx),
+                        start: offset + text.len(),
+                        end: offset + text.len() + c_text.len(),
+                    });
+
+                    text.push_str("const ");
+                    text.push_str(&c_text);
+                    text.push_str(": ");
+                    text.push_str(&pprust::ty_to_string(&c.ty));
+                    text.push(',');
+                }
             }
         }
 

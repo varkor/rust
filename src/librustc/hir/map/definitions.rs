@@ -209,6 +209,7 @@ impl DefKey {
             DefPathData::Module(name) |
             DefPathData::MacroDef(name) |
             DefPathData::TypeParam(name) |
+            DefPathData::ConstParam(name) |
             DefPathData::LifetimeDef(name) |
             DefPathData::EnumVariant(name) |
             DefPathData::Field(name) |
@@ -363,8 +364,10 @@ pub enum DefPathData {
     ClosureExpr,
 
     // Subportions of items
-    /// A type parameter (generic parameter)
+    /// A generic type parameter
     TypeParam(InternedString),
+    /// A generic const parameter
+    ConstParam(InternedString),
     /// A lifetime definition
     LifetimeDef(InternedString),
     /// A variant of a enum
@@ -613,6 +616,7 @@ impl DefPathData {
             Module(name) |
             MacroDef(name) |
             TypeParam(name) |
+            ConstParam(name) |
             LifetimeDef(name) |
             EnumVariant(name) |
             Field(name) |
@@ -637,6 +641,7 @@ impl DefPathData {
             Module(name) |
             MacroDef(name) |
             TypeParam(name) |
+            ConstParam(name) |
             LifetimeDef(name) |
             EnumVariant(name) |
             Field(name) |

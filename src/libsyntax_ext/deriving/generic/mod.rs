@@ -566,7 +566,8 @@ impl<'a> TraitDef<'a> {
                     }
 
                     GenericParam::Type(cx.typaram(self.span, ty_param.ident, vec![], bounds, None))
-                }
+                },
+                ref c @ GenericParam::Const(_) => c.clone(),
             }
         }));
 

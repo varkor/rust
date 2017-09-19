@@ -203,6 +203,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
             data @ DefPathData::ValueNs(..) |
             data @ DefPathData::Module(..) |
             data @ DefPathData::TypeParam(..) |
+            data @ DefPathData::ConstParam(..) |
             data @ DefPathData::LifetimeDef(..) |
             data @ DefPathData::EnumVariant(..) |
             data @ DefPathData::Field(..) |

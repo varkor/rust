@@ -1829,6 +1829,8 @@ impl<'a> Visitor<'a> for PostExpansionVisitor<'a> {
                 (&ld.attrs, "attributes on lifetime bindings are experimental"),
             ast::GenericParam::Type(ref t) =>
                 (&t.attrs, "attributes on type parameter bindings are experimental"),
+            ast::GenericParam::Const(ref c) =>
+                (&c.attrs, "attributes on const parameter bindings are experimental"),
         };
 
         if !attrs.is_empty() {
