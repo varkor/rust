@@ -174,7 +174,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         EvalContext {
             machine_data,
             tcx,
-            memory: Memory::new(&tcx.data_layout, limits.memory_size, memory_data),
+            memory: Memory::new(tcx, limits.memory_size, memory_data),
             suspended: HashMap::new(),
             globals: HashMap::new(),
             stack: Vec::new(),
@@ -197,7 +197,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             "cannot alloc memory for unsized type",
         );
         let align = self.type_align_with_substs(ty, substs)?;
-        self.memory.allocate(size, align, MemoryKind::Stack)
+        self.memory.allocate(size, align, Some(MemoryKind::Stack))
     }
 
     pub fn memory(&self) -> &Memory<'a, 'tcx, M> {
@@ -219,7 +219,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
     }
 
     pub fn str_to_value(&mut self, s: &str) -> EvalResult<'tcx, Value> {
-        let ptr = self.memory.allocate_cached(s.as_bytes())?;
+        let ptr = self.memory.allocate_cached(s.as_bytes());
         Ok(Value::ByValPair(
             PrimVal::Ptr(ptr),
             PrimVal::from_u128(s.len() as u128),
@@ -240,7 +240,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             Str(ref s) => return self.str_to_value(s),
 
             ByteStr(ref bs) => {
-                let ptr = self.memory.allocate_cached(bs.data)?;
+                let ptr = self.memory.allocate_cached(bs.data);
                 PrimVal::Ptr(ptr)
             }
 
@@ -558,14 +558,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             trace!("deallocating local");
             let ptr = ptr.to_ptr()?;
             self.memory.dump_alloc(ptr.alloc_id);
-            match self.memory.get(ptr.alloc_id)?.kind {
-                // for a constant like `const FOO: &i32 = &1;` the local containing
-                // the `1` is referred to by the global. We transitively marked everything
-                // the global refers to as static itself, so we don't free it here
-                MemoryKind::Static => {}
-                MemoryKind::Stack => self.memory.deallocate(ptr, None, MemoryKind::Stack)?,
-                other => bug!("local contained non-stack memory: {:?}", other),
-            }
+            self.memory.deallocate_local(ptr)?;
         };
         Ok(())
     }
@@ -2415,7 +2408,7 @@ fn resolve_associated_item<'a, 'tcx>(
     );
 
     let trait_ref = ty::TraitRef::from_method(tcx, trait_id, rcvr_substs);
-    let vtbl = tcx.trans_fulfill_obligation(DUMMY_SP, ty::Binder(trait_ref));
+    let vtbl = tcx.trans_fulfill_obligation(DUMMY_SP, ty::ParamEnv::empty(::traits::Reveal::All), ty::Binder(trait_ref));
 
     // Now that we know which impl is being used, we can dispatch to
     // the actual function:

@@ -27,7 +27,7 @@ pub use self::eval_context::{EvalContext, Frame, ResourceLimits, StackPopCleanup
 
 pub use self::lvalue::{Lvalue, LvalueExtra, GlobalId};
 
-pub use self::memory::{AllocId, Memory, MemoryPointer, MemoryKind, HasMemory, AccessKind, AllocIdKind};
+pub use self::memory::{AllocId, Memory, MemoryPointer, MemoryKind, HasMemory, AccessKind, Allocation};
 
 use self::memory::{PointerArithmetic, Lock};
 
@@ -35,7 +35,7 @@ use self::range_map::RangeMap;
 
 pub use self::value::{PrimVal, PrimValKind, Value, Pointer};
 
-pub use self::const_eval::{eval_body_as_integer, eval_body_as_primval};
+pub use self::const_eval::{eval_body_as_integer, eval_body};
 
 pub use self::machine::Machine;
 

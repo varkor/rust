@@ -5,7 +5,7 @@ use ty::{self, Ty};
 use syntax::codemap::DUMMY_SP;
 use syntax::ast::{self, Mutability};
 
-use super::{EvalResult, EvalContext, eval_context, MemoryPointer, MemoryKind, Value, PrimVal,
+use super::{EvalResult, EvalContext, eval_context, MemoryPointer, Value, PrimVal,
             Machine};
 
 impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
@@ -58,7 +58,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         let vtable = self.memory.allocate(
             ptr_size * (3 + methods.count() as u64),
             ptr_size,
-            MemoryKind::UninitializedStatic,
+            None,
         )?;
 
         let drop = eval_context::resolve_drop_in_place(self.tcx, ty);

@@ -13,7 +13,7 @@ use ty::subst::Substs;
 use middle::const_val::ConstVal;
 
 use super::{EvalResult, EvalContext, StackPopCleanup, PtrAndAlign, GlobalId, Lvalue,
-            MemoryKind, Machine, PrimVal};
+            Machine, PrimVal};
 
 use syntax::codemap::Span;
 use syntax::ast::Mutability;
@@ -221,7 +221,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         let ptr = self.memory.allocate(
             size,
             align,
-            MemoryKind::UninitializedStatic,
+            None,
         )?;
         let aligned = !self.is_packed(mir.return_ty)?;
         self.globals.insert(
@@ -321,7 +321,7 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                     let ptr = this.ecx.memory.allocate(
                         size,
                         align,
-                        MemoryKind::UninitializedStatic,
+                        None,
                     )?;
                     let aligned = !this.ecx.is_packed(mir.return_ty)?;
                     this.ecx.globals.insert(

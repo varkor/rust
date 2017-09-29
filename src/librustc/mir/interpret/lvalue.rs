@@ -391,7 +391,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             n,
             len
         );
-        let ptr = base_ptr.offset(n * elem_size, self.memory.layout)?;
+        let ptr = base_ptr.offset(n * elem_size, &*self)?;
         Ok(Lvalue::Ptr {
             ptr,
             extra: LvalueExtra::None,

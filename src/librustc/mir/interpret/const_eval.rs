@@ -6,7 +6,7 @@ use syntax::ast::Mutability;
 use syntax::codemap::Span;
 
 use super::{EvalResult, EvalError, EvalErrorKind, GlobalId, Lvalue, Value, PrimVal, EvalContext,
-            StackPopCleanup, PtrAndAlign, MemoryKind, ValTy};
+            StackPopCleanup, PtrAndAlign, ValTy};
 
 use rustc_const_math::ConstInt;
 
@@ -16,7 +16,7 @@ use std::error::Error;
 pub fn eval_body<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     instance: Instance<'tcx>,
-) -> EvalResult<'tcx, (Value, Ty<'tcx>)> {
+) -> EvalResult<'tcx, (Value, EvalResult<'tcx, PrimVal>, Ty<'tcx>)> {
     let limits = super::ResourceLimits::default();
     let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
     let cid = GlobalId {
@@ -35,7 +35,7 @@ pub fn eval_body<'a, 'tcx>(
         let ptr = ecx.memory.allocate(
             size,
             align,
-            MemoryKind::UninitializedStatic,
+            None,
         )?;
         let aligned = !ecx.is_packed(mir.return_ty)?;
         ecx.globals.insert(
@@ -74,15 +74,15 @@ pub fn eval_body<'a, 'tcx>(
         ty: mir.return_ty,
     };
     // FIXME: store cached value in TyCtxt
-    Ok(value, mir.return_ty))
+    Ok((value, ecx.value_to_primval(valty), mir.return_ty))
 }
 
 pub fn eval_body_as_integer<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     instance: Instance<'tcx>,
 ) -> EvalResult<'tcx, ConstInt> {
-    let (prim, ty) = eval_body_as_primval(tcx, instance)?;
-    let prim = prim.to_bytes()?;
+    let (_, prim, ty) = eval_body(tcx, instance)?;
+    let prim = prim?.to_bytes()?;
     use syntax::ast::{IntTy, UintTy};
     use ty::TypeVariants::*;
     use rustc_const_math::{ConstIsize, ConstUsize};

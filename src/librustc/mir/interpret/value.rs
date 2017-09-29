@@ -198,7 +198,7 @@ impl<'a, 'tcx: 'a> Value {
                 mem.read_maybe_aligned(aligned, |mem| {
                     let ptr = mem.read_ptr_sized_unsigned(ref_ptr.to_ptr()?)?.into();
                     let vtable = mem.read_ptr_sized_unsigned(
-                        ref_ptr.offset(mem.pointer_size(), mem.layout)?.to_ptr()?,
+                        ref_ptr.offset(mem.pointer_size(), &mem.tcx.data_layout)?.to_ptr()?,
                     )?.to_ptr()?;
                     Ok((ptr, vtable))
                 })
@@ -224,7 +224,7 @@ impl<'a, 'tcx: 'a> Value {
                 mem.read_maybe_aligned(aligned, |mem| {
                     let ptr = mem.read_ptr_sized_unsigned(ref_ptr.to_ptr()?)?.into();
                     let len = mem.read_ptr_sized_unsigned(
-                        ref_ptr.offset(mem.pointer_size(), mem.layout)?.to_ptr()?,
+                        ref_ptr.offset(mem.pointer_size(), &mem.tcx.data_layout)?.to_ptr()?,
                     )?.to_bytes()? as u64;
                     Ok((ptr, len))
                 })
