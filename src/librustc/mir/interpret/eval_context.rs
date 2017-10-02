@@ -245,7 +245,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             }
 
             Unevaluated(def_id, substs) => {
-                let instance = self.resolve_associated_const(def_id, substs);
+                let instance = self.resolve_associated_const(def_id, substs)?;
                 let cid = GlobalId {
                     instance,
                     promoted: None,
@@ -265,7 +265,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
     pub(super) fn type_is_sized(&self, ty: Ty<'tcx>) -> bool {
         // generics are weird, don't run this function on a generic
         assert!(!ty.needs_subst());
-        ty.is_sized(self.tcx, ty::ParamEnv::empty(Reveal::All), DUMMY_SP)
+        ty.is_sized(self.tcx, M::param_env(self), DUMMY_SP)
     }
 
     pub fn load_mir(
@@ -451,7 +451,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         // TODO(solson): Is this inefficient? Needs investigation.
         let ty = self.monomorphize(ty, substs);
 
-        ty.layout(self.tcx, ty::ParamEnv::empty(Reveal::All))
+        ty.layout(self.tcx, M::param_env(self))
             .map_err(|layout| EvalErrorKind::Layout(layout).into())
     }
 
@@ -2110,28 +2110,11 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
     pub fn report(&self, e: &mut EvalError) {
         if let Some(ref mut backtrace) = e.backtrace {
             let mut trace_text = "\n\nAn error occurred in miri:\n".to_string();
-            let mut skip_init = true;
             backtrace.resolve();
+            write!(trace_text, "backtrace frames: {}\n", backtrace.frames().len()).unwrap();
             'frames: for (i, frame) in backtrace.frames().iter().enumerate() {
-                for symbol in frame.symbols() {
-                    if let Some(name) = symbol.name() {
-                        // unmangle the symbol via `to_string`
-                        let name = name.to_string();
-                        if name.starts_with("miri::after_analysis") {
-                            // don't report initialization gibberish
-                            break 'frames;
-                        } else if name.starts_with("backtrace::capture::Backtrace::new")
-                            // debug mode produces funky symbol names
-                            || name.starts_with("backtrace::capture::{{impl}}::new")
-                        {
-                            // don't report backtrace internals
-                            skip_init = false;
-                            continue 'frames;
-                        }
-                    }
-                }
-                if skip_init {
-                    continue;
+                if frame.symbols().is_empty() {
+                    write!(trace_text, "{}: no symbols\n", i).unwrap();
                 }
                 for symbol in frame.symbols() {
                     write!(trace_text, "{}: ", i).unwrap();

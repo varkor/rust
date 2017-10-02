@@ -360,6 +360,8 @@ impl<'a, 'tcx, M: Machine<'tcx>> Memory<'a, 'tcx, M> {
             // the global refers to as static itself, so we don't free it here
             Some(MemoryKind::MutableStatic) => Ok(()),
             Some(MemoryKind::Stack) => self.deallocate(ptr, None, MemoryKind::Stack),
+            // Happens if the memory was interned into immutable memory
+            None => Ok(()),
             other => bug!("local contained non-stack memory: {:?}", other),
         }
     }
@@ -513,7 +515,10 @@ impl<'a, 'tcx, M: Machine<'tcx>> Memory<'a, 'tcx, M> {
         if len == 0 {
             return Ok(());
         }
-        let locks = self.locks.get(&ptr.alloc_id.0).ok_or(EvalErrorKind::DanglingPointerDeref)?;
+        let locks = match self.locks.get(&ptr.alloc_id.0) {
+            Some(locks) => locks,
+            None => return Ok(()),
+        };
         let frame = self.cur_frame;
         locks
             .check(Some(frame), ptr.offset, len, access)
@@ -1036,11 +1041,8 @@ impl<'a, 'tcx, M: Machine<'tcx>> Memory<'a, 'tcx, M> {
                 for &alloc in alloc.relocations.values() {
                     self.mark_inner_allocation_initialized(alloc, mutability)?;
                 }
-            } else {
-                // already static or dangling
-                // FIXME: report error if dangling
-                return Ok(());
             }
+            return Ok(());
         }
         // do not use `self.get_mut(alloc_id)` here, because we might have already marked a
         // sub-element or have circular pointers (e.g. `Rc`-cycles)

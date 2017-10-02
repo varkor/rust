@@ -1,40 +1,84 @@
-use traits::{self, Reveal};
+use traits;
 use hir::def_id::DefId;
 use ty::subst::Substs;
 use ty::{self, Ty};
-use syntax::codemap::DUMMY_SP;
-use syntax::ast::{self, Mutability};
+use syntax::codemap::{DUMMY_SP, Span};
+use syntax::ast::{DUMMY_NODE_ID, Mutability};
 
 use super::{EvalResult, EvalContext, eval_context, MemoryPointer, Value, PrimVal,
             Machine};
 
 impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
-    pub(crate) fn fulfill_obligation(
-        &self,
-        trait_ref: ty::PolyTraitRef<'tcx>,
-    ) -> traits::Vtable<'tcx, ()> {
-        // Do the initial selection for the obligation. This yields the shallow result we are
-        // looking for -- that is, what specific impl.
+    /// Attempts to resolve an obligation to a vtable.. The result is
+    /// a shallow vtable resolution -- meaning that we do not
+    /// (necessarily) resolve all nested obligations on the impl. Note
+    /// that type check should guarantee to us that all nested
+    /// obligations *could be* resolved if we wanted to.
+    /// Assumes that this is run after the entire crate has been successfully type-checked.
+    pub fn trans_fulfill_obligation(&self,
+                                    span: Span,
+                                    param_env: ty::ParamEnv<'tcx>,
+                                    trait_ref: ty::PolyTraitRef<'tcx>)
+                                    -> EvalResult<'tcx, traits::Vtable<'tcx, ()>>
+    {
+        // Remove any references to regions; this helps improve caching.
+        let trait_ref = self.tcx.erase_regions(&trait_ref);
+
+        debug!("trans::fulfill_obligation(trait_ref={:?}, def_id={:?})",
+                (param_env, trait_ref), trait_ref.def_id());
+
+        // Do the initial selection for the obligation. This yields the
+        // shallow result we are looking for -- that is, what specific impl.
         self.tcx.infer_ctxt().enter(|infcx| {
             let mut selcx = traits::SelectionContext::new(&infcx);
 
-            let obligation = traits::Obligation::new(
-                traits::ObligationCause::misc(DUMMY_SP, ast::DUMMY_NODE_ID),
-                ty::ParamEnv::empty(Reveal::All),
-                trait_ref.to_poly_trait_predicate(),
-            );
-            let selection = selcx.select(&obligation).unwrap().unwrap();
+            let obligation_cause = traits::ObligationCause::misc(span,
+                                                            DUMMY_NODE_ID);
+            let obligation = traits::Obligation::new(obligation_cause,
+                                                param_env,
+                                                trait_ref.to_poly_trait_predicate());
 
-            // Currently, we use a fulfillment context to completely resolve all nested obligations.
-            // This is because they can inform the inference of the impl's type parameters.
+            let selection = match selcx.select(&obligation) {
+                Ok(Some(selection)) => selection,
+                Ok(None) => {
+                    // Ambiguity can happen when monomorphizing during trans
+                    // expands to some humongo type that never occurred
+                    // statically -- this humongo type can then overflow,
+                    // leading to an ambiguous result. So report this as an
+                    // overflow bug, since I believe this is the only case
+                    // where ambiguity can result.
+                    debug!("Encountered ambiguity selecting `{:?}` during trans, \
+                            presuming due to overflow",
+                            trait_ref);
+                    self.tcx.sess.span_fatal(span,
+                                        "reached the recursion limit during monomorphization \
+                                            (selection ambiguity)");
+                }
+                Err(traits::SelectionError::Unimplemented) => {
+                    return err!(UnimplementedTraitSelection);
+                }
+                Err(e) => {
+                    span_bug!(span, "Encountered error `{:?}` selecting `{:?}` during trans",
+                                e, trait_ref)
+                }
+            };
+
+            debug!("fulfill_obligation: selection={:?}", selection);
+
+            // Currently, we use a fulfillment context to completely resolve
+            // all nested obligations. This is because they can inform the
+            // inference of the impl's type parameters.
             let mut fulfill_cx = traits::FulfillmentContext::new();
             let vtable = selection.map(|predicate| {
+                debug!("fulfill_obligation: register_predicate_obligation {:?}", predicate);
                 fulfill_cx.register_predicate_obligation(&infcx, predicate);
             });
-            infcx.drain_fulfillment_cx_or_panic(DUMMY_SP, &mut fulfill_cx, &vtable)
+            let vtable = infcx.drain_fulfillment_cx_or_panic(span, &mut fulfill_cx, &vtable);
+
+            info!("Cache miss: {:?} => {:?}", trait_ref, vtable);
+            Ok(vtable)
         })
     }
-
     /// Creates a dynamic vtable for the given type and vtable origin. This is used only for
     /// objects.
     ///
@@ -116,10 +160,10 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         &self,
         def_id: DefId,
         substs: &'tcx Substs<'tcx>,
-    ) -> ty::Instance<'tcx> {
+    ) -> EvalResult<'tcx, ty::Instance<'tcx>> {
         if let Some(trait_id) = self.tcx.trait_of_item(def_id) {
             let trait_ref = ty::Binder(ty::TraitRef::new(trait_id, substs));
-            let vtable = self.fulfill_obligation(trait_ref);
+            let vtable = self.trans_fulfill_obligation(DUMMY_SP, M::param_env(self), trait_ref)?;
             if let traits::VtableImpl(vtable_impl) = vtable {
                 let name = self.tcx.item_name(def_id);
                 let assoc_const_opt = self.tcx.associated_items(vtable_impl.impl_def_id).find(
@@ -128,10 +172,10 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                     },
                 );
                 if let Some(assoc_const) = assoc_const_opt {
-                    return ty::Instance::new(assoc_const.def_id, vtable_impl.substs);
+                    return Ok(ty::Instance::new(assoc_const.def_id, vtable_impl.substs));
                 }
             }
         }
-        ty::Instance::new(def_id, substs)
+        Ok(ty::Instance::new(def_id, substs))
     }
 }

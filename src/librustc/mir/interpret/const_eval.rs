@@ -1,4 +1,3 @@
-use traits::Reveal;
 use ty::{self, TyCtxt, Ty, Instance, layout};
 use mir;
 
@@ -16,9 +15,10 @@ use std::error::Error;
 pub fn eval_body<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     instance: Instance<'tcx>,
+    param_env: ty::ParamEnv<'tcx>,
 ) -> EvalResult<'tcx, (PtrAndAlign, Ty<'tcx>)> {
     let limits = super::ResourceLimits::default();
-    let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
+    let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
     let cid = GlobalId {
         instance,
         promoted: None,
@@ -47,7 +47,7 @@ pub fn eval_body<'a, 'tcx>(
         );
         let mutable = !mir.return_ty.is_freeze(
             ecx.tcx,
-            ty::ParamEnv::empty(Reveal::All),
+            param_env,
             mir.span,
         );
         let mutability = if mutable {
@@ -74,11 +74,12 @@ pub fn eval_body<'a, 'tcx>(
 
 pub fn eval_body_as_integer<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    param_env: ty::ParamEnv<'tcx>,
     instance: Instance<'tcx>,
 ) -> EvalResult<'tcx, ConstInt> {
-    let (ptr, ty) = eval_body(tcx, instance)?;
+    let (ptr, ty) = eval_body(tcx, instance, param_env)?;
     let limits = super::ResourceLimits::default();
-    let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
+    let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
     let prim = match ecx.read_maybe_aligned(ptr.aligned, |ectx| ectx.try_read_value(ptr.ptr, ty))? {
         Some(Value::ByVal(prim)) => prim.to_bytes()?,
         _ => return err!(TypeNotPrimitive(ty)),
@@ -160,9 +161,14 @@ impl Error for ConstEvalError {
 }
 
 impl<'tcx> super::Machine<'tcx> for CompileTimeFunctionEvaluator {
-    type Data = ();
+    type Data = ty::ParamEnv<'tcx>;
     type MemoryData = ();
     type MemoryKinds = !;
+    fn param_env<'a>(
+        ecx: &EvalContext<'a, 'tcx, Self>,
+    ) -> ty::ParamEnv<'tcx> {
+        ecx.machine_data
+    }
     fn eval_fn_call<'a>(
         ecx: &mut EvalContext<'a, 'tcx, Self>,
         instance: ty::Instance<'tcx>,

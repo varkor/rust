@@ -6,7 +6,6 @@ use hir::def_id::DefId;
 use hir;
 use mir::visit::{Visitor, LvalueContext};
 use mir;
-use traits::Reveal;
 use ty;
 use ty::layout::Layout;
 use ty::subst::Substs;
@@ -201,7 +200,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         span: Span,
         mutability: Mutability,
     ) -> EvalResult<'tcx, bool> {
-        let instance = self.resolve_associated_const(def_id, substs);
+        let instance = self.resolve_associated_const(def_id, substs)?;
         let cid = GlobalId {
             instance,
             promoted: None,
@@ -233,7 +232,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         );
         let internally_mutable = !mir.return_ty.is_freeze(
             self.tcx,
-            ty::ParamEnv::empty(Reveal::All),
+            M::param_env(self),
             span,
         );
         let mutability = if mutability == Mutability::Mutable || internally_mutable {
