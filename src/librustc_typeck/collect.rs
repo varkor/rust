@@ -922,6 +922,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         has_default: false,
                         object_lifetime_default: rl::Set1::Empty,
                         pure_wrt_drop: false,
+                        synthetic: None,
                     });
 
                     allow_defaults = true;
@@ -993,6 +994,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             object_lifetime_default:
                 object_lifetime_defaults.as_ref().map_or(rl::Set1::Empty, |o| o[i]),
             pure_wrt_drop: p.pure_wrt_drop,
+            synthetic: p.synthetic,
         }
     });
     let mut types: Vec<_> = opt_self.into_iter().chain(types).collect();
@@ -1009,6 +1011,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 has_default: false,
                 object_lifetime_default: rl::Set1::Empty,
                 pure_wrt_drop: false,
+                synthetic: None,
             }));
         });
     }
@@ -1327,6 +1330,12 @@ fn early_bound_lifetimes_from_generics<'a, 'tcx>(
 }
 
 fn predicates_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
+                           def_id: DefId)
+                           -> ty::GenericPredicates<'tcx> {
+    explicit_predicates_of(tcx, def_id)
+}
+
+fn explicit_predicates_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                            def_id: DefId)
                            -> ty::GenericPredicates<'tcx> {
     use rustc::hir::map::*;

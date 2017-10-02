@@ -727,6 +727,12 @@ pub const BUILTIN_ATTRIBUTES: &'static [(&'static str, AttributeType, AttributeG
                                                        is just used for rustc unit tests \
                                                        and will never be stable",
                                                       cfg_fn!(rustc_attrs))),
+    ("rustc_synthetic", Whitelisted, Gated(Stability::Unstable,
+                                                      "rustc_attrs",
+                                                      "this attribute \
+                                                       is just used for rustc unit tests \
+                                                       and will never be stable",
+                                                      cfg_fn!(rustc_attrs))),
     ("rustc_symbol_name", Whitelisted, Gated(Stability::Unstable,
                                              "rustc_attrs",
                                              "internal rustc attributes will never be stable",
@@ -818,7 +824,8 @@ pub const BUILTIN_ATTRIBUTES: &'static [(&'static str, AttributeType, AttributeG
     ("no_debug", Whitelisted, Gated(
         Stability::Deprecated("https://github.com/rust-lang/rust/issues/29721"),
         "no_debug",
-        "the `#[no_debug]` attribute is an experimental feature",
+        "the `#[no_debug]` attribute was an experimental feature that has been \
+         deprecated due to lack of demand",
         cfg_fn!(no_debug))),
     ("omit_gdb_pretty_printer_section", Whitelisted, Gated(Stability::Unstable,
                                                        "omit_gdb_pretty_printer_section",
