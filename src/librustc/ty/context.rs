@@ -90,6 +90,8 @@ pub struct GlobalArenas<'tcx> {
     steal_mir: TypedArena<Steal<Mir<'tcx>>>,
     mir: TypedArena<Mir<'tcx>>,
     tables: TypedArena<ty::TypeckTables<'tcx>>,
+    /// miri allocations
+    const_allocs: TypedArena<interpret::Allocation>,
 }
 
 impl<'tcx> GlobalArenas<'tcx> {
@@ -102,6 +104,7 @@ impl<'tcx> GlobalArenas<'tcx> {
             steal_mir: TypedArena::new(),
             mir: TypedArena::new(),
             tables: TypedArena::new(),
+            const_allocs: TypedArena::new(),
         }
     }
 }
@@ -1081,7 +1084,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
             return alloc;
         }
 
-        let interned = self.global_interners.arena.alloc(alloc);
+        let interned = self.global_arenas.const_allocs.alloc(alloc);
         if let Some(prev) = self.interpret_interner.borrow_mut().allocs.replace(interned) {
             bug!("Tried to overwrite interned Allocation: {:#?}", prev)
         }

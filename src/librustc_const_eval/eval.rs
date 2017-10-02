@@ -25,6 +25,8 @@ use rustc::ty::subst::{Substs, Subst};
 use rustc::util::common::ErrorReported;
 use rustc::util::nodemap::NodeMap;
 
+use rustc::mir::interpret::{PrimVal, Value, PtrAndAlign, HasMemory};
+
 use syntax::abi::Abi;
 use syntax::ast;
 use syntax::attr;
@@ -793,7 +795,7 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     };
 
     let instance = ty::Instance::new(def_id, substs);
-    let miri_result = ::rustc::mir::interpret::eval_body_as_primval(tcx, instance);
+    let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance);
     let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
     match (miri_result, old_result) {
         (Err(err), Ok(ok)) => {
@@ -806,61 +808,165 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         },
         (Err(_), Err(err)) => Err(err),
         (Ok((miri_val, miri_ty)), Ok(ctfe)) => {
-            use rustc::ty::TypeVariants::*;
-            use rustc::mir::interpret::PrimVal;
-            match (miri_val, &miri_ty.sty, ctfe.val) {
-                (PrimVal::Undef, _, _) => {
-                    panic!("miri produced an undef, while old ctfe produced {:?}", ctfe);
-                },
-                (PrimVal::Ptr(_), _, _) => {
-                    panic!("miri produced a pointer, which isn't implemented yet");
-                },
-                (PrimVal::Bytes(b), &TyInt(int_ty), ConstVal::Integral(ci)) => {
-                    let c = ConstInt::new_signed_truncating(b as i128,
-                                                            int_ty,
-                                                            tcx.sess.target.isize_ty);
-                    if c != ci {
-                        panic!("miri evaluated to {}, but ctfe yielded {}", b as i128, ci);
-                    }
-                }
-                (PrimVal::Bytes(b), &TyUint(int_ty), ConstVal::Integral(ci)) => {
-                    let c = ConstInt::new_unsigned_truncating(b, int_ty, tcx.sess.target.usize_ty);
-                    if c != ci {
-                        panic!("miri evaluated to {}, but ctfe yielded {}", b, ci);
-                    }
-                }
-                (PrimVal::Bytes(bits), &TyFloat(ty), ConstVal::Float(cf)) => {
-                    let f = ConstFloat { bits, ty };
-                    if f != cf {
-                        panic!("miri evaluated to {}, but ctfe yielded {}", f, cf);
-                    }
-                }
-                (PrimVal::Bytes(bits), &TyBool, ConstVal::Bool(b)) => {
-                    if bits == 0 && b {
-                        panic!("miri evaluated to {}, but ctfe yielded {}", bits == 0, b);
-                    } else if bits == 1 && !b {
-                        panic!("miri evaluated to {}, but ctfe yielded {}", bits == 1, b);
-                    } else {
-                        panic!("miri evaluated to {}, but expected a bool {}", bits, b);
-                    }
-                }
-                (PrimVal::Bytes(bits), &TyChar, ConstVal::Char(c)) => {
-                    if let Some(cm) = ::std::char::from_u32(bits as u32) {
-                        if cm != c {
-                            panic!("miri evaluated to {:?}, but expected {:?}", cm, c);
-                        }
-                    } else {
-                        panic!("miri evaluated to {}, but expected a char {:?}", bits, c);
-                    }
-                }
-                _ => {
-                    panic!("can't check whether miri's {:?} ({}) makes sense when ctfe yields {:?}",
-                        miri_val,
-                        miri_ty,
-                        ctfe)
-                }
-            }
+            check_ctfe_against_miri(tcx, miri_val, miri_ty, ctfe.val);
             Ok(ctfe)
         }
+    }
+}
+
+fn check_ctfe_against_miri<'a, 'tcx>(
+    tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    miri_val: PtrAndAlign,
+    miri_ty: Ty<'tcx>,
+    ctfe: ConstVal<'tcx>,
+) {
+    let limits = ResourceLimits::default();
+    use rustc::mir::interpret::{CompileTimeFunctionEvaluator, EvalContext, ResourceLimits};
+    let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
+    let value = ecx.read_maybe_aligned(miri_val.aligned, |ectx| {
+        ectx.try_read_value(miri_val.ptr, miri_ty)
+    });
+    let prim = match value {
+        Ok(Some(Value::ByVal(prim))) => prim.to_bytes().map_err(|err| Some(format!("{:?}", err))),
+        Err(ref err) => Err(Some(format!("{:?}", err))),
+        _ => Err(None),
+    };
+    use rustc::ty::TypeVariants::*;
+    match miri_ty.sty {
+        TyInt(int_ty) => {
+            let prim = prim.expect("miri failed to produce a primitive");
+            let c = ConstInt::new_signed_truncating(prim as i128,
+                                                    int_ty,
+                                                    tcx.sess.target.isize_ty);
+            let c = ConstVal::Integral(c);
+            assert_eq!(c, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", c, ctfe);
+        },
+        TyUint(uint_ty) => {
+            let prim = prim.expect("miri failed to produce a primitive");
+            let c = ConstInt::new_unsigned_truncating(prim,
+                                                     uint_ty,
+                                                     tcx.sess.target.usize_ty);
+            let c = ConstVal::Integral(c);
+            assert_eq!(c, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", c, ctfe);
+        },
+        TyFloat(ty) => {
+            let prim = prim.expect("miri failed to produce a primitive");
+            let f = ConstVal::Float(ConstFloat { bits: prim, ty });
+            assert_eq!(f, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", f, ctfe);
+        },
+        TyBool => {
+            let bits = prim.expect("miri failed to produce a primitive");
+            if bits > 1 {
+                panic!("miri evaluated to {}, but expected a bool {:?}", bits, ctfe);
+            }
+            let b = ConstVal::Bool(bits == 1);
+            assert_eq!(b, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", b, ctfe);
+        },
+        TyChar => {
+            let bits = prim.expect("miri failed to produce a primitive");
+            if let Some(cm) = ::std::char::from_u32(bits as u32) {
+                assert_eq!(
+                    ConstVal::Char(cm), ctfe,
+                    "miri evaluated to {:?}, but expected {:?}", cm, ctfe,
+                );
+            } else {
+                panic!("miri evaluated to {}, but expected a char {:?}", bits, ctfe);
+            }
+        },
+        TyStr => {
+            if let Ok(Some(Value::ByValPair(PrimVal::Ptr(ptr), PrimVal::Bytes(len)))) = value {
+                let bytes = ecx
+                    .memory
+                    .read_bytes(ptr.into(), len as u64)
+                    .expect("bad miri memory for str");
+                if let Ok(s) = ::std::str::from_utf8(bytes) {
+                    if let ConstVal::Str(s2) = ctfe {
+                        assert_eq!(s, s2, "miri produced {:?}, but expected {:?}", s, s2);
+                    } else {
+                        panic!("miri produced {:?}, but expected {:?}", s, ctfe);
+                    }
+                } else {
+                    panic!(
+                        "miri failed to produce valid utf8 {:?}, while ctfe produced {:?}",
+                        bytes,
+                        ctfe,
+                    );
+                }
+            } else {
+                panic!("miri evaluated to {:?}, but expected a str {:?}", value, ctfe);
+            }
+        },
+        TyArray(elem_ty, n) => {
+            let n = n.val.to_const_int().unwrap().to_u64().unwrap();
+            let size = ecx.type_size(elem_ty).unwrap().unwrap();
+            let vec: Box<Iterator<Item = (ConstVal, Ty<'tcx>)>> = match ctfe {
+                ConstVal::ByteStr(arr) => Box::new(arr.data.iter().map(|&b| {
+                    (ConstVal::Integral(ConstInt::U8(b)), tcx.types.u8)
+                })),
+                ConstVal::Aggregate(Array(v)) => {
+                    Box::new(v.iter().map(|c| (c.val, c.ty)))
+                },
+                ConstVal::Aggregate(Repeat(v, n)) => {
+                    Box::new(::std::iter::repeat((v.val, v.ty)).take(n as usize))
+                },
+                _ => panic!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            for (i, elem) in vec.enumerate() {
+                assert!((i as u64) < n);
+                let ptr = miri_val.offset(size * i as u64, &ecx).unwrap();
+                check_ctfe_against_miri(tcx, ptr, elem_ty, elem.0);
+            }
+        },
+        TyTuple(..) => {
+            let vec = match ctfe {
+                ConstVal::Aggregate(Tuple(v)) => v,
+                _ => panic!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            for (i, elem) in vec.into_iter().enumerate() {
+                let offset = ecx.get_field_offset(miri_ty, i).unwrap();
+                let ptr = miri_val.offset(offset.bytes(), &ecx).unwrap();
+                check_ctfe_against_miri(tcx, ptr, elem.ty, elem.val);
+            }
+        },
+        TyAdt(def, _) => {
+            let struct_variant = def.struct_variant();
+            let vec = match ctfe {
+                ConstVal::Aggregate(Struct(v)) => v,
+                ctfe => panic!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            let ptr = match value {
+                Ok(Some(Value::ByRef(ptr))) => ptr,
+                value => panic!("miri produced {:?}, but expected {:?}", value, ctfe),
+            };
+            for &(name, elem) in vec.into_iter() {
+                let field = struct_variant.fields.iter().position(|f| f.name == name).unwrap();
+                let offset = ecx.get_field_offset(miri_ty, field).unwrap();
+                let ptr = ptr.offset(offset.bytes(), &ecx).unwrap();
+                check_ctfe_against_miri(tcx, ptr, elem.ty, elem.val);
+            }
+        },
+        TySlice(_) => panic!("miri produced a slice?"),
+        TyRawPtr(_) => panic!("miri produced a raw ptr"),
+        TyRef(..) => panic!("miri produced a reference"),
+        TyDynamic(..) => panic!("miri produced a trait object"),
+        TyClosure(..) => panic!("miri produced a closure"),
+        TyGenerator(..) => panic!("miri produced a generator"),
+        TyNever => panic!("miri produced a value of the never type"),
+        TyProjection(_) => panic!("miri produced a projection"),
+        TyAnon(..) => panic!("miri produced an impl Trait type"),
+        TyParam(_) => panic!("miri produced an unmonomorphized type"),
+        TyInfer(_) => panic!("miri produced an uninferred type"),
+        TyError => panic!("miri produced a type error"),
+        // should be fine
+        TyFnDef(..) => {}
+        TyFnPtr(_) => {
+            let ptr = match value {
+                Ok(Some(Value::ByVal(PrimVal::Ptr(ptr)))) => ptr,
+                value => bug!("expected fn ptr, got {:?}", value),
+            };
+            let instance = ecx.memory.get_fn(ptr).unwrap();
+            let cv = ConstVal::Function(instance.def_id(), instance.substs);
+            assert_eq!(cv, ctfe, "expected fn ptr {:?}, but got {:?}", ctfe, cv);
+        },
     }
 }

@@ -6,7 +6,7 @@ use syntax::ast::Mutability;
 use syntax::codemap::Span;
 
 use super::{EvalResult, EvalError, EvalErrorKind, GlobalId, Lvalue, Value, PrimVal, EvalContext,
-            StackPopCleanup, PtrAndAlign, ValTy};
+            StackPopCleanup, PtrAndAlign, ValTy, HasMemory};
 
 use rustc_const_math::ConstInt;
 
@@ -16,7 +16,7 @@ use std::error::Error;
 pub fn eval_body<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     instance: Instance<'tcx>,
-) -> EvalResult<'tcx, (Value, EvalResult<'tcx, PrimVal>, Ty<'tcx>)> {
+) -> EvalResult<'tcx, (PtrAndAlign, Ty<'tcx>)> {
     let limits = super::ResourceLimits::default();
     let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
     let cid = GlobalId {
@@ -68,21 +68,21 @@ pub fn eval_body<'a, 'tcx>(
 
         while ecx.step()? {}
     }
-    let value = Value::ByRef(*ecx.globals.get(&cid).expect("global not cached"));
-    let valty = ValTy {
-        value,
-        ty: mir.return_ty,
-    };
-    // FIXME: store cached value in TyCtxt
-    Ok((value, ecx.value_to_primval(valty), mir.return_ty))
+    let value = *ecx.globals.get(&cid).expect("global not cached");
+    Ok((value, mir.return_ty))
 }
 
 pub fn eval_body_as_integer<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     instance: Instance<'tcx>,
 ) -> EvalResult<'tcx, ConstInt> {
-    let (_, prim, ty) = eval_body(tcx, instance)?;
-    let prim = prim?.to_bytes()?;
+    let (ptr, ty) = eval_body(tcx, instance)?;
+    let limits = super::ResourceLimits::default();
+    let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, (), ());
+    let prim = match ecx.read_maybe_aligned(ptr.aligned, |ectx| ectx.try_read_value(ptr.ptr, ty))? {
+        Some(Value::ByVal(prim)) => prim.to_bytes()?,
+        _ => return err!(TypeNotPrimitive(ty)),
+    };
     use syntax::ast::{IntTy, UintTy};
     use ty::TypeVariants::*;
     use rustc_const_math::{ConstIsize, ConstUsize};
@@ -115,7 +115,7 @@ pub fn eval_body_as_integer<'a, 'tcx>(
     })
 }
 
-struct CompileTimeFunctionEvaluator;
+pub struct CompileTimeFunctionEvaluator;
 
 impl<'tcx> Into<EvalError<'tcx>> for ConstEvalError {
     fn into(self) -> EvalError<'tcx> {
