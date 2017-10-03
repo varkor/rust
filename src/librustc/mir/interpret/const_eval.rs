@@ -17,6 +17,7 @@ pub fn eval_body<'a, 'tcx>(
     instance: Instance<'tcx>,
     param_env: ty::ParamEnv<'tcx>,
 ) -> EvalResult<'tcx, (PtrAndAlign, Ty<'tcx>)> {
+    debug!("eval_body: {:?}, {:?}", instance, param_env);
     let limits = super::ResourceLimits::default();
     let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
     let cid = GlobalId {
@@ -177,6 +178,7 @@ impl<'tcx> super::Machine<'tcx> for CompileTimeFunctionEvaluator {
         span: Span,
         _sig: ty::FnSig<'tcx>,
     ) -> EvalResult<'tcx, bool> {
+        debug!("eval_fn_call: {:?}", instance);
         if !ecx.tcx.is_const_fn(instance.def_id()) {
             return Err(
                 ConstEvalError::NotConst(format!("calling non-const fn `{}`", instance)).into(),

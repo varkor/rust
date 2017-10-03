@@ -777,6 +777,7 @@ pub fn provide(providers: &mut Providers) {
 fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         key: ty::ParamEnvAnd<'tcx, (DefId, &'tcx Substs<'tcx>)>)
                         -> EvalResult<'tcx> {
+    trace!("const eval: {:?}", key);
     let (def_id, substs) = if let Some(resolved) = lookup_const_by_id(tcx, key) {
         resolved
     } else {
@@ -795,10 +796,11 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     };
 
     let instance = ty::Instance::new(def_id, substs);
-    let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance, key.param_env);
     let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
+    let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance, key.param_env);
     match (miri_result, old_result) {
         (Err(err), Ok(ok)) => {
+            trace!("miri failed, ctfe returned {:?}", ok);
             tcx.sess.span_warn(
                 tcx.def_span(key.value.0),
                 "miri failed to eval, while ctfe succeeded",

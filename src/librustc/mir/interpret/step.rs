@@ -200,7 +200,9 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         span: Span,
         mutability: Mutability,
     ) -> EvalResult<'tcx, bool> {
+        debug!("global_item: {:?}, {:?}", def_id, substs);
         let instance = self.resolve_associated_const(def_id, substs)?;
+        debug!("global_item: {:?}", instance);
         let cid = GlobalId {
             instance,
             promoted: None,

@@ -24,7 +24,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         // Remove any references to regions; this helps improve caching.
         let trait_ref = self.tcx.erase_regions(&trait_ref);
 
-        debug!("trans::fulfill_obligation(trait_ref={:?}, def_id={:?})",
+        info!("trans::fulfill_obligation(trait_ref={:?}, def_id={:?})",
                 (param_env, trait_ref), trait_ref.def_id());
 
         // Do the initial selection for the obligation. This yields the
