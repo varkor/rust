@@ -2,83 +2,14 @@ use traits;
 use hir::def_id::DefId;
 use ty::subst::Substs;
 use ty::{self, Ty};
-use syntax::codemap::{DUMMY_SP, Span};
-use syntax::ast::{DUMMY_NODE_ID, Mutability};
+use syntax::ast::Mutability;
+use hir::def::Def;
+use hir::map as hir_map;
 
 use super::{EvalResult, EvalContext, eval_context, MemoryPointer, Value, PrimVal,
-            Machine};
+            Machine, EvalErrorKind};
 
 impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
-    /// Attempts to resolve an obligation to a vtable.. The result is
-    /// a shallow vtable resolution -- meaning that we do not
-    /// (necessarily) resolve all nested obligations on the impl. Note
-    /// that type check should guarantee to us that all nested
-    /// obligations *could be* resolved if we wanted to.
-    /// Assumes that this is run after the entire crate has been successfully type-checked.
-    pub fn trans_fulfill_obligation(&self,
-                                    span: Span,
-                                    param_env: ty::ParamEnv<'tcx>,
-                                    trait_ref: ty::PolyTraitRef<'tcx>)
-                                    -> EvalResult<'tcx, traits::Vtable<'tcx, ()>>
-    {
-        // Remove any references to regions; this helps improve caching.
-        let trait_ref = self.tcx.erase_regions(&trait_ref);
-
-        info!("trans::fulfill_obligation(trait_ref={:?}, def_id={:?})",
-                (param_env, trait_ref), trait_ref.def_id());
-
-        // Do the initial selection for the obligation. This yields the
-        // shallow result we are looking for -- that is, what specific impl.
-        self.tcx.infer_ctxt().enter(|infcx| {
-            let mut selcx = traits::SelectionContext::new(&infcx);
-
-            let obligation_cause = traits::ObligationCause::misc(span,
-                                                            DUMMY_NODE_ID);
-            let obligation = traits::Obligation::new(obligation_cause,
-                                                param_env,
-                                                trait_ref.to_poly_trait_predicate());
-
-            let selection = match selcx.select(&obligation) {
-                Ok(Some(selection)) => selection,
-                Ok(None) => {
-                    // Ambiguity can happen when monomorphizing during trans
-                    // expands to some humongo type that never occurred
-                    // statically -- this humongo type can then overflow,
-                    // leading to an ambiguous result. So report this as an
-                    // overflow bug, since I believe this is the only case
-                    // where ambiguity can result.
-                    debug!("Encountered ambiguity selecting `{:?}` during trans, \
-                            presuming due to overflow",
-                            trait_ref);
-                    self.tcx.sess.span_fatal(span,
-                                        "reached the recursion limit during monomorphization \
-                                            (selection ambiguity)");
-                }
-                Err(traits::SelectionError::Unimplemented) => {
-                    return err!(UnimplementedTraitSelection);
-                }
-                Err(e) => {
-                    span_bug!(span, "Encountered error `{:?}` selecting `{:?}` during trans",
-                                e, trait_ref)
-                }
-            };
-
-            debug!("fulfill_obligation: selection={:?}", selection);
-
-            // Currently, we use a fulfillment context to completely resolve
-            // all nested obligations. This is because they can inform the
-            // inference of the impl's type parameters.
-            let mut fulfill_cx = traits::FulfillmentContext::new();
-            let vtable = selection.map(|predicate| {
-                debug!("fulfill_obligation: register_predicate_obligation {:?}", predicate);
-                fulfill_cx.register_predicate_obligation(&infcx, predicate);
-            });
-            let vtable = infcx.drain_fulfillment_cx_or_panic(span, &mut fulfill_cx, &vtable);
-
-            info!("Cache miss: {:?} => {:?}", trait_ref, vtable);
-            Ok(vtable)
-        })
-    }
     /// Creates a dynamic vtable for the given type and vtable origin. This is used only for
     /// objects.
     ///
@@ -161,21 +92,107 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         def_id: DefId,
         substs: &'tcx Substs<'tcx>,
     ) -> EvalResult<'tcx, ty::Instance<'tcx>> {
-        if let Some(trait_id) = self.tcx.trait_of_item(def_id) {
-            let trait_ref = ty::Binder(ty::TraitRef::new(trait_id, substs));
-            let vtable = self.trans_fulfill_obligation(DUMMY_SP, M::param_env(self), trait_ref)?;
-            if let traits::VtableImpl(vtable_impl) = vtable {
-                let name = self.tcx.item_name(def_id);
-                let assoc_const_opt = self.tcx.associated_items(vtable_impl.impl_def_id).find(
-                    |item| {
-                        item.kind == ty::AssociatedKind::Const && item.name == name
-                    },
-                );
-                if let Some(assoc_const) = assoc_const_opt {
-                    return Ok(ty::Instance::new(assoc_const.def_id, vtable_impl.substs));
+        match lookup_const_by_id(
+            self.tcx,
+            M::param_env(self).and((def_id, substs)),
+        ) {
+            Some((def_id, substs)) => Ok(ty::Instance::new(def_id, substs)),
+            None => Err(EvalErrorKind::UnimplementedTraitSelection.into()),
+        }
+    }
+}
+
+/// * `DefId` is the id of the constant.
+/// * `Substs` is the monomorphized substitutions for the expression.
+fn lookup_const_by_id<'a, 'tcx>(tcx: ty::TyCtxt<'a, 'tcx, 'tcx>,
+                                    key: ty::ParamEnvAnd<'tcx, (DefId, &'tcx Substs<'tcx>)>)
+                                    -> Option<(DefId, &'tcx Substs<'tcx>)> {
+    let (def_id, _) = key.value;
+    if let Some(node_id) = tcx.hir.as_local_node_id(def_id) {
+        match tcx.hir.find(node_id) {
+            Some(hir_map::NodeTraitItem(_)) => {
+                // If we have a trait item and the substitutions for it,
+                // `resolve_trait_associated_const` will select an impl
+                // or the default.
+                resolve_trait_associated_const(tcx, key)
+            }
+            _ => Some(key.value)
+        }
+    } else {
+        match tcx.describe_def(def_id) {
+            Some(Def::AssociatedConst(_)) => {
+                // As mentioned in the comments above for in-crate
+                // constants, we only try to find the expression for a
+                // trait-associated const if the caller gives us the
+                // substitutions for the reference to it.
+                if tcx.trait_of_item(def_id).is_some() {
+                    resolve_trait_associated_const(tcx, key)
+                } else {
+                    Some(key.value)
                 }
             }
+            _ => Some(key.value)
         }
-        Ok(ty::Instance::new(def_id, substs))
     }
+}
+
+fn resolve_trait_associated_const<'a, 'tcx>(tcx: ty::TyCtxt<'a, 'tcx, 'tcx>,
+                                            key: ty::ParamEnvAnd<'tcx, (DefId, &'tcx Substs<'tcx>)>)
+                                            -> Option<(DefId, &'tcx Substs<'tcx>)> {
+    let param_env = key.param_env;
+    let (def_id, substs) = key.value;
+    let trait_item = tcx.associated_item(def_id);
+    let trait_id = trait_item.container.id();
+    let trait_ref = ty::Binder(ty::TraitRef::new(trait_id, substs));
+    debug!("resolve_trait_associated_const: trait_ref={:?}",
+           trait_ref);
+
+    tcx.infer_ctxt().enter(|infcx| {
+        let mut selcx = traits::SelectionContext::new(&infcx);
+        let obligation = traits::Obligation::new(traits::ObligationCause::dummy(),
+                                                 param_env,
+                                                 trait_ref.to_poly_trait_predicate());
+        let selection = match selcx.select(&obligation) {
+            Ok(Some(vtable)) => vtable,
+            // Still ambiguous, so give up and let the caller decide whether this
+            // expression is really needed yet. Some associated constant values
+            // can't be evaluated until monomorphization is done in trans.
+            Ok(None) => {
+                return None
+            }
+            Err(_) => {
+                return None
+            }
+        };
+
+        // NOTE: this code does not currently account for specialization, but when
+        // it does so, it should hook into the param_env.reveal to determine when the
+        // constant should resolve.
+        match selection {
+            traits::VtableImpl(ref impl_data) => {
+                let name = trait_item.name;
+                let ac = tcx.associated_items(impl_data.impl_def_id)
+                    .find(|item| item.kind == ty::AssociatedKind::Const && item.name == name);
+                match ac {
+                    // FIXME(eddyb) Use proper Instance resolution to
+                    // get the correct Substs returned from here.
+                    Some(ic) => {
+                        let substs = Substs::identity_for_item(tcx, ic.def_id);
+                        Some((ic.def_id, substs))
+                    }
+                    None => {
+                        if trait_item.defaultness.has_value() {
+                            Some(key.value)
+                        } else {
+                            None
+                        }
+                    }
+                }
+            }
+            traits::VtableParam(_) => None,
+            _ => {
+                bug!("resolve_trait_associated_const: unexpected vtable type {:?}", selection)
+            }
+        }
+    })
 }

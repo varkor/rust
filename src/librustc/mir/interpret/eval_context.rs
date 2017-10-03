@@ -245,6 +245,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             }
 
             Unevaluated(def_id, substs) => {
+                let substs = self.tcx.trans_apply_param_substs(self.substs(), &substs);
                 let instance = self.resolve_associated_const(def_id, substs)?;
                 let cid = GlobalId {
                     instance,
@@ -1410,7 +1411,15 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
     }
 
     pub fn is_packed(&self, ty: Ty<'tcx>) -> EvalResult<'tcx, bool> {
-        let layout = self.type_layout(ty)?;
+        self.is_packed_with_substs(ty, self.substs())
+    }
+
+    pub fn is_packed_with_substs(
+        &self,
+        ty: Ty<'tcx>, 
+        substs: &'tcx Substs<'tcx>,
+    ) -> EvalResult<'tcx, bool> {
+        let layout = self.type_layout_with_substs(ty, substs)?;
         use ty::layout::Layout::*;
         Ok(match *layout {
             Univariant { ref variant, .. } => variant.packed,

@@ -2,11 +2,10 @@
 //!
 //! The main entry point is the `step` method.
 
-use hir::def_id::DefId;
 use hir;
 use mir::visit::{Visitor, LvalueContext};
 use mir;
-use ty;
+use ty::{self, Instance};
 use ty::layout::Layout;
 use ty::subst::Substs;
 use middle::const_val::ConstVal;
@@ -195,13 +194,11 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
     /// returns `true` if a stackframe was pushed
     fn global_item(
         &mut self,
-        def_id: DefId,
-        substs: &'tcx Substs<'tcx>,
+        instance: Instance<'tcx>,
         span: Span,
         mutability: Mutability,
+        orig_substs: &'tcx Substs<'tcx>,
     ) -> EvalResult<'tcx, bool> {
-        debug!("global_item: {:?}, {:?}", def_id, substs);
-        let instance = self.resolve_associated_const(def_id, substs)?;
         debug!("global_item: {:?}", instance);
         let cid = GlobalId {
             instance,
@@ -210,15 +207,15 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         if self.globals.contains_key(&cid) {
             return Ok(false);
         }
-        if self.tcx.has_attr(def_id, "linkage") {
+        if self.tcx.has_attr(instance.def_id(), "linkage") {
             M::global_item_with_linkage(self, cid.instance, mutability)?;
             return Ok(false);
         }
         let mir = self.load_mir(instance.def)?;
-        let size = self.type_size_with_substs(mir.return_ty, substs)?.expect(
+        let size = self.type_size_with_substs(mir.return_ty, orig_substs)?.expect(
             "unsized global",
         );
-        let align = self.type_align_with_substs(mir.return_ty, substs)?;
+        let align = self.type_align_with_substs(mir.return_ty, orig_substs)?;
         let ptr = self.memory.allocate(
             size,
             align,
@@ -243,7 +240,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             Mutability::Immutable
         };
         let cleanup = StackPopCleanup::MarkStatic(mutability);
-        let name = ty::tls::with(|tcx| tcx.item_path_str(def_id));
+        let name = ty::tls::with(|tcx| tcx.item_path_str(instance.def_id()));
         trace!("pushing stack frame for global: {}", name);
         self.push_stack_frame(
             instance,
@@ -293,11 +290,14 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
             // already computed by rustc
             mir::Literal::Value { value: &ty::Const { val: ConstVal::Unevaluated(def_id, substs), .. } } => {
                 self.try(|this| {
+                    debug!("global_item: {:?}, {:?}", def_id, substs);
+                    let substs = this.ecx.tcx.trans_apply_param_substs(this.instance.substs, &substs);
+                    let instance = this.ecx.resolve_associated_const(def_id, substs)?;
                     this.ecx.global_item(
-                        def_id,
-                        substs,
+                        instance,
                         constant.span,
                         Mutability::Immutable,
+                        this.instance.substs,
                     )
                 });
             }
@@ -361,15 +361,16 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                 if let hir::map::Node::NodeItem(&hir::Item { ref node, .. }) = node_item {
                     if let hir::ItemStatic(_, m, _) = *node {
                         self.try(|this| {
+                            let instance = Instance::new(def_id, substs);
                             this.ecx.global_item(
-                                def_id,
-                                substs,
+                                instance,
                                 span,
                                 if m == hir::MutMutable {
                                     Mutability::Mutable
                                 } else {
                                     Mutability::Immutable
                                 },
+                                this.instance.substs,
                             )
                         });
                         return;
@@ -383,15 +384,16 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                 let def = self.ecx.tcx.describe_def(def_id).expect("static not found");
                 if let hir::def::Def::Static(_, mutable) = def {
                     self.try(|this| {
+                        let instance = Instance::new(def_id, substs);
                         this.ecx.global_item(
-                            def_id,
-                            substs,
+                            instance,
                             span,
                             if mutable {
                                 Mutability::Mutable
                             } else {
                                 Mutability::Immutable
                             },
+                            this.instance.substs,
                         )
                     });
                 } else {

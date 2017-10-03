@@ -97,7 +97,7 @@ impl<'tcx> fmt::Display for Instance<'tcx> {
 impl<'a, 'b, 'tcx> Instance<'tcx> {
     pub fn new(def_id: DefId, substs: &'tcx Substs<'tcx>)
                -> Instance<'tcx> {
-        assert!(substs.is_normalized_for_trans() && !substs.has_escaping_regions(),
+        assert!(!substs.has_escaping_regions(),
                 "substs of instance {:?} not normalized for trans: {:?}",
                 def_id, substs);
         Instance { def: InstanceDef::Item(def_id), substs: substs }

@@ -796,6 +796,7 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     };
 
     let instance = ty::Instance::new(def_id, substs);
+    trace!("const eval instance: {:?}", instance);
     let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
     let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance, key.param_env);
     match (miri_result, old_result) {
@@ -929,20 +930,22 @@ fn check_ctfe_against_miri<'a, 'tcx>(
                 check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
             }
         },
+        TyAdt(def, _) if def.is_enum() => {
+            let ptr = miri_val.ptr.to_ptr().unwrap();
+            let discr = ecx.read_discriminant_value(ptr, miri_ty).unwrap();
+            let var = ConstVal::Variant(def.variants[discr as usize].did);
+            assert_eq!(var, ctfe, "miri produced {:?}, but ctfe yielded {:?}", var, ctfe);
+        },
         TyAdt(def, _) => {
             let struct_variant = def.struct_variant();
             let vec = match ctfe {
                 ConstVal::Aggregate(Struct(v)) => v,
                 ctfe => bug!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
             };
-            let ptr = match value {
-                Ok(Some(Value::ByRef(ptr))) => ptr,
-                value => bug!("miri produced {:?}, but expected {:?}", value, ctfe),
-            };
             for &(name, elem) in vec.into_iter() {
                 let field = struct_variant.fields.iter().position(|f| f.name == name).unwrap();
                 let offset = ecx.get_field_offset(miri_ty, field).unwrap();
-                let ptr = ptr.offset(offset.bytes(), &ecx).unwrap();
+                let ptr = miri_val.offset(offset.bytes(), &ecx).unwrap();
                 check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
             }
         },

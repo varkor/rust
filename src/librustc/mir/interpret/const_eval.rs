@@ -38,7 +38,7 @@ pub fn eval_body<'a, 'tcx>(
             align,
             None,
         )?;
-        let aligned = !ecx.is_packed(mir.return_ty)?;
+        let aligned = !ecx.is_packed_with_substs(mir.return_ty, instance.substs)?;
         ecx.globals.insert(
             cid,
             PtrAndAlign {
@@ -46,17 +46,7 @@ pub fn eval_body<'a, 'tcx>(
                 aligned,
             },
         );
-        let mutable = !mir.return_ty.is_freeze(
-            ecx.tcx,
-            param_env,
-            mir.span,
-        );
-        let mutability = if mutable {
-            Mutability::Mutable
-        } else {
-            Mutability::Immutable
-        };
-        let cleanup = StackPopCleanup::MarkStatic(mutability);
+        let cleanup = StackPopCleanup::MarkStatic(Mutability::Immutable);
         let name = ty::tls::with(|tcx| tcx.item_path_str(instance.def_id()));
         trace!("const_eval: pushing stack frame for global: {}", name);
         ecx.push_stack_frame(
