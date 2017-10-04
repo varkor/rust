@@ -202,18 +202,44 @@ impl<'tcx> super::Machine<'tcx> for CompileTimeFunctionEvaluator {
         Ok(false)
     }
 
+
     fn call_intrinsic<'a>(
-        _ecx: &mut EvalContext<'a, 'tcx, Self>,
-        _instance: ty::Instance<'tcx>,
+        ecx: &mut EvalContext<'a, 'tcx, Self>,
+        instance: ty::Instance<'tcx>,
         _args: &[ValTy<'tcx>],
-        _dest: Lvalue,
-        _dest_ty: Ty<'tcx>,
+        dest: Lvalue,
+        dest_ty: Ty<'tcx>,
         _dest_layout: &'tcx layout::Layout,
-        _target: mir::BasicBlock,
+        target: mir::BasicBlock,
     ) -> EvalResult<'tcx> {
-        Err(
-            ConstEvalError::NeedsRfc("calling intrinsics".to_string()).into(),
-        )
+        let substs = instance.substs;
+
+        let intrinsic_name = &ecx.tcx.item_name(instance.def_id())[..];
+        match intrinsic_name {
+            "min_align_of" => {
+                let elem_ty = substs.type_at(0);
+                let elem_align = ecx.type_align(elem_ty)?;
+                let align_val = PrimVal::from_u128(elem_align as u128);
+                ecx.write_primval(dest, align_val, dest_ty)?;
+            }
+
+            "size_of" => {
+                let ty = substs.type_at(0);
+                let size = ecx.type_size(ty)?.expect(
+                    "size_of intrinsic called on unsized value",
+                ) as u128;
+                ecx.write_primval(dest, PrimVal::from_u128(size), dest_ty)?;
+            }
+
+            name => return Err(ConstEvalError::NeedsRfc(format!("calling intrinsic `{}`", name)).into()),
+        }
+
+        ecx.goto_block(target);
+
+        // Since we pushed no stack frame, the main loop will act
+        // as if the call just completed and it's returning to the
+        // current frame.
+        Ok(())
     }
 
     fn try_ptr_op<'a>(
