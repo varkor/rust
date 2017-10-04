@@ -795,6 +795,12 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         tcx.extern_const_body(def_id).body
     };
 
+    // do not continue into miri if typeck errors occurred
+    // it will fail horribly
+    if tables.tainted_by_errors {
+        signal!(&body.value, TypeckError);
+    }
+
     let instance = ty::Instance::new(def_id, substs);
     trace!("const eval instance: {:?}", instance);
     let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
