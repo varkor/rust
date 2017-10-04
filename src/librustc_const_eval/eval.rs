@@ -988,9 +988,14 @@ fn check_ctfe_against_miri<'a, 'tcx>(
                 Ok(Some(Value::ByVal(PrimVal::Ptr(ptr)))) => ptr,
                 value => bug!("expected fn ptr, got {:?}", value),
             };
-            let instance = ecx.memory.get_fn(ptr).unwrap();
-            let cv = ConstVal::Function(instance.def_id(), instance.substs);
-            assert_eq!(cv, ctfe, "expected fn ptr {:?}, but got {:?}", ctfe, cv);
+            let inst = ecx.memory.get_fn(ptr).unwrap();
+            match ctfe {
+                ConstVal::Function(did, substs) => {
+                    let ctfe = ty::Instance::resolve(ecx.tcx, param_env, did, substs).unwrap();
+                    assert_eq!(inst, ctfe, "expected fn ptr {:?}, but got {:?}", ctfe, inst);
+                },
+                _ => bug!("ctfe produced {:?}, but miri produced function {:?}", ctfe, inst),
+            }
         },
     }
 }
