@@ -962,6 +962,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                     ClosureFnPointer => {
                         match self.operand_ty(operand).sty {
                             ty::TyClosure(def_id, substs) => {
+                                let substs = self.tcx.trans_apply_param_substs(self.substs(), &substs);
                                 let instance = ty::Instance::resolve_closure(
                                     self.tcx,
                                     def_id,

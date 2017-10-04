@@ -360,13 +360,12 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
         self.super_lvalue(lvalue, context, location);
         if let mir::Lvalue::Static(ref static_) = *lvalue {
             let def_id = static_.def_id;
-            let substs = self.ecx.tcx.intern_substs(&[]);
             let span = self.span;
             if let Some(node_item) = self.ecx.tcx.hir.get_if_local(def_id) {
                 if let hir::map::Node::NodeItem(&hir::Item { ref node, .. }) = node_item {
                     if let hir::ItemStatic(_, m, _) = *node {
                         self.try(|this| {
-                            let instance = Instance::new(def_id, substs);
+                            let instance = Instance::mono(this.ecx.tcx, def_id);
                             this.ecx.global_item(
                                 instance,
                                 span,
@@ -389,7 +388,7 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                 let def = self.ecx.tcx.describe_def(def_id).expect("static not found");
                 if let hir::def::Def::Static(_, mutable) = def {
                     self.try(|this| {
-                        let instance = Instance::new(def_id, substs);
+                        let instance = Instance::mono(this.ecx.tcx, def_id);
                         this.ecx.global_item(
                             instance,
                             span,
