@@ -86,7 +86,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                         (instance, sig)
                     }
                     ty::TyFnDef(def_id, substs) => (
-                        eval_context::resolve(self.tcx, def_id, substs),
+                        self.resolve(def_id, substs),
                         func_ty.fn_sig(self.tcx),
                     ),
                     _ => {
@@ -113,7 +113,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                 // FIXME(CTFE): forbid drop in const eval
                 let lval = self.eval_lvalue(location)?;
                 let ty = self.lvalue_ty(location);
-                let ty = eval_context::apply_param_substs(self.tcx, self.substs(), &ty);
+                let ty = self.tcx.trans_apply_param_substs(self.substs(), &ty);
                 trace!("TerminatorKind::drop: {:?}, type {}", location, ty);
 
                 let instance = eval_context::resolve_drop_in_place(self.tcx, ty);

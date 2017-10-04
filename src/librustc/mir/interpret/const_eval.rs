@@ -60,7 +60,8 @@ pub fn eval_body<'a, 'tcx>(
         while ecx.step()? {}
     }
     let value = *ecx.globals.get(&cid).expect("global not cached");
-    Ok((value, mir.return_ty))
+    let ret_ty = ecx.monomorphize(mir.return_ty, instance.substs);
+    Ok((value, ret_ty))
 }
 
 pub fn eval_body_as_integer<'a, 'tcx>(

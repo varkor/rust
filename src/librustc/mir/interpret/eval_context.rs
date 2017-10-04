@@ -13,7 +13,6 @@ use ty::{self, Ty, TyCtxt, TypeFoldable};
 use rustc_data_structures::indexed_vec::Idx;
 use syntax::codemap::{self, DUMMY_SP};
 use syntax::ast::Mutability;
-use syntax::abi::Abi;
 
 use super::{EvalError, EvalResult, EvalErrorKind, GlobalId, Lvalue, LvalueExtra, Memory,
             MemoryPointer, HasMemory, MemoryKind, operator, PrimVal, PrimValKind, Value, Pointer,
@@ -245,8 +244,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             }
 
             Unevaluated(def_id, substs) => {
-                let substs = self.tcx.trans_apply_param_substs(self.substs(), &substs);
-                let instance = self.resolve_associated_const(def_id, substs)?;
+                let instance = self.resolve(def_id, substs);
                 let cid = GlobalId {
                     instance,
                     promoted: None,
@@ -261,6 +259,16 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         };
 
         Ok(Value::ByVal(primval))
+    }
+
+    pub(super) fn resolve(&self, def_id: DefId, substs: &'tcx Substs<'tcx>) -> ty::Instance<'tcx> {
+        let substs = self.tcx.trans_apply_param_substs(self.substs(), &substs);
+        ty::Instance::resolve(
+            self.tcx,
+            M::param_env(self),
+            def_id,
+            substs,
+        ).expect("miri monomorphization failed")
     }
 
     pub(super) fn type_is_sized(&self, ty: Ty<'tcx>) -> bool {
@@ -822,15 +830,14 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                         )
                     }
                 };
-                self.inc_step_counter_and_check_limit(length)?;
                 let elem_size = self.type_size(elem_ty)?.expect(
                     "repeat element type must be sized",
                 );
                 let value = self.eval_operand(operand)?.value;
 
-                // FIXME(solson)
                 let dest = Pointer::from(self.force_allocation(dest)?.to_ptr()?);
 
+                // FIXME: speed up repeat filling
                 for i in 0..length {
                     let elem_dest = dest.offset(i * elem_size, &self)?;
                     self.write_value_to_ptr(value, elem_dest, elem_ty)?;
@@ -929,7 +936,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                     ReifyFnPointer => {
                         match self.operand_ty(operand).sty {
                             ty::TyFnDef(def_id, substs) => {
-                                let instance = resolve(self.tcx, def_id, substs);
+                                let instance = self.resolve(def_id, substs);
                                 let fn_ptr = self.memory.create_fn_alloc(instance);
                                 let valty = ValTy {
                                     value: Value::ByVal(PrimVal::Ptr(fn_ptr)),
@@ -955,7 +962,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                     ClosureFnPointer => {
                         match self.operand_ty(operand).sty {
                             ty::TyClosure(def_id, substs) => {
-                                let instance = resolve_closure(
+                                let instance = ty::Instance::resolve_closure(
                                     self.tcx,
                                     def_id,
                                     substs,
@@ -2225,299 +2232,11 @@ impl IntegerExt for layout::Integer {
     }
 }
 
-/// FIXME: expose trans::monomorphize::resolve_closure
-pub fn resolve_closure<'a, 'tcx>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    def_id: DefId,
-    substs: ty::ClosureSubsts<'tcx>,
-    requested_kind: ty::ClosureKind,
-) -> ty::Instance<'tcx> {
-    let actual_kind = tcx.closure_kind(def_id);
-    match needs_fn_once_adapter_shim(actual_kind, requested_kind) {
-        Ok(true) => fn_once_adapter_instance(tcx, def_id, substs),
-        _ => ty::Instance::new(def_id, substs.substs),
-    }
-}
-
-fn fn_once_adapter_instance<'a, 'tcx>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    closure_did: DefId,
-    substs: ty::ClosureSubsts<'tcx>,
-) -> ty::Instance<'tcx> {
-    debug!("fn_once_adapter_shim({:?}, {:?})", closure_did, substs);
-    let fn_once = tcx.lang_items().fn_once_trait().unwrap();
-    let call_once = tcx.associated_items(fn_once)
-        .find(|it| it.kind == ty::AssociatedKind::Method)
-        .unwrap()
-        .def_id;
-    let def = ty::InstanceDef::ClosureOnceShim { call_once };
-
-    let self_ty = tcx.mk_closure_from_closure_substs(closure_did, substs);
-
-    let sig = tcx.fn_sig(closure_did).subst(tcx, substs.substs);
-    let sig = tcx.erase_late_bound_regions_and_normalize(&sig);
-    assert_eq!(sig.inputs().len(), 1);
-    let substs = tcx.mk_substs(
-        [Kind::from(self_ty), Kind::from(sig.inputs()[0])]
-            .iter()
-            .cloned(),
-    );
-
-    debug!("fn_once_adapter_shim: self_ty={:?} sig={:?}", self_ty, sig);
-    ty::Instance { def, substs }
-}
-
-fn needs_fn_once_adapter_shim(
-    actual_closure_kind: ty::ClosureKind,
-    trait_closure_kind: ty::ClosureKind,
-) -> Result<bool, ()> {
-    match (actual_closure_kind, trait_closure_kind) {
-        (ty::ClosureKind::Fn, ty::ClosureKind::Fn) |
-        (ty::ClosureKind::FnMut, ty::ClosureKind::FnMut) |
-        (ty::ClosureKind::FnOnce, ty::ClosureKind::FnOnce) => {
-            // No adapter needed.
-            Ok(false)
-        }
-        (ty::ClosureKind::Fn, ty::ClosureKind::FnMut) => {
-            // The closure fn `llfn` is a `fn(&self, ...)`.  We want a
-            // `fn(&mut self, ...)`. In fact, at trans time, these are
-            // basically the same thing, so we can just return llfn.
-            Ok(false)
-        }
-        (ty::ClosureKind::Fn, ty::ClosureKind::FnOnce) |
-        (ty::ClosureKind::FnMut, ty::ClosureKind::FnOnce) => {
-            // The closure fn `llfn` is a `fn(&self, ...)` or `fn(&mut
-            // self, ...)`.  We want a `fn(self, ...)`. We can produce
-            // this by doing something like:
-            //
-            //     fn call_once(self, ...) { call_mut(&self, ...) }
-            //     fn call_once(mut self, ...) { call_mut(&mut self, ...) }
-            //
-            // These are both the same at trans time.
-            Ok(true)
-        }
-        _ => Err(()),
-    }
-}
-
-/// The point where linking happens. Resolve a (def_id, substs)
-/// pair to an instance.
-pub fn resolve<'a, 'tcx>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    def_id: DefId,
-    substs: &'tcx Substs<'tcx>,
-) -> ty::Instance<'tcx> {
-    debug!("resolve(def_id={:?}, substs={:?})", def_id, substs);
-    let result = if let Some(trait_def_id) = tcx.trait_of_item(def_id) {
-        debug!(" => associated item, attempting to find impl");
-        let item = tcx.associated_item(def_id);
-        resolve_associated_item(tcx, &item, trait_def_id, substs)
-    } else {
-        let item_type = def_ty(tcx, def_id, substs);
-        let def = match item_type.sty {
-            ty::TyFnDef(..)
-                if {
-                       let f = item_type.fn_sig(tcx);
-                       f.abi() == Abi::RustIntrinsic || f.abi() == Abi::PlatformIntrinsic
-                   } => {
-                debug!(" => intrinsic");
-                ty::InstanceDef::Intrinsic(def_id)
-            }
-            _ => {
-                if Some(def_id) == tcx.lang_items().drop_in_place_fn() {
-                    let ty = substs.type_at(0);
-                    if needs_drop_glue(tcx, ty) {
-                        debug!(" => nontrivial drop glue");
-                        ty::InstanceDef::DropGlue(def_id, Some(ty))
-                    } else {
-                        debug!(" => trivial drop glue");
-                        ty::InstanceDef::DropGlue(def_id, None)
-                    }
-                } else {
-                    debug!(" => free item");
-                    ty::InstanceDef::Item(def_id)
-                }
-            }
-        };
-        ty::Instance { def, substs }
-    };
-    debug!(
-        "resolve(def_id={:?}, substs={:?}) = {}",
-        def_id,
-        substs,
-        result
-    );
-    result
-}
-
-pub fn needs_drop_glue<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, t: Ty<'tcx>) -> bool {
-    assert!(t.is_normalized_for_trans());
-
-    let t = tcx.erase_regions(&t);
-
-    // FIXME (#22815): note that type_needs_drop conservatively
-    // approximates in some cases and may say a type expression
-    // requires drop glue when it actually does not.
-    //
-    // (In this case it is not clear whether any harm is done, i.e.
-    // erroneously returning `true` in some cases where we could have
-    // returned `false` does not appear unsound. The impact on
-    // code quality is unknown at this time.)
-
-    let env = ty::ParamEnv::empty(Reveal::All);
-    if !t.needs_drop(tcx, env) {
-        return false;
-    }
-    match t.sty {
-        ty::TyAdt(def, _) if def.is_box() => {
-            let typ = t.boxed_ty();
-            if !typ.needs_drop(tcx, env) && type_is_sized(tcx, typ) {
-                let layout = t.layout(tcx, ty::ParamEnv::empty(Reveal::All)).unwrap();
-                // `Box<ZeroSizeType>` does not allocate.
-                layout.size(&tcx.data_layout).bytes() != 0
-            } else {
-                true
-            }
-        }
-        _ => true,
-    }
-}
-
-fn resolve_associated_item<'a, 'tcx>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    trait_item: &ty::AssociatedItem,
-    trait_id: DefId,
-    rcvr_substs: &'tcx Substs<'tcx>,
-) -> ty::Instance<'tcx> {
-    let def_id = trait_item.def_id;
-    debug!(
-        "resolve_associated_item(trait_item={:?}, \
-                                    trait_id={:?}, \
-                                    rcvr_substs={:?})",
-        def_id,
-        trait_id,
-        rcvr_substs
-    );
-
-    let trait_ref = ty::TraitRef::from_method(tcx, trait_id, rcvr_substs);
-    let vtbl = tcx.trans_fulfill_obligation(DUMMY_SP, ty::ParamEnv::empty(::traits::Reveal::All), ty::Binder(trait_ref));
-
-    // Now that we know which impl is being used, we can dispatch to
-    // the actual function:
-    match vtbl {
-        ::traits::VtableImpl(impl_data) => {
-            let (def_id, substs) =
-                ::traits::find_associated_item(tcx, trait_item, rcvr_substs, &impl_data);
-            let substs = tcx.erase_regions(&substs);
-            ty::Instance::new(def_id, substs)
-        }
-        ::traits::VtableGenerator(closure_data) => {
-            ty::Instance {
-                def: ty::InstanceDef::Item(closure_data.closure_def_id),
-                substs: closure_data.substs.substs
-            }
-        }
-        ::traits::VtableClosure(closure_data) => {
-            let trait_closure_kind = tcx.lang_items().fn_trait_kind(trait_id).unwrap();
-            resolve_closure(
-                tcx,
-                closure_data.closure_def_id,
-                closure_data.substs,
-                trait_closure_kind,
-            )
-        }
-        ::traits::VtableFnPointer(ref data) => {
-            ty::Instance {
-                def: ty::InstanceDef::FnPtrShim(trait_item.def_id, data.fn_ty),
-                substs: rcvr_substs,
-            }
-        }
-        ::traits::VtableObject(ref data) => {
-            let index = tcx.get_vtable_index_of_object_method(data, def_id);
-            ty::Instance {
-                def: ty::InstanceDef::Virtual(def_id, index),
-                substs: rcvr_substs,
-            }
-        }
-        ::traits::VtableBuiltin(..) if Some(trait_id) == tcx.lang_items().clone_trait() => {
-            ty::Instance {
-                def: ty::InstanceDef::CloneShim(def_id, trait_ref.self_ty()),
-                substs: rcvr_substs
-            }
-        }
-        _ => bug!("static call to invalid vtable: {:?}", vtbl),
-    }
-}
-
-pub fn def_ty<'a, 'tcx>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    def_id: DefId,
-    substs: &'tcx Substs<'tcx>,
-) -> Ty<'tcx> {
-    let ty = tcx.type_of(def_id);
-    apply_param_substs(tcx, substs, &ty)
-}
-
-/// Monomorphizes a type from the AST by first applying the in-scope
-/// substitutions and then normalizing any associated types.
-pub fn apply_param_substs<'a, 'tcx, T>(
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-    param_substs: &Substs<'tcx>,
-    value: &T,
-) -> T
-where
-    T: ::infer::TransNormalize<'tcx>,
-{
-    debug!(
-        "apply_param_substs(param_substs={:?}, value={:?})",
-        param_substs,
-        value
-    );
-    let substituted = value.subst(tcx, param_substs);
-    let substituted = tcx.erase_regions(&substituted);
-    AssociatedTypeNormalizer { tcx }.fold(&substituted)
-}
-
-
-struct AssociatedTypeNormalizer<'a, 'tcx: 'a> {
-    tcx: TyCtxt<'a, 'tcx, 'tcx>,
-}
-
-impl<'a, 'tcx> AssociatedTypeNormalizer<'a, 'tcx> {
-    fn fold<T: TypeFoldable<'tcx>>(&mut self, value: &T) -> T {
-        if !value.has_projections() {
-            value.clone()
-        } else {
-            value.fold_with(self)
-        }
-    }
-}
-
-impl<'a, 'tcx> ::ty::fold::TypeFolder<'tcx, 'tcx> for AssociatedTypeNormalizer<'a, 'tcx> {
-    fn tcx<'c>(&'c self) -> TyCtxt<'c, 'tcx, 'tcx> {
-        self.tcx
-    }
-
-    fn fold_ty(&mut self, ty: Ty<'tcx>) -> Ty<'tcx> {
-        if !ty.has_projections() {
-            ty
-        } else {
-            self.tcx.normalize_associated_type(&ty)
-        }
-    }
-}
-
-fn type_is_sized<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, ty: Ty<'tcx>) -> bool {
-    // generics are weird, don't run this function on a generic
-    assert!(!ty.needs_subst());
-    ty.is_sized(tcx, ty::ParamEnv::empty(Reveal::All), DUMMY_SP)
-}
-
 pub fn resolve_drop_in_place<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     ty: Ty<'tcx>,
 ) -> ty::Instance<'tcx> {
     let def_id = tcx.require_lang_item(::middle::lang_items::DropInPlaceFnLangItem);
     let substs = tcx.intern_substs(&[Kind::from(ty)]);
-    resolve(tcx, def_id, substs)
+    ty::Instance::resolve(tcx, ty::ParamEnv::empty(Reveal::All), def_id, substs).unwrap()
 }

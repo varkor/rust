@@ -292,7 +292,12 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                 self.try(|this| {
                     debug!("global_item: {:?}, {:?}", def_id, substs);
                     let substs = this.ecx.tcx.trans_apply_param_substs(this.instance.substs, &substs);
-                    let instance = this.ecx.resolve_associated_const(def_id, substs)?;
+                    let instance = Instance::resolve(
+                        this.ecx.tcx,
+                        M::param_env(this.ecx),
+                        def_id,
+                        substs,
+                    ).expect("miri monomorphization failed");
                     this.ecx.global_item(
                         instance,
                         constant.span,

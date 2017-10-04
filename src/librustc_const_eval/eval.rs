@@ -26,6 +26,9 @@ use rustc::util::common::ErrorReported;
 use rustc::util::nodemap::NodeMap;
 
 use rustc::mir::interpret::{PrimVal, Value, PtrAndAlign, HasMemory, EvalError};
+use rustc::mir::Field;
+use rustc::mir::interpret::{Lvalue, LvalueExtra};
+use rustc_data_structures::indexed_vec::Idx;
 
 use syntax::abi::Abi;
 use syntax::ast;
@@ -835,7 +838,7 @@ fn check_ctfe_against_miri<'a, 'tcx>(
 ) {
     let limits = ResourceLimits::default();
     use rustc::mir::interpret::{CompileTimeFunctionEvaluator, EvalContext, ResourceLimits};
-    let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
+    let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
     let value = ecx.read_maybe_aligned(miri_val.aligned, |ectx| {
         ectx.try_read_value(miri_val.ptr, miri_ty)
     });
@@ -936,22 +939,32 @@ fn check_ctfe_against_miri<'a, 'tcx>(
                 check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
             }
         },
-        TyAdt(def, _) if def.is_enum() => {
-            let ptr = miri_val.ptr.to_ptr().unwrap();
-            let discr = ecx.read_discriminant_value(ptr, miri_ty).unwrap();
-            let var = ConstVal::Variant(def.variants[discr as usize].did);
-            assert_eq!(var, ctfe, "miri produced {:?}, but ctfe yielded {:?}", var, ctfe);
-        },
-        TyAdt(def, _) => {
-            let struct_variant = def.struct_variant();
+        TyAdt(def, substs) => {
+            let (struct_variant, extra) = if def.is_enum() {
+                let ptr = miri_val.ptr.to_ptr().unwrap();
+                let discr = ecx.read_discriminant_value(ptr, miri_ty).unwrap();
+                (&def.variants[discr as usize], LvalueExtra::DowncastVariant(discr as usize))
+            } else {
+                (def.struct_variant(), LvalueExtra::None)
+            };
             let vec = match ctfe {
                 ConstVal::Aggregate(Struct(v)) => v,
+                ConstVal::Variant(did) => {
+                    assert_eq!(struct_variant.fields.len(), 0);
+                    assert_eq!(did, struct_variant.did);
+                    return;
+                },
                 ctfe => bug!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
             };
             for &(name, elem) in vec.into_iter() {
                 let field = struct_variant.fields.iter().position(|f| f.name == name).unwrap();
-                let offset = ecx.get_field_offset(miri_ty, field).unwrap();
-                let ptr = miri_val.offset(offset.bytes(), &ecx).unwrap();
+                let lvalue = ecx.lvalue_field(
+                    Lvalue::Ptr { ptr: miri_val, extra },
+                    Field::new(field),
+                    miri_ty,
+                    struct_variant.fields[field].ty(tcx, substs),
+                ).unwrap();
+                let ptr = lvalue.to_ptr_extra_aligned().0;
                 check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
             }
         },

@@ -57,7 +57,7 @@ impl<'tcx> Lvalue {
         Self::from_primval_ptr(ptr.into())
     }
 
-    pub(super) fn to_ptr_extra_aligned(self) -> (PtrAndAlign, LvalueExtra) {
+    pub fn to_ptr_extra_aligned(self) -> (PtrAndAlign, LvalueExtra) {
         match self {
             Lvalue::Ptr { ptr, extra } => (ptr, extra),
             _ => bug!("to_ptr_and_extra: expected Lvalue::Ptr, got {:?}", self),
