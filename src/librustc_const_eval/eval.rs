@@ -25,6 +25,11 @@ use rustc::ty::subst::{Substs, Subst};
 use rustc::util::common::ErrorReported;
 use rustc::util::nodemap::NodeMap;
 
+use rustc::mir::interpret::{PrimVal, Value, PtrAndAlign, HasMemory, EvalError};
+use rustc::mir::Field;
+use rustc::mir::interpret::{Lvalue, LvalueExtra};
+use rustc_data_structures::indexed_vec::Idx;
+
 use syntax::abi::Abi;
 use syntax::ast;
 use syntax::attr;
@@ -775,6 +780,7 @@ pub fn provide(providers: &mut Providers) {
 fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         key: ty::ParamEnvAnd<'tcx, (DefId, &'tcx Substs<'tcx>)>)
                         -> EvalResult<'tcx> {
+    trace!("const eval: {:?}", key);
     let (def_id, substs) = if let Some(resolved) = lookup_const_by_id(tcx, key) {
         resolved
     } else {
@@ -791,5 +797,237 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     } else {
         tcx.extern_const_body(def_id).body
     };
-    ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value)
+
+    // do not continue into miri if typeck errors occurred
+    // it will fail horribly
+    if tables.tainted_by_errors {
+        signal!(&body.value, TypeckError);
+    }
+
+    trace!("running old const eval");
+    let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
+    trace!("old const eval produced {:?}", old_result);
+    let instance = ty::Instance::new(def_id, substs);
+    trace!("const eval instance: {:?}, {:?}", instance, key.param_env);
+    let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance, key.param_env);
+    match (miri_result, old_result) {
+        (Err(err), Ok(ok)) => {
+            trace!("miri failed, ctfe returned {:?}", ok);
+            tcx.sess.span_warn(
+                tcx.def_span(key.value.0),
+                "miri failed to eval, while ctfe succeeded",
+            );
+            let () = unwrap_miri(tcx, key.param_env, Err(err));
+            Ok(ok)
+        },
+        (Ok(_), Err(err)) => {
+            Err(err)
+        },
+        (Err(_), Err(err)) => Err(err),
+        (Ok((miri_val, miri_ty)), Ok(ctfe)) => {
+            check_ctfe_against_miri(tcx, key.param_env, miri_val, miri_ty, ctfe.val);
+            Ok(ctfe)
+        }
+    }
+}
+
+fn check_ctfe_against_miri<'a, 'tcx>(
+    tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    param_env: ty::ParamEnv<'tcx>,
+    miri_val: PtrAndAlign,
+    miri_ty: Ty<'tcx>,
+    ctfe: ConstVal<'tcx>,
+) {
+    let limits = ResourceLimits::default();
+    use rustc::mir::interpret::{CompileTimeFunctionEvaluator, EvalContext, ResourceLimits};
+    let mut ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
+    let value = ecx.read_maybe_aligned(miri_val.aligned, |ectx| {
+        ectx.try_read_value(miri_val.ptr, miri_ty)
+    });
+    use rustc::ty::TypeVariants::*;
+    match miri_ty.sty {
+        TyInt(int_ty) => {
+            let prim = get_prim(tcx, param_env, value);
+            let c = ConstInt::new_signed_truncating(prim as i128,
+                                                    int_ty,
+                                                    tcx.sess.target.isize_ty);
+            let c = ConstVal::Integral(c);
+            assert_eq!(c, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", c, ctfe);
+        },
+        TyUint(uint_ty) => {
+            let prim = get_prim(tcx, param_env, value);
+            let c = ConstInt::new_unsigned_truncating(prim,
+                                                     uint_ty,
+                                                     tcx.sess.target.usize_ty);
+            let c = ConstVal::Integral(c);
+            assert_eq!(c, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", c, ctfe);
+        },
+        TyFloat(ty) => {
+            let prim = get_prim(tcx, param_env, value);
+            let f = ConstVal::Float(ConstFloat { bits: prim, ty });
+            assert_eq!(f, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", f, ctfe);
+        },
+        TyBool => {
+            let bits = get_prim(tcx, param_env, value);
+            if bits > 1 {
+                bug!("miri evaluated to {}, but expected a bool {:?}", bits, ctfe);
+            }
+            let b = ConstVal::Bool(bits == 1);
+            assert_eq!(b, ctfe, "miri evaluated to {:?}, but ctfe yielded {:?}", b, ctfe);
+        },
+        TyChar => {
+            let bits = get_prim(tcx, param_env, value);
+            if let Some(cm) = ::std::char::from_u32(bits as u32) {
+                assert_eq!(
+                    ConstVal::Char(cm), ctfe,
+                    "miri evaluated to {:?}, but expected {:?}", cm, ctfe,
+                );
+            } else {
+                bug!("miri evaluated to {}, but expected a char {:?}", bits, ctfe);
+            }
+        },
+        TyStr => {
+            if let Ok(Some(Value::ByValPair(PrimVal::Ptr(ptr), PrimVal::Bytes(len)))) = value {
+                let bytes = ecx
+                    .memory
+                    .read_bytes(ptr.into(), len as u64)
+                    .expect("bad miri memory for str");
+                if let Ok(s) = ::std::str::from_utf8(bytes) {
+                    if let ConstVal::Str(s2) = ctfe {
+                        assert_eq!(s, s2, "miri produced {:?}, but expected {:?}", s, s2);
+                    } else {
+                        bug!("miri produced {:?}, but expected {:?}", s, ctfe);
+                    }
+                } else {
+                    bug!(
+                        "miri failed to produce valid utf8 {:?}, while ctfe produced {:?}",
+                        bytes,
+                        ctfe,
+                    );
+                }
+            } else {
+                bug!("miri evaluated to {:?}, but expected a str {:?}", value, ctfe);
+            }
+        },
+        TyArray(elem_ty, n) => {
+            let n = n.val.to_const_int().unwrap().to_u64().unwrap();
+            let size = ecx.type_size(elem_ty).unwrap().unwrap();
+            let vec: Box<Iterator<Item = (ConstVal, Ty<'tcx>)>> = match ctfe {
+                ConstVal::ByteStr(arr) => Box::new(arr.data.iter().map(|&b| {
+                    (ConstVal::Integral(ConstInt::U8(b)), tcx.types.u8)
+                })),
+                ConstVal::Aggregate(Array(v)) => {
+                    Box::new(v.iter().map(|c| (c.val, c.ty)))
+                },
+                ConstVal::Aggregate(Repeat(v, n)) => {
+                    Box::new(::std::iter::repeat((v.val, v.ty)).take(n as usize))
+                },
+                _ => bug!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            for (i, elem) in vec.enumerate() {
+                assert!((i as u64) < n);
+                let ptr = miri_val.offset(size * i as u64, &ecx).unwrap();
+                check_ctfe_against_miri(tcx, param_env, ptr, elem_ty, elem.0);
+            }
+        },
+        TyTuple(..) => {
+            let vec = match ctfe {
+                ConstVal::Aggregate(Tuple(v)) => v,
+                _ => bug!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            for (i, elem) in vec.into_iter().enumerate() {
+                let offset = ecx.get_field_offset(miri_ty, i).unwrap();
+                let ptr = miri_val.offset(offset.bytes(), &ecx).unwrap();
+                check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
+            }
+        },
+        TyAdt(def, substs) => {
+            let (struct_variant, extra) = if def.is_enum() {
+                let ptr = miri_val.ptr.to_ptr().unwrap();
+                let discr = ecx.read_discriminant_value(ptr, miri_ty).unwrap();
+                (&def.variants[discr as usize], LvalueExtra::DowncastVariant(discr as usize))
+            } else {
+                (def.struct_variant(), LvalueExtra::None)
+            };
+            let vec = match ctfe {
+                ConstVal::Aggregate(Struct(v)) => v,
+                ConstVal::Variant(did) => {
+                    assert_eq!(struct_variant.fields.len(), 0);
+                    assert_eq!(did, struct_variant.did);
+                    return;
+                },
+                ctfe => bug!("miri produced {:?}, but ctfe yielded {:?}", miri_ty, ctfe),
+            };
+            for &(name, elem) in vec.into_iter() {
+                let field = struct_variant.fields.iter().position(|f| f.name == name).unwrap();
+                let lvalue = ecx.lvalue_field(
+                    Lvalue::Ptr { ptr: miri_val, extra },
+                    Field::new(field),
+                    miri_ty,
+                    struct_variant.fields[field].ty(tcx, substs),
+                ).unwrap();
+                let ptr = lvalue.to_ptr_extra_aligned().0;
+                check_ctfe_against_miri(tcx, param_env, ptr, elem.ty, elem.val);
+            }
+        },
+        TySlice(_) => bug!("miri produced a slice?"),
+        // not supported by ctfe
+        TyRawPtr(_) |
+        TyRef(..) => {}
+        TyDynamic(..) => bug!("miri produced a trait object"),
+        TyClosure(..) => bug!("miri produced a closure"),
+        TyGenerator(..) => bug!("miri produced a generator"),
+        TyNever => bug!("miri produced a value of the never type"),
+        TyProjection(_) => bug!("miri produced a projection"),
+        TyAnon(..) => bug!("miri produced an impl Trait type"),
+        TyParam(_) => bug!("miri produced an unmonomorphized type"),
+        TyInfer(_) => bug!("miri produced an uninferred type"),
+        TyError => bug!("miri produced a type error"),
+        // should be fine
+        TyFnDef(..) => {}
+        TyFnPtr(_) => {
+            let ptr = match value {
+                Ok(Some(Value::ByVal(PrimVal::Ptr(ptr)))) => ptr,
+                value => bug!("expected fn ptr, got {:?}", value),
+            };
+            let inst = ecx.memory.get_fn(ptr).unwrap();
+            match ctfe {
+                ConstVal::Function(did, substs) => {
+                    let ctfe = ty::Instance::resolve(ecx.tcx, param_env, did, substs).unwrap();
+                    assert_eq!(inst, ctfe, "expected fn ptr {:?}, but got {:?}", ctfe, inst);
+                },
+                _ => bug!("ctfe produced {:?}, but miri produced function {:?}", ctfe, inst),
+            }
+        },
+    }
+}
+
+fn get_prim<'a, 'tcx>(
+    tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    param_env: ty::ParamEnv<'tcx>,
+    res: Result<Option<Value>, EvalError<'tcx>>,
+) -> u128 {
+    match res {
+        Ok(Some(Value::ByVal(prim))) => unwrap_miri(tcx, param_env, prim.to_bytes()),
+        Err(err) => unwrap_miri(tcx, param_env, Err(err)),
+        val => bug!("got {:?}", val),
+    }
+}
+
+fn unwrap_miri<'a, 'tcx, T>(
+    tcx: TyCtxt<'a, 'tcx, 'tcx>,
+    param_env: ty::ParamEnv<'tcx>,
+    res: Result<T, EvalError<'tcx>>,
+) -> T {
+    match res {
+        Ok(val) => val,
+        Err(mut err) => {
+            let limits = ResourceLimits::default();
+            use rustc::mir::interpret::{CompileTimeFunctionEvaluator, EvalContext, ResourceLimits};
+            let ecx = EvalContext::<CompileTimeFunctionEvaluator>::new(tcx, limits, param_env, ());
+            ecx.report(&mut err);
+            tcx.sess.abort_if_errors();
+            bug!("{:#?}", err);
+        }
+    }
 }

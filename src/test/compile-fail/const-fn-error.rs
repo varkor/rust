@@ -13,8 +13,15 @@
 const X : usize = 2;
 
 const fn f(x: usize) -> usize {
-    let mut sum = 0;
-    for i in 0..x {
+    let mut sum = 0; //~ ERROR blocks in constant functions are limited
+    for i in 0..x { //~ ERROR calls in constant functions
+    //~| ERROR blocks in constant
+    //~| ERROR references in constant
+    //~| ERROR references in constant
+    //~| ERROR calls in constant
+    //~| ERROR constant function contains unimplemented
+    //~| NOTE constant functions require immutable values
+    //~| NOTE constant functions require immutable values
         sum += i;
     }
     sum //~ ERROR E0080

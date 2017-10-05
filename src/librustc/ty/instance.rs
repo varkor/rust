@@ -13,7 +13,6 @@ use ty::{self, Ty, TypeFoldable, Substs, TyCtxt};
 use ty::subst::{Kind, Subst};
 use traits;
 use syntax::abi::Abi;
-use syntax::codemap::DUMMY_SP;
 use util::ppaux;
 
 use std::fmt;
@@ -101,7 +100,7 @@ impl<'tcx> fmt::Display for Instance<'tcx> {
 impl<'a, 'b, 'tcx> Instance<'tcx> {
     pub fn new(def_id: DefId, substs: &'tcx Substs<'tcx>)
                -> Instance<'tcx> {
-        assert!(substs.is_normalized_for_trans() && !substs.has_escaping_regions(),
+        assert!(!substs.has_escaping_regions(),
                 "substs of instance {:?} not normalized for trans: {:?}",
                 def_id, substs);
         Instance { def: InstanceDef::Item(def_id), substs: substs }
@@ -181,20 +180,20 @@ impl<'a, 'b, 'tcx> Instance<'tcx> {
         debug!("resolve(def_id={:?}, substs={:?}) = {:?}", def_id, substs, result);
         result
     }
-}
 
-fn resolve_closure<'a, 'tcx>(
-                   tcx: TyCtxt<'a, 'tcx, 'tcx>,
-                   def_id: DefId,
-                   substs: ty::ClosureSubsts<'tcx>,
-                   requested_kind: ty::ClosureKind)
--> Instance<'tcx>
-{
-    let actual_kind = tcx.closure_kind(def_id);
+    pub fn resolve_closure(
+                    tcx: TyCtxt<'a, 'tcx, 'tcx>,
+                    def_id: DefId,
+                    substs: ty::ClosureSubsts<'tcx>,
+                    requested_kind: ty::ClosureKind)
+    -> Instance<'tcx>
+    {
+        let actual_kind = tcx.closure_kind(def_id);
 
-    match needs_fn_once_adapter_shim(actual_kind, requested_kind) {
-        Ok(true) => fn_once_adapter_instance(tcx, def_id, substs),
-        _ => Instance::new(def_id, substs.substs)
+        match needs_fn_once_adapter_shim(actual_kind, requested_kind) {
+            Ok(true) => fn_once_adapter_instance(tcx, def_id, substs),
+            _ => Instance::new(def_id, substs.substs)
+        }
     }
 }
 
@@ -203,8 +202,8 @@ fn resolve_associated_item<'a, 'tcx>(
     trait_item: &ty::AssociatedItem,
     param_env: ty::ParamEnv<'tcx>,
     trait_id: DefId,
-    rcvr_substs: &'tcx Substs<'tcx>
-    ) -> Option<Instance<'tcx>> {
+    rcvr_substs: &'tcx Substs<'tcx>,
+) -> Option<Instance<'tcx>> {
     let def_id = trait_item.def_id;
     debug!("resolve_associated_item(trait_item={:?}, \
                                     trait_id={:?}, \
@@ -212,7 +211,7 @@ fn resolve_associated_item<'a, 'tcx>(
            def_id, trait_id, rcvr_substs);
 
     let trait_ref = ty::TraitRef::from_method(tcx, trait_id, rcvr_substs);
-    let vtbl = tcx.trans_fulfill_obligation(DUMMY_SP, param_env, ty::Binder(trait_ref));
+    let vtbl = tcx.trans_fulfill_obligation(param_env, ty::Binder(trait_ref))?;
 
     // Now that we know which impl is being used, we can dispatch to
     // the actual function:
@@ -231,7 +230,7 @@ fn resolve_associated_item<'a, 'tcx>(
         }
         traits::VtableClosure(closure_data) => {
             let trait_closure_kind = tcx.lang_items().fn_trait_kind(trait_id).unwrap();
-            Some(resolve_closure(tcx, closure_data.closure_def_id, closure_data.substs,
+            Some(Instance::resolve_closure(tcx, closure_data.closure_def_id, closure_data.substs,
                                  trait_closure_kind))
         }
         traits::VtableFnPointer(ref data) => {

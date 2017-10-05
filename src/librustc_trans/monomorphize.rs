@@ -15,8 +15,6 @@ use rustc::ty::adjustment::CustomCoerceUnsized;
 use rustc::ty::subst::{Kind, Subst, Substs};
 use rustc::ty::{self, Ty, TyCtxt};
 
-use syntax::codemap::DUMMY_SP;
-
 pub use rustc::ty::Instance;
 
 fn fn_once_adapter_instance<'a, 'tcx>(
@@ -115,13 +113,15 @@ pub fn custom_coerce_unsize_info<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         substs: tcx.mk_substs_trait(source_ty, &[target_ty])
     });
 
-    match tcx.trans_fulfill_obligation(
-        DUMMY_SP, ty::ParamEnv::empty(traits::Reveal::All), trait_ref) {
-        traits::VtableImpl(traits::VtableImplData { impl_def_id, .. }) => {
+    match tcx.trans_fulfill_obligation(ty::ParamEnv::empty(traits::Reveal::All), trait_ref) {
+        Some(traits::VtableImpl(traits::VtableImplData { impl_def_id, .. })) => {
             tcx.coerce_unsized_info(impl_def_id).custom_kind.unwrap()
         }
-        vtable => {
+        Some(vtable) => {
             bug!("invalid CoerceUnsized vtable: {:?}", vtable);
+        }
+        None => {
+            bug!("reached the recursion limit during monomorphization (selection ambiguity)");
         }
     }
 }

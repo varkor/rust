@@ -76,22 +76,27 @@ impl<M: DepTrackingMapConfig> MemoizationMap for RefCell<DepTrackingMap<M>> {
     /// The key is the line marked `(*)`: the closure implicitly
     /// accesses the body of the item `item`, so we register a read
     /// from `Hir(item_def_id)`.
-    fn memoize<OP>(&self, key: M::Key, op: OP) -> M::Value
-        where OP: FnOnce() -> M::Value
+    ///
+    /// memoize does the same except that the closure doesn't return an,
+    /// Option and thus always caches
+    fn try_memoize<OP>(&self, key: M::Key, op: OP) -> Option<M::Value>
+        where OP: FnOnce() -> Option<M::Value>
     {
         let graph;
         {
             let this = self.borrow();
             if let Some(&(ref result, dep_node)) = this.map.get(&key) {
                 this.graph.read_index(dep_node);
-                return result.clone();
+                return Some(result.clone());
             }
             graph = this.graph.clone();
         }
 
         let (result, dep_node) = graph.with_anon_task(M::to_dep_kind(), op);
-        self.borrow_mut().map.insert(key, (result.clone(), dep_node));
-        graph.read_index(dep_node);
+        if let Some(ref result) = result {
+            self.borrow_mut().map.insert(key, (result.clone(), dep_node));
+            graph.read_index(dep_node);
+        }
         result
     }
 }
