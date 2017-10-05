@@ -86,7 +86,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                         (instance, sig)
                     }
                     ty::TyFnDef(def_id, substs) => (
-                        self.resolve(def_id, substs),
+                        self.resolve(def_id, substs)?,
                         func_ty.fn_sig(self.tcx),
                     ),
                     _ => {

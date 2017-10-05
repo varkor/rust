@@ -11,7 +11,7 @@ use ty::subst::Substs;
 use middle::const_val::ConstVal;
 
 use super::{EvalResult, EvalContext, StackPopCleanup, PtrAndAlign, GlobalId, Lvalue,
-            Machine, PrimVal};
+            Machine, PrimVal, EvalErrorKind};
 
 use syntax::codemap::Span;
 use syntax::ast::Mutability;
@@ -297,7 +297,7 @@ impl<'a, 'b, 'tcx, M: Machine<'tcx>> Visitor<'tcx> for ConstantExtractor<'a, 'b,
                         M::param_env(this.ecx),
                         def_id,
                         substs,
-                    ).expect("miri monomorphization failed");
+                    ).ok_or(EvalErrorKind::TypeckError)?; // turn error prop into a panic to expose associated type in const issue
                     this.ecx.global_item(
                         instance,
                         constant.span,

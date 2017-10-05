@@ -42,7 +42,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
 
         for (i, method) in ::traits::get_vtable_methods(self.tcx, trait_ref).enumerate() {
             if let Some((def_id, substs)) = method {
-                let instance = self.resolve(def_id, substs);
+                let instance = self.resolve(def_id, substs)?;
                 let fn_ptr = self.memory.create_fn_alloc(instance);
                 let method_ptr = vtable.offset(ptr_size * (3 + i as u64), &self)?;
                 self.memory.write_ptr_sized_unsigned(method_ptr, PrimVal::Ptr(fn_ptr))?;

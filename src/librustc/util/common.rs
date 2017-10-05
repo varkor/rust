@@ -310,7 +310,13 @@ pub trait MemoizationMap {
     /// added into the dep graph. See the `DepTrackingMap` impl for
     /// more details!
     fn memoize<OP>(&self, key: Self::Key, op: OP) -> Self::Value
-        where OP: FnOnce() -> Self::Value;
+        where OP: FnOnce() -> Self::Value
+    {
+        self.try_memoize(key, || Some(op())).unwrap()
+    }
+
+    fn try_memoize<OP>(&self, key: Self::Key, op: OP) -> Option<Self::Value>
+        where OP: FnOnce() -> Option<Self::Value>;
 }
 
 impl<K, V, S> MemoizationMap for RefCell<HashMap<K,V,S>>
@@ -319,15 +325,17 @@ impl<K, V, S> MemoizationMap for RefCell<HashMap<K,V,S>>
     type Key = K;
     type Value = V;
 
-    fn memoize<OP>(&self, key: K, op: OP) -> V
-        where OP: FnOnce() -> V
+    fn try_memoize<OP>(&self, key: K, op: OP) -> Option<V>
+        where OP: FnOnce() -> Option<V>
     {
         let result = self.borrow().get(&key).cloned();
         match result {
-            Some(result) => result,
+            Some(result) => Some(result),
             None => {
                 let result = op();
-                self.borrow_mut().insert(key, result.clone());
+                if let Some(ref result) = result {
+                    self.borrow_mut().insert(key, result.clone());
+                }
                 result
             }
         }

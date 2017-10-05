@@ -18,7 +18,7 @@ use infer::TransNormalize;
 use std::cell::RefCell;
 use std::marker::PhantomData;
 use syntax::ast;
-use syntax_pos::Span;
+use syntax::codemap::DUMMY_SP;
 use traits::{FulfillmentContext, Obligation, ObligationCause, SelectionContext, Vtable};
 use ty::{self, Ty, TyCtxt};
 use ty::subst::{Subst, Substs};
@@ -31,17 +31,16 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx, 'tcx> {
     /// (necessarily) resolve all nested obligations on the impl. Note
     /// that type check should guarantee to us that all nested
     /// obligations *could be* resolved if we wanted to.
-    /// Assumes that this is run after the entire crate has been successfully type-checked.
+    /// Might return `None` if the crate has not been successfully type-checked yet
     pub fn trans_fulfill_obligation(self,
-                                    span: Span,
                                     param_env: ty::ParamEnv<'tcx>,
                                     trait_ref: ty::PolyTraitRef<'tcx>)
-                                    -> Vtable<'tcx, ()>
+                                    -> Option<Vtable<'tcx, ()>>
     {
         // Remove any references to regions; this helps improve caching.
         let trait_ref = self.erase_regions(&trait_ref);
 
-        self.trans_trait_caches.trait_cache.memoize((param_env, trait_ref), || {
+        self.trans_trait_caches.trait_cache.try_memoize((param_env, trait_ref), || {
             debug!("trans::fulfill_obligation(trait_ref={:?}, def_id={:?})",
                    (param_env, trait_ref), trait_ref.def_id());
 
@@ -50,7 +49,7 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx, 'tcx> {
             self.infer_ctxt().enter(|infcx| {
                 let mut selcx = SelectionContext::new(&infcx);
 
-                let obligation_cause = ObligationCause::misc(span,
+                let obligation_cause = ObligationCause::misc(DUMMY_SP,
                                                              ast::DUMMY_NODE_ID);
                 let obligation = Obligation::new(obligation_cause,
                                                  param_env,
@@ -68,13 +67,12 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx, 'tcx> {
                         debug!("Encountered ambiguity selecting `{:?}` during trans, \
                                 presuming due to overflow",
                                trait_ref);
-                        self.sess.span_fatal(span,
-                                            "reached the recursion limit during monomorphization \
-                                             (selection ambiguity)");
+                        return None;
                     }
                     Err(e) => {
-                        span_bug!(span, "Encountered error `{:?}` selecting `{:?}` during trans",
-                                  e, trait_ref)
+                        debug!("Encountered error `{:?}` selecting `{:?}` during trans",
+                                  e, trait_ref);
+                        return None;
                     }
                 };
 
@@ -88,10 +86,14 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx, 'tcx> {
                     debug!("fulfill_obligation: register_predicate_obligation {:?}", predicate);
                     fulfill_cx.register_predicate_obligation(&infcx, predicate);
                 });
-                let vtable = infcx.drain_fulfillment_cx_or_panic(span, &mut fulfill_cx, &vtable);
+                let vtable = infcx.drain_fulfillment_cx_or_panic(
+                    DUMMY_SP,
+                    &mut fulfill_cx,
+                    &vtable,
+                );
 
                 info!("Cache miss: {:?} => {:?}", trait_ref, vtable);
-                vtable
+                Some(vtable)
             })
         })
     }

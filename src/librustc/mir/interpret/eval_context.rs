@@ -244,7 +244,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             }
 
             Unevaluated(def_id, substs) => {
-                let instance = self.resolve(def_id, substs);
+                let instance = self.resolve(def_id, substs)?;
                 let cid = GlobalId {
                     instance,
                     promoted: None,
@@ -261,14 +261,14 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
         Ok(Value::ByVal(primval))
     }
 
-    pub(super) fn resolve(&self, def_id: DefId, substs: &'tcx Substs<'tcx>) -> ty::Instance<'tcx> {
+    pub(super) fn resolve(&self, def_id: DefId, substs: &'tcx Substs<'tcx>) -> EvalResult<'tcx, ty::Instance<'tcx>> {
         let substs = self.tcx.trans_apply_param_substs(self.substs(), &substs);
         ty::Instance::resolve(
             self.tcx,
             M::param_env(self),
             def_id,
             substs,
-        ).expect("miri monomorphization failed")
+        ).ok_or(EvalErrorKind::TypeckError.into()) // turn error prop into a panic to expose associated type in const issue
     }
 
     pub(super) fn type_is_sized(&self, ty: Ty<'tcx>) -> bool {
@@ -940,7 +940,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
                     ReifyFnPointer => {
                         match self.operand_ty(operand).sty {
                             ty::TyFnDef(def_id, substs) => {
-                                let instance = self.resolve(def_id, substs);
+                                let instance = self.resolve(def_id, substs)?;
                                 let fn_ptr = self.memory.create_fn_alloc(instance);
                                 let valty = ValTy {
                                     value: Value::ByVal(PrimVal::Ptr(fn_ptr)),

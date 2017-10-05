@@ -804,9 +804,11 @@ fn const_eval<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         signal!(&body.value, TypeckError);
     }
 
-    let instance = ty::Instance::new(def_id, substs);
-    trace!("const eval instance: {:?}", instance);
+    trace!("running old const eval");
     let old_result = ConstContext::new(tcx, key.param_env.and(substs), tables).eval(&body.value);
+    trace!("old const eval produced {:?}", old_result);
+    let instance = ty::Instance::new(def_id, substs);
+    trace!("const eval instance: {:?}, {:?}", instance, key.param_env);
     let miri_result = ::rustc::mir::interpret::eval_body(tcx, instance, key.param_env);
     match (miri_result, old_result) {
         (Err(err), Ok(ok)) => {
