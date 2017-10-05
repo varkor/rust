@@ -122,6 +122,8 @@ pub enum EvalErrorKind<'tcx> {
     ReadFromReturnPointer,
     PathNotFound(Vec<String>),
     UnimplementedTraitSelection,
+    /// Abort in case type errors are reached
+    TypeckError,
 }
 
 pub type EvalResult<'tcx, T = ()> = Result<T, EvalError<'tcx>>;
@@ -241,6 +243,8 @@ impl<'tcx> Error for EvalError<'tcx> {
                 "a path could not be resolved, maybe the crate is not loaded",
             UnimplementedTraitSelection =>
                 "there were unresolved type arguments during trait selection",
+            TypeckError =>
+                "encountered constants with type errors, stopping evaluation",
         }
     }
 
