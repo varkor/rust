@@ -771,12 +771,15 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
     }
 
     pub fn new_block(&self, name: &str) -> Builder<'a, 'tcx> {
-        Builder::new_block(self.ccx, self.llfn, name)
+        let mut builder = Builder::new_block(self.ccx, self.llfn, name);
+        builder.alias_scope_info = self.alias_scope_info.clone();
+        builder
     }
 
     pub fn get_builder(&self, bb: mir::BasicBlock) -> Builder<'a, 'tcx> {
-        let builder = Builder::with_ccx(self.ccx);
+        let mut builder = Builder::with_ccx(self.ccx);
         builder.position_at_end(self.blocks[bb]);
+        builder.alias_scope_info = self.alias_scope_info.clone();
         builder
     }
 

@@ -613,6 +613,10 @@ impl ThinModule {
             self.data().len(),
             self.shared.module_names[self.idx].as_ptr(),
         );
+        if llmod.is_null() {
+            let msg = format!("failed to parse bitcode for thin LTO module");
+            return Err(write::llvm_err(&diag_handler, msg));
+        }
         assert!(!llmod.is_null());
         let mtrans = ModuleTranslation {
             source: ModuleSource::Translated(ModuleLlvm {

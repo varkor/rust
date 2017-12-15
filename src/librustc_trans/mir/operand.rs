@@ -10,7 +10,7 @@
 
 use llvm::ValueRef;
 use rustc::ty;
-use rustc::ty::layout::{self, LayoutOf, TyLayout};
+use rustc::ty::layout::{self, LayoutOf, Size, TyLayout};
 use rustc::mir;
 use rustc_data_structures::indexed_vec::Idx;
 
@@ -107,11 +107,17 @@ impl<'a, 'tcx> OperandRef<'tcx> {
             OperandValue::Pair(llptr, llextra) => (llptr, llextra),
             OperandValue::Ref(..) => bug!("Deref of by-Ref operand {:?}", self)
         };
+        let kind = if let Some(pointee) = self.layout.pointee_info_at(ccx, Size::from_bytes(0)) {
+            pointee.safe
+        } else {
+            None
+        };
         PlaceRef {
             llval: llptr,
             llextra,
             layout: ccx.layout_of(projected_ty),
             alignment: Alignment::AbiAligned,
+            kind
         }
     }
 

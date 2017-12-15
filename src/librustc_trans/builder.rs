@@ -9,11 +9,11 @@
 // except according to those terms.
 
 #![allow(dead_code)] // FFI wrappers
-
+#![allow(warnings)]
 use llvm;
 use llvm::{AtomicRmwBinOp, AtomicOrdering, SynchronizationScope, AsmDialect};
 use llvm::{Opcode, IntPredicate, RealPredicate, False, OperandBundleDef};
-use llvm::{ValueRef, BasicBlockRef, BuilderRef, ModuleRef};
+use llvm::{ValueRef, MetadataRef, BasicBlockRef, BuilderRef, ModuleRef};
 use common::*;
 use type_::Type;
 use value::Value;
@@ -21,18 +21,27 @@ use libc::{c_uint, c_char};
 use rustc::ty::TyCtxt;
 use rustc::ty::layout::{Align, Size};
 use rustc::session::{config, Session};
+use rustc::mir::{Local};
 
 use std::borrow::Cow;
 use std::ffi::CString;
 use std::ops::Range;
 use std::ptr;
+use std::collections::HashMap;
 use syntax_pos::Span;
+
+#[derive(Clone)]
+pub struct AliasScopeInfo {
+    pub alias_scopes: HashMap<Local, ValueRef>,
+    pub full_alias_scope_list: ValueRef,
+}
 
 // All Builders must have an llfn associated with them
 #[must_use]
 pub struct Builder<'a, 'tcx: 'a> {
     pub llbuilder: BuilderRef,
     pub ccx: &'a CrateContext<'a, 'tcx>,
+    pub alias_scope_info: Option<AliasScopeInfo>,
 }
 
 impl<'a, 'tcx> Drop for Builder<'a, 'tcx> {
@@ -73,11 +82,14 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         Builder {
             llbuilder,
             ccx,
+            alias_scope_info: None,
         }
     }
 
     pub fn build_sibling_block<'b>(&self, name: &'b str) -> Builder<'a, 'tcx> {
-        Builder::new_block(self.ccx, self.llfn(), name)
+        let mut builder = Builder::new_block(self.ccx, self.llfn(), name);
+        builder.alias_scope_info = self.alias_scope_info.clone();
+        builder
     }
 
     pub fn sess(&self) -> &Session {
@@ -489,10 +501,11 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
     }
 
     pub fn alloca(&self, ty: Type, name: &str, align: Align) -> ValueRef {
-        let builder = Builder::with_ccx(self.ccx);
+        let mut builder = Builder::with_ccx(self.ccx);
         builder.position_at_start(unsafe {
             llvm::LLVMGetFirstBasicBlock(self.llfn())
         });
+        builder.alias_scope_info = self.alias_scope_info.clone();
         builder.dynamic_alloca(ty, name, align)
     }
 
@@ -570,6 +583,47 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         unsafe {
             llvm::LLVMSetMetadata(load, llvm::MD_nonnull as c_uint,
                                   llvm::LLVMMDNodeInContext(self.ccx.llcx(), ptr::null(), 0));
+        }
+    }
+
+    pub fn anonymous_alias_scope_domain(&self) -> ValueRef {
+        unsafe {
+            let alias_scope_domain = llvm::LLVMRustCreateAnonymousAliasScopeDomain(self.ccx.llcx());
+            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_domain)
+        }
+    }
+
+    pub fn anonymous_alias_scope(&self, alias_scope_domain: ValueRef) -> ValueRef {
+        unsafe {
+            let alias_scope_domain = llvm::LLVMRustValueAsMetadata(alias_scope_domain);
+            let alias_scope = llvm::LLVMRustCreateAnonymousAliasScope(self.ccx.llcx(),
+                                                                      alias_scope_domain);
+            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope)
+        }
+    }
+
+    pub fn alias_scope_list(&self, alias_scopes: Vec<ValueRef>) -> ValueRef {
+        unsafe {
+            let mut alias_scopes_: Vec<MetadataRef> = Vec::new();
+            for alias_scope in alias_scopes {
+                alias_scopes_.push(llvm::LLVMRustValueAsMetadata(alias_scope));
+            }
+            let alias_scope_list = llvm::LLVMRustCreateAliasScopeList(self.ccx.llcx(),
+                                                                      alias_scopes_.as_ptr(),
+                                                                      alias_scopes_.len() as c_uint);
+            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list)
+        }
+    }
+
+    pub fn alias_scope_metadata(&self, load: ValueRef, alias_scope_list: ValueRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_alias_scope as c_uint, alias_scope_list);
+        }
+    }
+
+    pub fn noalias_metadata(&self, load: ValueRef, alias_scope_list: ValueRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_noalias as c_uint, alias_scope_list);
         }
     }
 
@@ -909,8 +963,15 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         let bundle = bundle.as_ref().map(|b| b.raw()).unwrap_or(ptr::null_mut());
 
         unsafe {
-            llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
-                                    args.len() as c_uint, bundle, noname())
+            let call = llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
+                                    args.len() as c_uint, bundle, noname());
+            if let Some(ref alias_scope_info) = self.alias_scope_info {
+                info!("no_alias {:?}", alias_scope_info.full_alias_scope_list);
+                self.noalias_metadata(call, alias_scope_info.full_alias_scope_list);
+            } else {
+                info!("couldn't get alias info")
+            }
+            call
         }
     }
 
