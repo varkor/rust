@@ -611,6 +611,14 @@ extern "C" {
     pub fn LLVMMDStringInContext(C: ContextRef, Str: *const c_char, SLen: c_uint) -> ValueRef;
     pub fn LLVMMDNodeInContext(C: ContextRef, Vals: *const ValueRef, Count: c_uint) -> ValueRef;
     pub fn LLVMAddNamedMetadataOperand(M: ModuleRef, Name: *const c_char, Val: ValueRef);
+    pub fn LLVMRustCreateAnonymousAliasScopeDomain(C: ContextRef) -> MetadataRef;
+    pub fn LLVMRustCreateAnonymousAliasScope(C: ContextRef,
+                                             Domain: MetadataRef)
+                                             -> MetadataRef;
+    pub fn LLVMRustCreateAliasScopeList(C: ContextRef,
+                                        AliasScopes: *const MetadataRef,
+                                        AliasScopesCount: c_uint)
+                                        -> MetadataRef;
 
     // Operations on scalar constants
     pub fn LLVMConstInt(IntTy: TypeRef, N: c_ulonglong, SignExtend: Bool) -> ValueRef;
@@ -1338,6 +1346,8 @@ extern "C" {
     pub fn LLVMRustAddModuleFlag(M: ModuleRef, name: *const c_char, value: u32);
 
     pub fn LLVMRustMetadataAsValue(C: ContextRef, MD: MetadataRef) -> ValueRef;
+
+    pub fn LLVMRustValueAsMetadata(V: ValueRef) -> MetadataRef;
 
     pub fn LLVMRustDIBuilderCreate(M: ModuleRef) -> DIBuilderRef;
 

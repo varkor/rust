@@ -10,7 +10,11 @@
 
 use llvm::ValueRef;
 use rustc::ty;
+<<<<<<< HEAD
 use rustc::ty::layout::{self, Align, LayoutOf, TyLayout};
+=======
+use rustc::ty::layout::{self, LayoutOf, Size, TyLayout};
+>>>>>>> Juncture 1
 use rustc::mir;
 use rustc_data_structures::indexed_vec::Idx;
 
@@ -108,11 +112,17 @@ impl<'a, 'tcx> OperandRef<'tcx> {
             OperandValue::Ref(..) => bug!("Deref of by-Ref operand {:?}", self)
         };
         let layout = ccx.layout_of(projected_ty);
+        let kind = if let Some(pointee) = self.layout.pointee_info_at(ccx, Size::from_bytes(0)) {
+            pointee.safe
+        } else {
+            None
+        };
         PlaceRef {
             llval: llptr,
             llextra,
-            layout,
-            align: layout.align,
+            layout: ccx.layout_of(projected_ty),
+            align: layout.aligned,
+            kind
         }
     }
 

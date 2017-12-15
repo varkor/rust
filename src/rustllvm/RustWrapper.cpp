@@ -1447,3 +1447,26 @@ LLVMRustModuleCost(LLVMModuleRef M) {
   }
   return cost;
 }
+
+extern "C" LLVMMetadataRef
+LLVMRustCreateAnonymousAliasScopeDomain(LLVMContextRef C) {
+  MDBuilder builder(*unwrap(C));
+  return wrap(builder.createAnonymousAliasScopeDomain());
+}
+
+extern "C" LLVMMetadataRef
+LLVMRustCreateAnonymousAliasScope(LLVMContextRef C, LLVMMetadataRef Domain) {
+  MDBuilder builder(*unwrap(C));
+  return wrap(builder.createAnonymousAliasScope(cast<MDNode>(unwrap(Domain))));
+}
+
+extern "C" LLVMMetadataRef
+LLVMRustCreateAliasScopeList(LLVMContextRef C,
+                             LLVMMetadataRef *AliasScopes,
+                             unsigned AliasScopesCount) {
+  SmallVector<Metadata *, 32> Elements;
+  for (unsigned i = 0; i < AliasScopesCount; ++i) {
+    Elements.push_back(unwrap(AliasScopes[i]));
+  }
+  return wrap(MDTuple::get(*unwrap(C), Elements));
+}

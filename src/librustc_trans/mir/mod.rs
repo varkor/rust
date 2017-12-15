@@ -7,18 +7,18 @@
 // <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-
+#![allow(warnings)]
 use libc::c_uint;
 use llvm::{self, ValueRef, BasicBlockRef};
 use llvm::debuginfo::DIScope;
 use rustc::ty::{self, TypeFoldable};
 use rustc::ty::layout::{LayoutOf, TyLayout};
-use rustc::mir::{self, Mir};
+use rustc::mir::{self, Mir, Local};
 use rustc::ty::subst::Substs;
 use rustc::infer::TransNormalize;
 use rustc::session::config::FullDebugInfo;
 use base;
-use builder::Builder;
+use builder::{Builder, AliasScopeInfo};
 use common::{CrateContext, Funclet};
 use debuginfo::{self, declare_local, VariableAccess, VariableKind, FunctionDebugContext};
 use monomorphize::Instance;
@@ -28,6 +28,7 @@ use syntax_pos::{DUMMY_SP, NO_EXPANSION, BytePos, Span};
 use syntax::symbol::keywords;
 
 use std::iter;
+use std::collections::HashMap;
 
 use rustc_data_structures::bitvec::BitVector;
 use rustc_data_structures::indexed_vec::{IndexVec, Idx};
@@ -49,6 +50,8 @@ pub struct MirContext<'a, 'tcx:'a> {
     llfn: ValueRef,
 
     ccx: &'a CrateContext<'a, 'tcx>,
+
+    alias_scope_info: Option<AliasScopeInfo>,
 
     fn_ty: FnType<'tcx>,
 
@@ -201,7 +204,7 @@ pub fn trans_mir<'a, 'tcx: 'a>(
     debug!("fn_ty: {:?}", fn_ty);
     let debug_context =
         debuginfo::create_function_debug_context(ccx, instance, sig, llfn, mir);
-    let bcx = Builder::new_block(ccx, llfn, "start");
+    let mut bcx = Builder::new_block(ccx, llfn, "start");
 
     if mir.basic_blocks().iter().any(|bb| bb.is_cleanup) {
         bcx.set_personality_fn(ccx.eh_personality());
@@ -227,6 +230,7 @@ pub fn trans_mir<'a, 'tcx: 'a>(
     let mut mircx = MirContext {
         mir,
         llfn,
+        alias_scope_info: None,
         fn_ty,
         ccx,
         personality_slot: None,
@@ -246,6 +250,9 @@ pub fn trans_mir<'a, 'tcx: 'a>(
 
     let memory_locals = analyze::memory_locals(&mircx);
 
+    let alias_scope_domain = bcx.anonymous_alias_scope_domain();
+    let mut alias_scopes: HashMap<Local, ValueRef> = HashMap::new();
+
     // Allocate variable and temp allocas
     mircx.locals = {
         let args = arg_local_refs(&bcx, &mircx, &mircx.scopes, &memory_locals);
@@ -254,6 +261,8 @@ pub fn trans_mir<'a, 'tcx: 'a>(
             let decl = &mir.local_decls[local];
             let layout = bcx.ccx.layout_of(mircx.monomorphize(&decl.ty));
             assert!(!layout.ty.has_erasable_regions());
+
+            alias_scopes.insert(local, bcx.anonymous_alias_scope(alias_scope_domain));
 
             if let Some(name) = decl.name {
                 // User variable
@@ -299,6 +308,14 @@ pub fn trans_mir<'a, 'tcx: 'a>(
             .chain(mir.vars_and_temps_iter().map(allocate_local))
             .collect()
     };
+
+    let full_alias_scope_list = bcx.alias_scope_list(alias_scopes.values().cloned().collect());
+    let alias_scope_info = AliasScopeInfo {
+        alias_scopes,
+        full_alias_scope_list,
+    };
+    bcx.alias_scope_info = Some(alias_scope_info.clone());
+    mircx.alias_scope_info = Some(alias_scope_info);
 
     // Branch to the START block, if it's not the entry block.
     if reentrant_start_block {

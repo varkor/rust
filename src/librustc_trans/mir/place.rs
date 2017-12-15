@@ -10,7 +10,7 @@
 
 use llvm::{self, ValueRef};
 use rustc::ty::{self, Ty};
-use rustc::ty::layout::{self, Align, TyLayout, LayoutOf};
+use rustc::ty::layout::{self, Align, Size, TyLayout, LayoutOf};
 use rustc::mir;
 use rustc::mir::tcx::PlaceTy;
 use rustc_data_structures::indexed_vec::Idx;
@@ -18,7 +18,7 @@ use base;
 use builder::Builder;
 use common::{CrateContext, C_usize, C_u8, C_u32, C_uint, C_int, C_null, C_uint_big};
 use consts;
-use type_of::LayoutLlvmExt;
+use type_of::{LayoutLlvmExt, PointerKind};
 use type_::Type;
 use value::Value;
 use glue;
@@ -39,8 +39,16 @@ pub struct PlaceRef<'tcx> {
     /// Monomorphized type of this place, including variant information
     pub layout: TyLayout<'tcx>,
 
+<<<<<<< HEAD
     /// What alignment we know for this place
     pub align: Align,
+=======
+    /// Whether this place is known to be aligned according to its layout
+    pub alignment: Alignment,
+
+    /// The pointer restrictions associated with the place this reference was dereferenced from
+    pub kind: Option<PointerKind>,
+>>>>>>> Juncture 1
 }
 
 impl<'a, 'tcx> PlaceRef<'tcx> {
@@ -52,7 +60,12 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval,
             llextra: ptr::null_mut(),
             layout,
+<<<<<<< HEAD
             align
+=======
+            alignment,
+            kind: None
+>>>>>>> Juncture 1
         }
     }
 
@@ -131,6 +144,17 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 if let layout::Abi::Scalar(ref scalar) = self.layout.abi {
                     scalar_load_metadata(load, scalar);
                 }
+                if let Some(kind) = self.kind {
+                    let no_alias = match kind {
+                        PointerKind::Shared => false,
+                        PointerKind::UniqueOwned |
+                        PointerKind::Frozen |
+                        PointerKind::UniqueBorrowed => true
+                    };
+                    if no_alias {
+                        bcx.alias_scope_metadata(load, bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
+                    }
+                }
                 load
             };
             OperandValue::Immediate(base::to_immediate(bcx, llval, self.layout))
@@ -185,6 +209,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 },
                 layout: field,
                 align,
+                kind: None,
             }
         };
 
@@ -257,7 +282,12 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.pointercast(byte_ptr, ll_fty.ptr_to()),
             llextra: self.llextra,
             layout: field,
+<<<<<<< HEAD
             align,
+=======
+            alignment,
+            kind: None,
+>>>>>>> Juncture 1
         }
     }
 
@@ -374,7 +404,12 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.inbounds_gep(self.llval, &[C_usize(bcx.ccx, 0), llindex]),
             llextra: ptr::null_mut(),
             layout: self.layout.field(bcx.ccx, 0),
+<<<<<<< HEAD
             align: self.align
+=======
+            alignment: self.alignment,
+            kind: None,
+>>>>>>> Juncture 1
         }
     }
 
