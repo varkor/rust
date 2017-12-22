@@ -21,7 +21,6 @@ use libc::{c_uint, c_char};
 use rustc::ty::TyCtxt;
 use rustc::ty::layout::{Align, Size};
 use rustc::session::{config, Session};
-use rustc::mir::{Local};
 
 use std::borrow::Cow;
 use std::ffi::CString;
@@ -32,8 +31,8 @@ use syntax_pos::Span;
 
 #[derive(Clone)]
 pub struct AliasScopeInfo {
-    pub alias_scopes: HashMap<Local, ValueRef>,
-    pub full_alias_scope_list: ValueRef,
+    pub alias_scopes: HashMap<usize, MetadataRef>,
+    pub full_alias_scope_list: MetadataRef,
 }
 
 // All Builders must have an llfn associated with them
@@ -584,44 +583,35 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         }
     }
 
-    pub fn anonymous_alias_scope_domain(&self) -> ValueRef {
+    pub fn anonymous_alias_scope_domain(&self) -> MetadataRef {
         unsafe {
-            let alias_scope_domain = llvm::LLVMRustCreateAnonymousAliasScopeDomain(self.ccx.llcx());
-            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_domain)
+            llvm::LLVMRustCreateAnonymousAliasScopeDomain(self.ccx.llcx())
         }
     }
 
-    pub fn anonymous_alias_scope(&self, alias_scope_domain: ValueRef) -> ValueRef {
+    pub fn anonymous_alias_scope(&self, alias_scope_domain: MetadataRef) -> MetadataRef {
         unsafe {
-            let alias_scope_domain = llvm::LLVMRustValueAsMetadata(alias_scope_domain);
-            let alias_scope = llvm::LLVMRustCreateAnonymousAliasScope(self.ccx.llcx(),
-                                                                      alias_scope_domain);
-            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope)
+            llvm::LLVMRustCreateAnonymousAliasScope(self.ccx.llcx(), alias_scope_domain)
         }
     }
 
-    pub fn alias_scope_list(&self, alias_scopes: Vec<ValueRef>) -> ValueRef {
+    pub fn alias_scope_list(&self, alias_scopes: Vec<MetadataRef>) -> MetadataRef {
         unsafe {
-            let mut alias_scopes_: Vec<MetadataRef> = Vec::new();
-            for alias_scope in alias_scopes {
-                alias_scopes_.push(llvm::LLVMRustValueAsMetadata(alias_scope));
-            }
-            let alias_scope_list = llvm::LLVMRustCreateAliasScopeList(self.ccx.llcx(),
-                                                                      alias_scopes_.as_ptr(),
-                                                                      alias_scopes_.len() as c_uint);
-            llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list)
+            llvm::LLVMRustCreateAliasScopeList(self.ccx.llcx(),
+                                               alias_scopes.as_ptr(),
+                                               alias_scopes.len() as c_uint)
         }
     }
 
-    pub fn alias_scope_metadata(&self, load: ValueRef, alias_scope_list: ValueRef) {
+    pub fn alias_scope_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
         unsafe {
-            llvm::LLVMSetMetadata(load, llvm::MD_alias_scope as c_uint, alias_scope_list);
+            llvm::LLVMSetMetadata(load, llvm::MD_alias_scope as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
         }
     }
 
-    pub fn noalias_metadata(&self, load: ValueRef, alias_scope_list: ValueRef) {
+    pub fn noalias_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
         unsafe {
-            llvm::LLVMSetMetadata(load, llvm::MD_noalias as c_uint, alias_scope_list);
+            llvm::LLVMSetMetadata(load, llvm::MD_noalias as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
         }
     }
 

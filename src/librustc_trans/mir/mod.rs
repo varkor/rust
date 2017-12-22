@@ -9,7 +9,7 @@
 // except according to those terms.
 #![allow(warnings)]
 use libc::c_uint;
-use llvm::{self, ValueRef, BasicBlockRef};
+use llvm::{self, ValueRef, MetadataRef, BasicBlockRef};
 use llvm::debuginfo::DIScope;
 use rustc::ty::{self, TypeFoldable};
 use rustc::ty::layout::{LayoutOf, TyLayout};
@@ -251,7 +251,7 @@ pub fn trans_mir<'a, 'tcx: 'a>(
     let memory_locals = analyze::memory_locals(&mircx);
 
     let alias_scope_domain = bcx.anonymous_alias_scope_domain();
-    let mut alias_scopes: HashMap<Local, ValueRef> = HashMap::new();
+    let mut alias_scopes: HashMap<usize, MetadataRef> = HashMap::new();
 
     // Allocate variable and temp allocas
     mircx.locals = {
@@ -261,8 +261,6 @@ pub fn trans_mir<'a, 'tcx: 'a>(
             let decl = &mir.local_decls[local];
             let layout = bcx.ccx.layout_of(mircx.monomorphize(&decl.ty));
             assert!(!layout.ty.has_erasable_regions());
-
-            alias_scopes.insert(local, bcx.anonymous_alias_scope(alias_scope_domain));
 
             if let Some(name) = decl.name {
                 // User variable
@@ -282,16 +280,29 @@ pub fn trans_mir<'a, 'tcx: 'a>(
                         VariableAccess::DirectVariable { alloca: place.llval },
                         VariableKind::LocalVariable, span);
                 }
+                debug!("inserting alias_scope {:?}", place.llval as usize);
+                alias_scopes.insert(place.llval as usize,
+                                    bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
                 LocalRef::Place(place)
             } else {
                 // Temporary or return place
                 if local == mir::RETURN_PLACE && mircx.fn_ty.ret.is_indirect() {
                     debug!("alloc: {:?} (return place) -> place", local);
                     let llretptr = llvm::get_param(llfn, 0);
+                    let place = PlaceRef::new_sized(llretptr,
+                    layout,
+                    Alignment::AbiAligned);
+                    debug!("inserting alias_scope {:?}", place.llval as usize);
+                    alias_scopes.insert(place.llval as usize,
+                        bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
                     LocalRef::Place(PlaceRef::new_sized(llretptr, layout, layout.align))
                 } else if memory_locals.contains(local.index()) {
                     debug!("alloc: {:?} -> place", local);
-                    LocalRef::Place(PlaceRef::alloca(&bcx, layout, &format!("{:?}", local)))
+                    let place = PlaceRef::alloca(&bcx, layout, &format!("{:?}", local));
+                    debug!("inserting alias_scope {:?}", place.llval as usize);
+                    alias_scopes.insert(place.llval as usize,
+                        bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
+                    LocalRef::Place(place)
                 } else {
                     // If this is an immediate local, we do not create an
                     // alloca in advance. Instead we wait until we see the
@@ -309,6 +320,7 @@ pub fn trans_mir<'a, 'tcx: 'a>(
             .collect()
     };
 
+    info!("scope list mappings {:?}", alias_scopes);
     let full_alias_scope_list = bcx.alias_scope_list(alias_scopes.values().cloned().collect());
     let alias_scope_info = AliasScopeInfo {
         alias_scopes,
