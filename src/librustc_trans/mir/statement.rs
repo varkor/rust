@@ -28,15 +28,15 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
             mir::StatementKind::Assign(ref place, ref rvalue) => {
                 if let mir::Place::Local(index) = *place {
                     match self.locals[index] {
-                        LocalRef::Place(tr_dest) => {
+                        LocalRef::Place(tr_dest, _) => {
                             self.trans_rvalue(bcx, tr_dest, rvalue)
                         }
-                        LocalRef::Operand(None) => {
-                            let (bcx, operand) = self.trans_rvalue_operand(bcx, rvalue);
-                            self.locals[index] = LocalRef::Operand(Some(operand));
+                        LocalRef::Operand(None, ind) => {
+                            let (bcx, operand) = self.trans_rvalue_operand(bcx, rvalue, ind);
+                            self.locals[index] = LocalRef::Operand(Some(operand), ind);
                             bcx
                         }
-                        LocalRef::Operand(Some(op)) => {
+                        LocalRef::Operand(Some(op), _) => {
                             if !op.layout.is_zst() {
                                 span_bug!(statement.source_info.span,
                                           "operand {:?} already assigned",
@@ -45,38 +45,38 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
                             // If the type is zero-sized, it's already been set here,
                             // but we still need to make sure we translate the operand
-                            self.trans_rvalue_operand(bcx, rvalue).0
+                            self.trans_rvalue_operand(bcx, rvalue, 770).0
                         }
                     }
                 } else {
-                    let tr_dest = self.trans_place(&bcx, place);
+                    let tr_dest = self.trans_place(&bcx, place, 660);
                     self.trans_rvalue(bcx, tr_dest, rvalue)
                 }
             }
             mir::StatementKind::SetDiscriminant{ref place, variant_index} => {
-                self.trans_place(&bcx, place)
+                self.trans_place(&bcx, place, 660)
                     .trans_set_discr(&bcx, variant_index);
                 bcx
             }
             mir::StatementKind::StorageLive(local) => {
-                if let LocalRef::Place(tr_place) = self.locals[local] {
+                if let LocalRef::Place(tr_place, _) = self.locals[local] {
                     tr_place.storage_live(&bcx);
                 }
                 bcx
             }
             mir::StatementKind::StorageDead(local) => {
-                if let LocalRef::Place(tr_place) = self.locals[local] {
+                if let LocalRef::Place(tr_place, _) = self.locals[local] {
                     tr_place.storage_dead(&bcx);
                 }
                 bcx
             }
             mir::StatementKind::InlineAsm { ref asm, ref outputs, ref inputs } => {
                 let outputs = outputs.iter().map(|output| {
-                    self.trans_place(&bcx, output)
+                    self.trans_place(&bcx, output, 660)
                 }).collect();
 
                 let input_vals = inputs.iter().map(|input| {
-                    self.trans_operand(&bcx, input).immediate()
+                    self.trans_operand(&bcx, input, 220).immediate()
                 }).collect();
 
                 asm::trans_inline_asm(&bcx, asm, outputs, input_vals);

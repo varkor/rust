@@ -187,7 +187,8 @@ impl<'a, 'tcx> Const<'tcx> {
 
         OperandRef {
             val,
-            layout: ccx.layout_of(self.ty)
+            layout: ccx.layout_of(self.ty),
+            index: 5535,
         }
     }
 }

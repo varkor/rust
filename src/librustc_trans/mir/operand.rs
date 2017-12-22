@@ -72,6 +72,8 @@ pub struct OperandRef<'tcx> {
 
     // The layout of value, based on its Rust type.
     pub layout: TyLayout<'tcx>,
+
+    pub index: u64,
 }
 
 impl<'tcx> fmt::Debug for OperandRef<'tcx> {
@@ -86,7 +88,8 @@ impl<'a, 'tcx> OperandRef<'tcx> {
         assert!(layout.is_zst());
         OperandRef {
             val: OperandValue::Immediate(C_undef(layout.immediate_llvm_type(ccx))),
-            layout
+            layout,
+            index: 0,
         }
     }
 
@@ -117,7 +120,8 @@ impl<'a, 'tcx> OperandRef<'tcx> {
             llextra,
             layout: ccx.layout_of(projected_ty),
             alignment: Alignment::AbiAligned,
-            kind
+            kind,
+            index: self.index,
         }
     }
 
@@ -141,7 +145,8 @@ impl<'a, 'tcx> OperandRef<'tcx> {
     /// If the type is a pair, we return a `Pair`, otherwise, an `Immediate`.
     pub fn from_immediate_or_packed_pair(bcx: &Builder<'a, 'tcx>,
                                          llval: ValueRef,
-                                         layout: TyLayout<'tcx>)
+                                         layout: TyLayout<'tcx>,
+                                         ind: u64)
                                          -> OperandRef<'tcx> {
         let val = if layout.is_llvm_scalar_pair() {
             debug!("Operand::from_immediate_or_packed_pair: unpacking {:?} @ {:?}",
@@ -153,7 +158,11 @@ impl<'a, 'tcx> OperandRef<'tcx> {
         } else {
             OperandValue::Immediate(llval)
         };
-        OperandRef { val, layout }
+        OperandRef {
+            val,
+            layout,
+            index: ind,
+        }
     }
 
     pub fn extract_field(&self, bcx: &Builder<'a, 'tcx>, i: usize) -> OperandRef<'tcx> {
@@ -165,7 +174,8 @@ impl<'a, 'tcx> OperandRef<'tcx> {
             _ if self.layout.abi == layout::Abi::Uninhabited || field.is_zst() => {
                 return OperandRef {
                     val: OperandValue::Immediate(C_undef(field.immediate_llvm_type(bcx.ccx))),
-                    layout: field
+                    layout: field,
+                    index: 5531,
                 };
             }
 
@@ -212,7 +222,8 @@ impl<'a, 'tcx> OperandRef<'tcx> {
 
         OperandRef {
             val,
-            layout: field
+            layout: field,
+            index: 5532,
         }
     }
 }
@@ -258,10 +269,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
         // alloca; they are handled somewhat differently
         if let mir::Place::Local(index) = *place {
             match self.locals[index] {
-                LocalRef::Operand(Some(o)) => {
+                LocalRef::Operand(Some(o), _) => {
                     return Some(o);
                 }
-                LocalRef::Operand(None) => {
+                LocalRef::Operand(None, _) => {
                     bug!("use of {:?} before def", place);
                 }
                 LocalRef::Place(..) => {
@@ -284,7 +295,8 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
     pub fn trans_consume(&mut self,
                          bcx: &Builder<'a, 'tcx>,
-                         place: &mir::Place<'tcx>)
+                         place: &mir::Place<'tcx>,
+                         ind: u64)
                          -> OperandRef<'tcx>
     {
         debug!("trans_consume(place={:?})", place);
@@ -303,12 +315,13 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         // for most places, to consume them we just load them
         // out from their home
-        self.trans_place(bcx, place).load(bcx)
+        self.trans_place(bcx, place, ind).load(bcx, ind)
     }
 
     pub fn trans_operand(&mut self,
                          bcx: &Builder<'a, 'tcx>,
-                         operand: &mir::Operand<'tcx>)
+                         operand: &mir::Operand<'tcx>,
+                         ind: u64)
                          -> OperandRef<'tcx>
     {
         debug!("trans_operand(operand={:?})", operand);
@@ -316,7 +329,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
         match *operand {
             mir::Operand::Copy(ref place) |
             mir::Operand::Move(ref place) => {
-                self.trans_consume(bcx, place)
+                self.trans_consume(bcx, place, ind)
             }
 
             mir::Operand::Constant(ref constant) => {
@@ -324,7 +337,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 let operand = val.to_operand(bcx.ccx);
                 if let OperandValue::Ref(ptr, align) = operand.val {
                     // If this is a OperandValue::Ref to an immediate constant, load it.
-                    PlaceRef::new_sized(ptr, operand.layout, align).load(bcx)
+                    PlaceRef::new_sized(ptr, operand.layout, align).load(bcx, 78902)
                 } else {
                     operand
                 }

@@ -88,6 +88,9 @@ pub struct PlaceRef<'tcx> {
 
     /// The pointer restrictions associated with the place this reference was dereferenced from
     pub kind: Option<PointerKind>,
+
+    /// An index used to associate places with variables, used for aliasing metadata
+    pub index: u64,
 }
 
 impl<'a, 'tcx> PlaceRef<'tcx> {
@@ -100,7 +103,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llextra: ptr::null_mut(),
             layout,
             alignment,
-            kind: None
+            kind: None,
+            index: 0,
         }
     }
 
@@ -109,6 +113,17 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         debug!("alloca({:?}: {:?})", name, layout);
         let tmp = bcx.alloca(layout.llvm_type(bcx.ccx), name, layout.align);
         Self::new_sized(tmp, layout, Alignment::AbiAligned)
+    }
+
+    pub fn with_index(&self, index: u64) -> PlaceRef {
+        PlaceRef {
+            llval: self.llval,
+            llextra: self.llextra,
+            layout: self.layout,
+            alignment: self.alignment,
+            kind: self.kind,
+            index,
+        }
     }
 
     pub fn len(&self, ccx: &CrateContext<'a, 'tcx>) -> ValueRef {
@@ -129,7 +144,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         !self.llextra.is_null()
     }
 
-    pub fn load(&self, bcx: &Builder<'a, 'tcx>) -> OperandRef<'tcx> {
+    pub fn load(&self, bcx: &Builder<'a, 'tcx>, index: u64) -> OperandRef<'tcx> {
         debug!("PlaceRef::load: {:?}", self);
 
         assert!(!self.has_extra());
@@ -188,10 +203,11 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                     };
                     debug!("no_alias {:?} {:?}", self, no_alias);
                     if let Some(ref alias_scope_info) = bcx.alias_scope_info {
-                        if let Some(&metadata) = alias_scope_info.alias_scopes.get(&(self.llval as usize)) {
+                        if let Some(&metadata) = alias_scope_info.alias_scopes.get(&self.index) {
+                            debug!("using no_alias metadata reference {:?} {:?}", self.index, index);
                             bcx.alias_scope_metadata(load, metadata);
                         } else {
-                            debug!("nonexistent no_alias metadata reference");
+                            debug!("nonexistent no_alias metadata reference {:?} {:?}", self.index, index);
                         }
                     } else {
                         debug!("nonexistent bcx.alias_scope_info")
@@ -220,7 +236,11 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             OperandValue::Ref(self.llval, self.alignment)
         };
 
-        OperandRef { val, layout: self.layout }
+        OperandRef {
+            val,
+            layout: self.layout,
+            index: 5533,
+        }
     }
 
     /// Access a field, at a point when the value's case is known.
@@ -252,6 +272,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 layout: field,
                 alignment,
                 kind: None,
+                index: 0,
             }
         };
 
@@ -324,6 +345,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             layout: field,
             alignment,
             kind: None,
+            index: 0,
         }
     }
 
@@ -339,7 +361,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         }
 
         let discr = self.project_field(bcx, 0);
-        let lldiscr = discr.load(bcx).immediate();
+        let lldiscr = discr.load(bcx, 543).immediate();
         match self.layout.variants {
             layout::Variants::Single { .. } => bug!(),
             layout::Variants::Tagged { ref discr, .. } => {
@@ -442,6 +464,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             layout: self.layout.field(bcx.ccx, 0),
             alignment: self.alignment,
             kind: None,
+            index: 0,
         }
     }
 
@@ -469,7 +492,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_place(&mut self,
                         bcx: &Builder<'a, 'tcx>,
-                        place: &mir::Place<'tcx>)
+                        place: &mir::Place<'tcx>,
+                        ind: u64)
                         -> PlaceRef<'tcx> {
         debug!("trans_place(place={:?})", place);
 
@@ -478,8 +502,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         if let mir::Place::Local(index) = *place {
             match self.locals[index] {
-                LocalRef::Place(place) => {
-                    return place;
+                LocalRef::Place(place, ind) => {
+                    let mut p2 = place.clone();
+                    p2.index = ind;
+                    return p2;
                 }
                 LocalRef::Operand(..) => {
                     bug!("using operand local {:?} as place", place);
@@ -499,10 +525,12 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 elem: mir::ProjectionElem::Deref
             }) => {
                 // Load the pointer from its location.
-                self.trans_consume(bcx, base).deref(bcx.ccx)
+                let mut p2 = self.trans_consume(bcx, base, ind).deref(bcx.ccx).clone();
+                // p2.index = 222;
+                return p2;
             }
             mir::Place::Projection(ref projection) => {
-                let tr_base = self.trans_place(bcx, &projection.base);
+                let tr_base = self.trans_place(bcx, &projection.base, 660);
 
                 match projection.elem {
                     mir::ProjectionElem::Deref => bug!(),
@@ -511,7 +539,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     }
                     mir::ProjectionElem::Index(index) => {
                         let index = &mir::Operand::Copy(mir::Place::Local(index));
-                        let index = self.trans_operand(bcx, index);
+                        let index = self.trans_operand(bcx, index, 220);
                         let llindex = index.immediate();
                         tr_base.project_index(bcx, llindex)
                     }
