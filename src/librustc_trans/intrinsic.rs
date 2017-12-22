@@ -627,7 +627,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                         };
                         let arg = PlaceRef::new_sized(ptr, arg.layout, align);
                         (0..contents.len()).map(|i| {
-                            arg.project_field(bcx, i).load(bcx).immediate()
+                            arg.project_field(bcx, i).load(bcx, 543).immediate()
                         }).collect()
                     }
                     intrinsics::Type::Pointer(_, Some(ref llvm_elem), _) => {
@@ -691,7 +691,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             let ptr = bcx.pointercast(result.llval, ty.llvm_type(ccx).ptr_to());
             bcx.store(llval, ptr, result.align);
         } else {
-            OperandRef::from_immediate_or_packed_pair(bcx, llval, result.layout)
+            OperandRef::from_immediate_or_packed_pair(bcx, llval, result.layout, 1001)
                 .val.store(bcx, result);
         }
     }

@@ -174,19 +174,22 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 }
 
 enum LocalRef<'tcx> {
-    Place(PlaceRef<'tcx>),
-    Operand(Option<OperandRef<'tcx>>),
+    Place(PlaceRef<'tcx>, u64),
+    Operand(Option<OperandRef<'tcx>>, u64),
 }
 
 impl<'a, 'tcx> LocalRef<'tcx> {
-    fn new_operand(ccx: &CrateContext<'a, 'tcx>, layout: TyLayout<'tcx>) -> LocalRef<'tcx> {
+    fn new_operand(ccx: &CrateContext<'a, 'tcx>,
+                   layout: TyLayout<'tcx>,
+                   index: u64)
+                   -> LocalRef<'tcx> {
         if layout.is_zst() {
             // Zero-size temporaries aren't always initialized, which
             // doesn't matter because they don't contain data, but
             // we need something in the operand.
-            LocalRef::Operand(Some(OperandRef::new_zst(ccx, layout)))
+            LocalRef::Operand(Some(OperandRef::new_zst(ccx, layout)), index)
         } else {
-            LocalRef::Operand(None)
+            LocalRef::Operand(None, index)
         }
     }
 }
@@ -251,17 +254,19 @@ pub fn trans_mir<'a, 'tcx: 'a>(
     let memory_locals = analyze::memory_locals(&mircx);
 
     let alias_scope_domain = bcx.anonymous_alias_scope_domain();
-    let mut alias_scopes: HashMap<usize, MetadataRef> = HashMap::new();
+    let mut alias_scopes: HashMap<u64, MetadataRef> = HashMap::new();
+    let mut placeref_index: u64 = 1;
 
     // Allocate variable and temp allocas
     mircx.locals = {
-        let args = arg_local_refs(&bcx, &mircx, &mircx.scopes, &memory_locals);
+        let args = arg_local_refs(&bcx, &mircx, &mircx.scopes, &memory_locals, 777);
 
         let mut allocate_local = |local| {
             let decl = &mir.local_decls[local];
             let layout = bcx.ccx.layout_of(mircx.monomorphize(&decl.ty));
             assert!(!layout.ty.has_erasable_regions());
 
+            placeref_index += 1;
             if let Some(name) = decl.name {
                 // User variable
                 let debug_scope = mircx.scopes[decl.source_info.scope];
@@ -269,7 +274,10 @@ pub fn trans_mir<'a, 'tcx: 'a>(
 
                 if !memory_locals.contains(local.index()) && !dbg {
                     debug!("alloc: {:?} ({}) -> operand", local, name);
-                    return LocalRef::new_operand(bcx.ccx, layout);
+                    alias_scopes.insert(placeref_index,
+                        bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
+                    debug!("inserting alias_scope {:?}", placeref_index);
+                    return LocalRef::new_operand(bcx.ccx, layout, placeref_index);
                 }
 
                 debug!("alloc: {:?} ({}) -> place", local, name);
@@ -280,10 +288,10 @@ pub fn trans_mir<'a, 'tcx: 'a>(
                         VariableAccess::DirectVariable { alloca: place.llval },
                         VariableKind::LocalVariable, span);
                 }
-                debug!("inserting alias_scope {:?}", place.llval as usize);
-                alias_scopes.insert(place.llval as usize,
+                alias_scopes.insert(placeref_index,
                                     bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
-                LocalRef::Place(place)
+                debug!("inserting alias_scope {:?}", placeref_index);
+                LocalRef::Place(place, placeref_index)
             } else {
                 // Temporary or return place
                 if local == mir::RETURN_PLACE && mircx.fn_ty.ret.is_indirect() {
@@ -292,23 +300,27 @@ pub fn trans_mir<'a, 'tcx: 'a>(
                     let place = PlaceRef::new_sized(llretptr,
                     layout,
                     Alignment::AbiAligned);
-                    debug!("inserting alias_scope {:?}", place.llval as usize);
-                    alias_scopes.insert(place.llval as usize,
+                    alias_scopes.insert(placeref_index,
                         bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
-                    LocalRef::Place(PlaceRef::new_sized(llretptr, layout, layout.align))
+                    debug!("inserting alias_scope {:?}", placeref_index);
+                    LocalRef::Place(PlaceRef::new_sized(llretptr, layout, layout.align),
+                        placeref_index)
                 } else if memory_locals.contains(local.index()) {
                     debug!("alloc: {:?} -> place", local);
                     let place = PlaceRef::alloca(&bcx, layout, &format!("{:?}", local));
-                    debug!("inserting alias_scope {:?}", place.llval as usize);
-                    alias_scopes.insert(place.llval as usize,
+                    alias_scopes.insert(placeref_index,
                         bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
-                    LocalRef::Place(place)
+                    debug!("inserting alias_scope {:?}", placeref_index);
+                    LocalRef::Place(place, placeref_index)
                 } else {
                     // If this is an immediate local, we do not create an
                     // alloca in advance. Instead we wait until we see the
                     // definition and update the operand there.
                     debug!("alloc: {:?} -> operand", local);
-                    LocalRef::new_operand(bcx.ccx, layout)
+                    alias_scopes.insert(placeref_index,
+                        bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
+                    debug!("inserting alias_scope {:?}", placeref_index);
+                    LocalRef::new_operand(bcx.ccx, layout, placeref_index)
                 }
             }
         };
@@ -387,7 +399,8 @@ fn create_funclets<'a, 'tcx>(
 fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                             mircx: &MirContext<'a, 'tcx>,
                             scopes: &IndexVec<mir::VisibilityScope, debuginfo::MirDebugScope>,
-                            memory_locals: &BitVector)
+                            memory_locals: &BitVector,
+                            ind: u64)
                             -> Vec<LocalRef<'tcx>> {
     let mir = mircx.mir;
     let tcx = bcx.tcx();
@@ -451,7 +464,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                 );
             });
 
-            return LocalRef::Place(place);
+            return LocalRef::Place(place, 0);
         }
 
         let arg = &mircx.fn_ty.args[idx];
@@ -464,7 +477,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             // We don't have to cast or keep the argument in the alloca.
             // FIXME(eddyb): We should figure out how to use llvm.dbg.value instead
             // of putting everything in allocas just so we can use llvm.dbg.declare.
-            let local = |op| LocalRef::Operand(Some(op));
+            let local = |op| LocalRef::Operand(Some(op), 321);
             match arg.mode {
                 PassMode::Ignore => {
                     return local(OperandRef::new_zst(bcx.ccx, arg.layout));
@@ -474,7 +487,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                     bcx.set_value_name(llarg, &name);
                     llarg_idx += 1;
                     return local(
-                        OperandRef::from_immediate_or_packed_pair(bcx, llarg, arg.layout));
+                        OperandRef::from_immediate_or_packed_pair(bcx, llarg, arg.layout, ind));
                 }
                 PassMode::Pair(..) => {
                     let a = llvm::get_param(bcx.llfn(), llarg_idx as c_uint);
@@ -487,7 +500,8 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
 
                     return local(OperandRef {
                         val: OperandValue::Pair(a, b),
-                        layout: arg.layout
+                        layout: arg.layout,
+                        index: 5536,
                     });
                 }
                 _ => {}
@@ -607,7 +621,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                 );
             }
         });
-        LocalRef::Place(place)
+        LocalRef::Place(place, 0)
     }).collect()
 }
 

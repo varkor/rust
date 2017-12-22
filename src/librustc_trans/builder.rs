@@ -31,7 +31,7 @@ use syntax_pos::Span;
 
 #[derive(Clone)]
 pub struct AliasScopeInfo {
-    pub alias_scopes: HashMap<usize, MetadataRef>,
+    pub alias_scopes: HashMap<u64, MetadataRef>,
     pub full_alias_scope_list: MetadataRef,
 }
 
