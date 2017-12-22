@@ -1347,8 +1347,6 @@ extern "C" {
 
     pub fn LLVMRustMetadataAsValue(C: ContextRef, MD: MetadataRef) -> ValueRef;
 
-    pub fn LLVMRustValueAsMetadata(V: ValueRef) -> MetadataRef;
-
     pub fn LLVMRustDIBuilderCreate(M: ModuleRef) -> DIBuilderRef;
 
     pub fn LLVMRustDIBuilderDispose(Builder: DIBuilderRef);

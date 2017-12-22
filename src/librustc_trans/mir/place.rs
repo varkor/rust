@@ -186,8 +186,15 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                         PointerKind::Frozen |
                         PointerKind::UniqueBorrowed => true
                     };
-                    if no_alias {
-                        bcx.alias_scope_metadata(load, bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
+                    debug!("no_alias {:?} {:?}", self, no_alias);
+                    if let Some(ref alias_scope_info) = bcx.alias_scope_info {
+                        if let Some(&metadata) = alias_scope_info.alias_scopes.get(&(self.llval as usize)) {
+                            bcx.alias_scope_metadata(load, metadata);
+                        } else {
+                            debug!("nonexistent no_alias metadata reference");
+                        }
+                    } else {
+                        debug!("nonexistent bcx.alias_scope_info")
                     }
                 }
                 load

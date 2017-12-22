@@ -570,10 +570,6 @@ extern "C" LLVMValueRef LLVMRustMetadataAsValue(LLVMContextRef C, LLVMMetadataRe
   return wrap(MetadataAsValue::get(*unwrap(C), unwrap(MD)));
 }
 
-extern "C" LLVMMetadataRef LLVMRustValueAsMetadata(LLVMValueRef V) {
-  return wrap(ValueAsMetadata::get(unwrap(V)));
-}
-
 extern "C" LLVMRustDIBuilderRef LLVMRustDIBuilderCreate(LLVMModuleRef M) {
   return new DIBuilder(*unwrap(M));
 }
