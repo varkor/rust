@@ -172,7 +172,7 @@ impl<'a, 'tcx> CrateContext<'a, 'tcx> {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum PointerKind {
     /// Most general case, we know no restrictions to tell LLVM.
     Shared,
@@ -187,7 +187,7 @@ pub enum PointerKind {
     UniqueOwned
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct PointeeInfo {
     pub size: Size,
     pub align: Align,

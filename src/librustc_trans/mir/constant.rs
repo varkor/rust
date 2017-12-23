@@ -186,7 +186,8 @@ impl<'a, 'tcx> Const<'tcx> {
 
         OperandRef {
             val,
-            layout
+            layout,
+            index: 5535,
         }
     }
 }

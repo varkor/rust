@@ -10,7 +10,7 @@
 
 use llvm::{self, ValueRef};
 use rustc::ty::{self, Ty};
-use rustc::ty::layout::{self, Align, TyLayout, LayoutOf};
+use rustc::ty::layout::{self, Align, Size, TyLayout, LayoutOf};
 use rustc::mir;
 use rustc::mir::tcx::PlaceTy;
 use rustc_data_structures::indexed_vec::Idx;
@@ -18,7 +18,7 @@ use base;
 use builder::Builder;
 use common::{CrateContext, C_usize, C_u8, C_u32, C_uint, C_int, C_null, C_uint_big};
 use consts;
-use type_of::LayoutLlvmExt;
+use type_of::{LayoutLlvmExt, PointerKind};
 use type_::Type;
 use value::Value;
 use glue;
@@ -41,6 +41,12 @@ pub struct PlaceRef<'tcx> {
 
     /// What alignment we know for this place
     pub align: Align,
+
+    /// The pointer restrictions associated with the place this reference was dereferenced from
+    pub kind: Option<PointerKind>,
+
+    /// An index used to associate places with variables, used for aliasing metadata
+    pub index: u64,
 }
 
 impl<'a, 'tcx> PlaceRef<'tcx> {
@@ -52,7 +58,9 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval,
             llextra: ptr::null_mut(),
             layout,
-            align
+            align,
+            kind: None,
+            index: 0,
         }
     }
 
@@ -81,7 +89,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         !self.llextra.is_null()
     }
 
-    pub fn load(&self, bcx: &Builder<'a, 'tcx>) -> OperandRef<'tcx> {
+    pub fn load(&self, bcx: &Builder<'a, 'tcx>, index: u64) -> OperandRef<'tcx> {
         debug!("PlaceRef::load: {:?}", self);
 
         assert!(!self.has_extra());
@@ -131,6 +139,25 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 if let layout::Abi::Scalar(ref scalar) = self.layout.abi {
                     scalar_load_metadata(load, scalar);
                 }
+                if let Some(kind) = self.kind {
+                    let no_alias = match kind {
+                        PointerKind::Shared => false,
+                        PointerKind::UniqueOwned |
+                        PointerKind::Frozen |
+                        PointerKind::UniqueBorrowed => true
+                    };
+                    debug!("no_alias {:?} {:?}", self, no_alias);
+                    if let Some(ref alias_scope_info) = bcx.alias_scope_info {
+                        if let Some(&metadata) = alias_scope_info.alias_scopes.get(&self.index) {
+                            debug!("using no_alias metadata reference {:?} {:?}", self.index, index);
+                            bcx.alias_scope_metadata(load, metadata);
+                        } else {
+                            debug!("nonexistent no_alias metadata reference {:?} {:?}", self.index, index);
+                        }
+                    } else {
+                        debug!("nonexistent bcx.alias_scope_info")
+                    }
+                }
                 load
             };
             OperandValue::Immediate(base::to_immediate(bcx, llval, self.layout))
@@ -154,7 +181,11 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             OperandValue::Ref(self.llval, self.align)
         };
 
-        OperandRef { val, layout: self.layout }
+        OperandRef {
+            val,
+            layout: self.layout,
+            index: 5533,
+        }
     }
 
     /// Access a field, at a point when the value's case is known.
@@ -185,6 +216,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 },
                 layout: field,
                 align,
+                kind: None,
+                index: 0,
             }
         };
 
@@ -258,6 +291,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llextra: self.llextra,
             layout: field,
             align,
+            kind: None,
+            index: 0,
         }
     }
 
@@ -273,7 +308,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         }
 
         let discr = self.project_field(bcx, 0);
-        let lldiscr = discr.load(bcx).immediate();
+        let lldiscr = discr.load(bcx, 543).immediate();
         match self.layout.variants {
             layout::Variants::Single { .. } => bug!(),
             layout::Variants::Tagged { ref discr, .. } => {
@@ -374,7 +409,9 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.inbounds_gep(self.llval, &[C_usize(bcx.ccx, 0), llindex]),
             llextra: ptr::null_mut(),
             layout: self.layout.field(bcx.ccx, 0),
-            align: self.align
+            align: self.align,
+            kind: None,
+            index: 0,
         }
     }
 
@@ -402,7 +439,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_place(&mut self,
                         bcx: &Builder<'a, 'tcx>,
-                        place: &mir::Place<'tcx>)
+                        place: &mir::Place<'tcx>,
+                        ind: u64)
                         -> PlaceRef<'tcx> {
         debug!("trans_place(place={:?})", place);
 
@@ -411,8 +449,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         if let mir::Place::Local(index) = *place {
             match self.locals[index] {
-                LocalRef::Place(place) => {
-                    return place;
+                LocalRef::Place(place, ind) => {
+                    let mut p2 = place.clone();
+                    p2.index = ind;
+                    return p2;
                 }
                 LocalRef::Operand(..) => {
                     bug!("using operand local {:?} as place", place);
@@ -431,10 +471,12 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 elem: mir::ProjectionElem::Deref
             }) => {
                 // Load the pointer from its location.
-                self.trans_consume(bcx, base).deref(bcx.ccx)
+                let mut p2 = self.trans_consume(bcx, base, ind).deref(bcx.ccx).clone();
+                // p2.index = 222;
+                return p2;
             }
             mir::Place::Projection(ref projection) => {
-                let tr_base = self.trans_place(bcx, &projection.base);
+                let tr_base = self.trans_place(bcx, &projection.base, 660);
 
                 match projection.elem {
                     mir::ProjectionElem::Deref => bug!(),
@@ -443,7 +485,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     }
                     mir::ProjectionElem::Index(index) => {
                         let index = &mir::Operand::Copy(mir::Place::Local(index));
-                        let index = self.trans_operand(bcx, index);
+                        let index = self.trans_operand(bcx, index, 220);
                         let llindex = index.immediate();
                         tr_base.project_index(bcx, llindex)
                     }

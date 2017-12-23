@@ -39,11 +39,11 @@ pub fn trans_inline_asm<'a, 'tcx>(
     let mut indirect_outputs = vec![];
     for (i, (out, place)) in ia.outputs.iter().zip(&outputs).enumerate() {
         if out.is_rw {
-            inputs.push(place.load(bcx).immediate());
+            inputs.push(place.load(bcx, 543).immediate());
             ext_constraints.push(i.to_string());
         }
         if out.is_indirect {
-            indirect_outputs.push(place.load(bcx).immediate());
+            indirect_outputs.push(place.load(bcx, 543).immediate());
         } else {
             output_types.push(place.layout.llvm_type(bcx.ccx));
         }

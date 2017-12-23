@@ -9,11 +9,11 @@
 // except according to those terms.
 
 #![allow(dead_code)] // FFI wrappers
-
+#![allow(warnings)]
 use llvm;
 use llvm::{AtomicRmwBinOp, AtomicOrdering, SynchronizationScope, AsmDialect};
 use llvm::{Opcode, IntPredicate, RealPredicate, False, OperandBundleDef};
-use llvm::{ValueRef, BasicBlockRef, BuilderRef, ModuleRef};
+use llvm::{ValueRef, MetadataRef, BasicBlockRef, BuilderRef, ModuleRef};
 use common::*;
 use type_::Type;
 use value::Value;
@@ -26,13 +26,21 @@ use std::borrow::Cow;
 use std::ffi::CString;
 use std::ops::Range;
 use std::ptr;
+use std::collections::HashMap;
 use syntax_pos::Span;
+
+#[derive(Clone)]
+pub struct AliasScopeInfo {
+    pub alias_scopes: HashMap<u64, MetadataRef>,
+    pub full_alias_scope_list: MetadataRef,
+}
 
 // All Builders must have an llfn associated with them
 #[must_use]
 pub struct Builder<'a, 'tcx: 'a> {
     pub llbuilder: BuilderRef,
     pub ccx: &'a CrateContext<'a, 'tcx>,
+    pub alias_scope_info: Option<AliasScopeInfo>,
 }
 
 impl<'a, 'tcx> Drop for Builder<'a, 'tcx> {
@@ -73,11 +81,14 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         Builder {
             llbuilder,
             ccx,
+            alias_scope_info: None,
         }
     }
 
     pub fn build_sibling_block<'b>(&self, name: &'b str) -> Builder<'a, 'tcx> {
-        Builder::new_block(self.ccx, self.llfn(), name)
+        let mut builder = Builder::new_block(self.ccx, self.llfn(), name);
+        builder.alias_scope_info = self.alias_scope_info.clone();
+        builder
     }
 
     pub fn sess(&self) -> &Session {
@@ -489,10 +500,11 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
     }
 
     pub fn alloca(&self, ty: Type, name: &str, align: Align) -> ValueRef {
-        let builder = Builder::with_ccx(self.ccx);
+        let mut builder = Builder::with_ccx(self.ccx);
         builder.position_at_start(unsafe {
             llvm::LLVMGetFirstBasicBlock(self.llfn())
         });
+        builder.alias_scope_info = self.alias_scope_info.clone();
         builder.dynamic_alloca(ty, name, align)
     }
 
@@ -568,6 +580,38 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         unsafe {
             llvm::LLVMSetMetadata(load, llvm::MD_nonnull as c_uint,
                                   llvm::LLVMMDNodeInContext(self.ccx.llcx(), ptr::null(), 0));
+        }
+    }
+
+    pub fn anonymous_alias_scope_domain(&self) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAnonymousAliasScopeDomain(self.ccx.llcx())
+        }
+    }
+
+    pub fn anonymous_alias_scope(&self, alias_scope_domain: MetadataRef) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAnonymousAliasScope(self.ccx.llcx(), alias_scope_domain)
+        }
+    }
+
+    pub fn alias_scope_list(&self, alias_scopes: Vec<MetadataRef>) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAliasScopeList(self.ccx.llcx(),
+                                               alias_scopes.as_ptr(),
+                                               alias_scopes.len() as c_uint)
+        }
+    }
+
+    pub fn alias_scope_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_alias_scope as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
+        }
+    }
+
+    pub fn noalias_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_noalias as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
         }
     }
 
@@ -905,8 +949,15 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         let bundle = bundle.as_ref().map(|b| b.raw()).unwrap_or(ptr::null_mut());
 
         unsafe {
-            llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
-                                    args.len() as c_uint, bundle, noname())
+            let call = llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
+                                    args.len() as c_uint, bundle, noname());
+            if let Some(ref alias_scope_info) = self.alias_scope_info {
+                info!("no_alias {:?}", alias_scope_info.full_alias_scope_list);
+                self.noalias_metadata(call, alias_scope_info.full_alias_scope_list);
+            } else {
+                info!("couldn't get alias info")
+            }
+            call
         }
     }
 
