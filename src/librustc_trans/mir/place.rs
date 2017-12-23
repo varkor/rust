@@ -39,22 +39,14 @@ pub struct PlaceRef<'tcx> {
     /// Monomorphized type of this place, including variant information
     pub layout: TyLayout<'tcx>,
 
-<<<<<<< HEAD
     /// What alignment we know for this place
     pub align: Align,
-=======
-    /// Whether this place is known to be aligned according to its layout
-    pub alignment: Alignment,
 
     /// The pointer restrictions associated with the place this reference was dereferenced from
     pub kind: Option<PointerKind>,
-<<<<<<< HEAD
->>>>>>> Juncture 1
-=======
 
     /// An index used to associate places with variables, used for aliasing metadata
     pub index: u64,
->>>>>>> Juncture 3
 }
 
 impl<'a, 'tcx> PlaceRef<'tcx> {
@@ -66,17 +58,9 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval,
             llextra: ptr::null_mut(),
             layout,
-<<<<<<< HEAD
-            align
-=======
-            alignment,
-<<<<<<< HEAD
-            kind: None
->>>>>>> Juncture 1
-=======
+            align,
             kind: None,
             index: 0,
->>>>>>> Juncture 3
         }
     }
 
@@ -85,6 +69,17 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         debug!("alloca({:?}: {:?})", name, layout);
         let tmp = bcx.alloca(layout.llvm_type(bcx.ccx), name, layout.align);
         Self::new_sized(tmp, layout, layout.align)
+    }
+
+    pub fn with_index(&self, index: u64) -> PlaceRef {
+        PlaceRef {
+            llval: self.llval,
+            llextra: self.llextra,
+            layout: self.layout,
+            alignment: self.alignment,
+            kind: self.kind,
+            index,
+        }
     }
 
     pub fn with_index(&self, index: u64) -> PlaceRef {
@@ -317,16 +312,9 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.pointercast(byte_ptr, ll_fty.ptr_to()),
             llextra: self.llextra,
             layout: field,
-<<<<<<< HEAD
             align,
-=======
-            alignment,
             kind: None,
-<<<<<<< HEAD
->>>>>>> Juncture 1
-=======
             index: 0,
->>>>>>> Juncture 3
         }
     }
 
@@ -443,16 +431,9 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.inbounds_gep(self.llval, &[C_usize(bcx.ccx, 0), llindex]),
             llextra: ptr::null_mut(),
             layout: self.layout.field(bcx.ccx, 0),
-<<<<<<< HEAD
-            align: self.align
-=======
-            alignment: self.alignment,
+            align: self.align,
             kind: None,
-<<<<<<< HEAD
->>>>>>> Juncture 1
-=======
             index: 0,
->>>>>>> Juncture 3
         }
     }
 

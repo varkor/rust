@@ -618,10 +618,6 @@ impl ThinModule {
             let msg = format!("failed to parse bitcode for thin LTO module");
             return Err(write::llvm_err(&diag_handler, msg));
         }
-<<<<<<< HEAD
-=======
-        assert!(!llmod.is_null());
->>>>>>> Juncture 1
         let mtrans = ModuleTranslation {
             source: ModuleSource::Translated(ModuleLlvm {
                 llmod,
