@@ -163,7 +163,7 @@ impl<'a, 'tcx> Const<'tcx> {
         }
     }
 
-    pub fn to_operand(&self, ccx: &CrateContext<'a, 'tcx>) -> OperandRef<'tcx> {
+    pub fn to_operand(&self, ccx: &CrateContext<'a, 'tcx>, ind: u64) -> OperandRef<'tcx> {
         let layout = ccx.layout_of(self.ty);
         let llty = layout.immediate_llvm_type(ccx);
         let llvalty = val_ty(self.llval);
@@ -187,7 +187,7 @@ impl<'a, 'tcx> Const<'tcx> {
         OperandRef {
             val,
             layout,
-            index: 5535,
+            index: ind,
         }
     }
 }

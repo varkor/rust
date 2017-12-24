@@ -52,7 +52,8 @@ pub struct PlaceRef<'tcx> {
 impl<'a, 'tcx> PlaceRef<'tcx> {
     pub fn new_sized(llval: ValueRef,
                      layout: TyLayout<'tcx>,
-                     align: Align)
+                     align: Align,
+                     ind: u64)
                      -> PlaceRef<'tcx> {
         PlaceRef {
             llval,
@@ -60,7 +61,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             layout,
             align,
             kind: None,
-            index: 0,
+            index: ind,
         }
     }
 
@@ -68,7 +69,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                   -> PlaceRef<'tcx> {
         debug!("alloca({:?}: {:?})", name, layout);
         let tmp = bcx.alloca(layout.llvm_type(bcx.ccx), name, layout.align);
-        Self::new_sized(tmp, layout, layout.align)
+        Self::new_sized(tmp, layout, layout.align, 1001)
     }
 
     pub fn len(&self, ccx: &CrateContext<'a, 'tcx>) -> ValueRef {
@@ -89,13 +90,13 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         !self.llextra.is_null()
     }
 
-    pub fn load(&self, bcx: &Builder<'a, 'tcx>, index: u64) -> OperandRef<'tcx> {
+    pub fn load(&self, bcx: &Builder<'a, 'tcx>, ind: u64) -> OperandRef<'tcx> {
         debug!("PlaceRef::load: {:?}", self);
 
         assert!(!self.has_extra());
 
         if self.layout.is_zst() {
-            return OperandRef::new_zst(bcx.ccx, self.layout);
+            return OperandRef::new_zst(bcx.ccx, self.layout, ind);
         }
 
         let scalar_load_metadata = |load, scalar: &layout::Scalar| {
@@ -149,10 +150,10 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                     debug!("no_alias {:?} {:?}", self, no_alias);
                     if let Some(ref alias_scope_info) = bcx.alias_scope_info {
                         if let Some(&metadata) = alias_scope_info.alias_scopes.get(&self.index) {
-                            debug!("using no_alias metadata reference {:?} {:?}", self.index, index);
+                            debug!("using no_alias metadata reference {:?} {:?}", self.index, ind);
                             bcx.alias_scope_metadata(load, metadata);
                         } else {
-                            debug!("nonexistent no_alias metadata reference {:?} {:?}", self.index, index);
+                            debug!("nonexistent no_alias metadata reference {:?} {:?}", self.index, ind);
                         }
                     } else {
                         debug!("nonexistent bcx.alias_scope_info")
@@ -184,7 +185,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
         OperandRef {
             val,
             layout: self.layout,
-            index: 5533,
+            index: ind,
         }
     }
 
@@ -217,7 +218,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 layout: field,
                 align,
                 kind: None,
-                index: 0,
+                index: 1001,
             }
         };
 
@@ -292,7 +293,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             layout: field,
             align,
             kind: None,
-            index: 0,
+            index: 1001,
         }
     }
 
@@ -411,7 +412,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             layout: self.layout.field(bcx.ccx, 0),
             align: self.align,
             kind: None,
-            index: 0,
+            index: 1001,
         }
     }
 
@@ -450,9 +451,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
         if let mir::Place::Local(index) = *place {
             match self.locals[index] {
                 LocalRef::Place(place, ind) => {
-                    let mut p2 = place.clone();
-                    p2.index = ind;
-                    return p2;
+                    return place;
                 }
                 LocalRef::Operand(..) => {
                     bug!("using operand local {:?} as place", place);
@@ -464,19 +463,17 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
             mir::Place::Local(_) => bug!(), // handled above
             mir::Place::Static(box mir::Static { def_id, ty }) => {
                 let layout = ccx.layout_of(self.monomorphize(&ty));
-                PlaceRef::new_sized(consts::get_static(ccx, def_id), layout, layout.align)
+                PlaceRef::new_sized(consts::get_static(ccx, def_id), layout, layout.align, ind)
             },
             mir::Place::Projection(box mir::Projection {
                 ref base,
                 elem: mir::ProjectionElem::Deref
             }) => {
                 // Load the pointer from its location.
-                let mut p2 = self.trans_consume(bcx, base, ind).deref(bcx.ccx).clone();
-                // p2.index = 222;
-                return p2;
+                return self.trans_consume(bcx, base, ind).deref(bcx.ccx).clone();
             }
             mir::Place::Projection(ref projection) => {
-                let tr_base = self.trans_place(bcx, &projection.base, 660);
+                let tr_base = self.trans_place(bcx, &projection.base, ind);
 
                 match projection.elem {
                     mir::ProjectionElem::Deref => bug!(),
@@ -485,7 +482,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     }
                     mir::ProjectionElem::Index(index) => {
                         let index = &mir::Operand::Copy(mir::Place::Local(index));
-                        let index = self.trans_operand(bcx, index, 220);
+                        let index = self.trans_operand(bcx, index, ind);
                         let llindex = index.immediate();
                         tr_base.project_index(bcx, llindex)
                     }

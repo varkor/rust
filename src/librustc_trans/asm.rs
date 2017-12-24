@@ -30,7 +30,8 @@ pub fn trans_inline_asm<'a, 'tcx>(
     bcx: &Builder<'a, 'tcx>,
     ia: &hir::InlineAsm,
     outputs: Vec<PlaceRef<'tcx>>,
-    mut inputs: Vec<ValueRef>
+    mut inputs: Vec<ValueRef>,
+    ind: u64,
 ) {
     let mut ext_constraints = vec![];
     let mut output_types = vec![];
@@ -39,11 +40,11 @@ pub fn trans_inline_asm<'a, 'tcx>(
     let mut indirect_outputs = vec![];
     for (i, (out, place)) in ia.outputs.iter().zip(&outputs).enumerate() {
         if out.is_rw {
-            inputs.push(place.load(bcx, 543).immediate());
+            inputs.push(place.load(bcx, ind).immediate());
             ext_constraints.push(i.to_string());
         }
         if out.is_indirect {
-            indirect_outputs.push(place.load(bcx, 543).immediate());
+            indirect_outputs.push(place.load(bcx, ind).immediate());
         } else {
             output_types.push(place.layout.llvm_type(bcx.ccx));
         }
