@@ -70,6 +70,7 @@
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/IR/IRPrintingPasses.h"
 #include "llvm/Linker/Linker.h"
+#include "llvm/IR/MDBuilder.h"
 
 extern "C" void LLVMRustSetLastError(const char *);
 

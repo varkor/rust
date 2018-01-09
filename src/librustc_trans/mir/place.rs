@@ -18,7 +18,7 @@ use base;
 use builder::Builder;
 use common::{CrateContext, C_usize, C_u8, C_u32, C_uint, C_int, C_null, C_uint_big};
 use consts;
-use type_of::LayoutLlvmExt;
+use type_of::{LayoutLlvmExt, PointerKind};
 use type_::Type;
 use value::Value;
 use glue;
@@ -41,6 +41,9 @@ pub struct PlaceRef<'tcx> {
 
     /// What alignment we know for this place
     pub align: Align,
+
+    /// The pointer restrictions associated with the place this reference was dereferenced from
+    pub kind: Option<PointerKind>,
 }
 
 impl<'a, 'tcx> PlaceRef<'tcx> {
@@ -52,7 +55,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval,
             llextra: ptr::null_mut(),
             layout,
-            align
+            align,
+            kind: None,
         }
     }
 
@@ -185,6 +189,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 },
                 layout: field,
                 align,
+                kind: None,
             }
         };
 
@@ -258,6 +263,7 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llextra: self.llextra,
             layout: field,
             align,
+            kind: None,
         }
     }
 
@@ -374,7 +380,8 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
             llval: bcx.inbounds_gep(self.llval, &[C_usize(bcx.ccx, 0), llindex]),
             llextra: ptr::null_mut(),
             layout: self.layout.field(bcx.ccx, 0),
-            align: self.align
+            align: self.align,
+            kind: None,
         }
     }
 

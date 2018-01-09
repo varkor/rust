@@ -13,7 +13,7 @@
 use llvm;
 use llvm::{AtomicRmwBinOp, AtomicOrdering, SynchronizationScope, AsmDialect};
 use llvm::{Opcode, IntPredicate, RealPredicate, False, OperandBundleDef};
-use llvm::{ValueRef, BasicBlockRef, BuilderRef, ModuleRef};
+use llvm::{ValueRef, MetadataRef, BasicBlockRef, BuilderRef, ModuleRef};
 use common::*;
 use type_::Type;
 use value::Value;
@@ -568,6 +568,38 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         unsafe {
             llvm::LLVMSetMetadata(load, llvm::MD_nonnull as c_uint,
                                   llvm::LLVMMDNodeInContext(self.ccx.llcx(), ptr::null(), 0));
+        }
+    }
+
+    pub fn anonymous_alias_scope_domain(&self) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAnonymousAliasScopeDomain(self.ccx.llcx())
+        }
+    }
+
+    pub fn anonymous_alias_scope(&self, alias_scope_domain: MetadataRef) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAnonymousAliasScope(self.ccx.llcx(), alias_scope_domain)
+        }
+    }
+
+    pub fn alias_scope_list(&self, alias_scopes: Vec<MetadataRef>) -> MetadataRef {
+        unsafe {
+            llvm::LLVMRustCreateAliasScopeList(self.ccx.llcx(),
+                                               alias_scopes.as_ptr(),
+                                               alias_scopes.len() as c_uint)
+        }
+    }
+
+    pub fn alias_scope_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_alias_scope as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
+        }
+    }
+
+    pub fn noalias_metadata(&self, load: ValueRef, alias_scope_list: MetadataRef) {
+        unsafe {
+            llvm::LLVMSetMetadata(load, llvm::MD_noalias as c_uint, llvm::LLVMRustMetadataAsValue(self.ccx.llcx(), alias_scope_list));
         }
     }
 

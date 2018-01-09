@@ -172,7 +172,7 @@ impl<'a, 'tcx> CrateContext<'a, 'tcx> {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum PointerKind {
     /// Most general case, we know no restrictions to tell LLVM.
     Shared,
