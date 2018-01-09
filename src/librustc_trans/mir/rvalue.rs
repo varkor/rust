@@ -38,8 +38,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_rvalue(&mut self,
                         bcx: Builder<'a, 'tcx>,
                         dest: PlaceRef<'tcx>,
-                        rvalue: &mir::Rvalue<'tcx>,
-                        ind: u64)
+                        rvalue: &mir::Rvalue<'tcx>)
                         -> Builder<'a, 'tcx>
     {
         debug!("trans_rvalue(dest.llval={:?}, rvalue={:?})",
@@ -47,7 +46,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         match *rvalue {
            mir::Rvalue::Use(ref operand) => {
-               let tr_operand = self.trans_operand(&bcx, operand, ind);
+               let tr_operand = self.trans_operand(&bcx, operand, 110);
                // FIXME: consider not copying constants through stack. (fixable by translating
                // constants into OperandValue::Ref, why don’t we do that yet if we don’t?)
                tr_operand.val.store(&bcx, dest);
@@ -60,7 +59,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 if dest.layout.is_llvm_scalar_pair() {
                     // into-coerce of a thin pointer to a fat pointer - just
                     // use the operand path.
-                    let (bcx, temp) = self.trans_rvalue_operand(bcx, rvalue, ind);
+                    let (bcx, temp) = self.trans_rvalue_operand(bcx, rvalue, 770);
                     temp.val.store(&bcx, dest);
                     return bcx;
                 }
@@ -69,7 +68,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 // this to be eliminated by MIR translation, but
                 // `CoerceUnsized` can be passed by a where-clause,
                 // so the (generic) MIR may not be able to expand it.
-                let operand = self.trans_operand(&bcx, source, ind);
+                let operand = self.trans_operand(&bcx, source, 110);
                 match operand.val {
                     OperandValue::Pair(..) |
                     OperandValue::Immediate(_) => {
@@ -83,19 +82,19 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                         let scratch = PlaceRef::alloca(&bcx, operand.layout, "__unsize_temp");
                         scratch.storage_live(&bcx);
                         operand.val.store(&bcx, scratch);
-                        base::coerce_unsized_into(&bcx, scratch, dest, ind);
+                        base::coerce_unsized_into(&bcx, scratch, dest);
                         scratch.storage_dead(&bcx);
                     }
                     OperandValue::Ref(llref, align) => {
-                        let source = PlaceRef::new_sized(llref, operand.layout, align, ind);
-                        base::coerce_unsized_into(&bcx, source, dest, ind);
+                        let source = PlaceRef::new_sized(llref, operand.layout, align);
+                        base::coerce_unsized_into(&bcx, source, dest);
                     }
                 }
                 bcx
             }
 
             mir::Rvalue::Repeat(ref elem, count) => {
-                let tr_elem = self.trans_operand(&bcx, elem, ind);
+                let tr_elem = self.trans_operand(&bcx, elem, 110);
 
                 // Do not generate the loop for zero-sized elements or empty arrays.
                 if dest.layout.is_zst() {
@@ -138,7 +137,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 header_bcx.cond_br(keep_going, body_bcx.llbb(), next_bcx.llbb());
 
                 tr_elem.val.store(&body_bcx,
-                    PlaceRef::new_sized(current, tr_elem.layout, dest.align, ind));
+                    PlaceRef::new_sized(current, tr_elem.layout, dest.align));
 
                 let next = body_bcx.inbounds_gep(current, &[C_usize(bcx.ccx, 1)]);
                 body_bcx.br(header_bcx.llbb());
@@ -160,7 +159,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     _ => (dest, None)
                 };
                 for (i, operand) in operands.iter().enumerate() {
-                    let op = self.trans_operand(&bcx, operand, ind);
+                    let op = self.trans_operand(&bcx, operand, 110);
                     // Do not generate stores and GEPis for zero-sized fields.
                     if !op.layout.is_zst() {
                         let field_index = active_field_index.unwrap_or(i);
@@ -172,7 +171,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
             _ => {
                 assert!(self.rvalue_creates_operand(rvalue));
-                let (bcx, temp) = self.trans_rvalue_operand(bcx, rvalue, ind);
+                let (bcx, temp) = self.trans_rvalue_operand(bcx, rvalue, 770);
                 temp.val.store(&bcx, dest);
                 bcx
             }
@@ -190,7 +189,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         match *rvalue {
             mir::Rvalue::Cast(ref kind, ref source, mir_cast_ty) => {
-                let operand = self.trans_operand(&bcx, source, ind);
+                let operand = self.trans_operand(&bcx, source, 880);
                 debug!("cast operand is {:?}", operand);
                 let cast = bcx.ccx.layout_of(self.monomorphize(&mir_cast_ty));
 
@@ -332,12 +331,12 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 (bcx, OperandRef {
                     val,
                     layout: cast,
-                    index: ind,
+                    index: 553001,
                 })
             }
 
             mir::Rvalue::Ref(_, bk, ref place) => {
-                let tr_place = self.trans_place(&bcx, place, ind);
+                let tr_place = self.trans_place(&bcx, place, 660);
 
                 let ty = tr_place.layout.ty;
 
@@ -359,18 +358,18 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
             }
 
             mir::Rvalue::Len(ref place) => {
-                let size = self.evaluate_array_len(&bcx, place, ind);
+                let size = self.evaluate_array_len(&bcx, place);
                 let operand = OperandRef {
                     val: OperandValue::Immediate(size),
                     layout: bcx.ccx.layout_of(bcx.tcx().types.usize),
-                    index: ind,
+                    index: 553003,
                 };
                 (bcx, operand)
             }
 
             mir::Rvalue::BinaryOp(op, ref lhs, ref rhs) => {
-                let lhs = self.trans_operand(&bcx, lhs, ind);
-                let rhs = self.trans_operand(&bcx, rhs, ind);
+                let lhs = self.trans_operand(&bcx, lhs, 890);
+                let rhs = self.trans_operand(&bcx, rhs, 890);
                 let llresult = match (lhs.val, rhs.val) {
                     (OperandValue::Pair(lhs_addr, lhs_extra),
                      OperandValue::Pair(rhs_addr, rhs_extra)) => {
@@ -391,13 +390,13 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     val: OperandValue::Immediate(llresult),
                     layout: bcx.ccx.layout_of(
                         op.ty(bcx.tcx(), lhs.layout.ty, rhs.layout.ty)),
-                    index: ind,
+                    index: 553004,
                 };
                 (bcx, operand)
             }
             mir::Rvalue::CheckedBinaryOp(op, ref lhs, ref rhs) => {
-                let lhs = self.trans_operand(&bcx, lhs, ind);
-                let rhs = self.trans_operand(&bcx, rhs, ind);
+                let lhs = self.trans_operand(&bcx, lhs, 891);
+                let rhs = self.trans_operand(&bcx, rhs, 891);
                 let result = self.trans_scalar_checked_binop(&bcx, op,
                                                              lhs.immediate(), rhs.immediate(),
                                                              lhs.layout.ty);
@@ -406,14 +405,14 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 let operand = OperandRef {
                     val: result,
                     layout: bcx.ccx.layout_of(operand_ty),
-                    index: ind,
+                    index: 553005,
                 };
 
                 (bcx, operand)
             }
 
             mir::Rvalue::UnaryOp(op, ref operand) => {
-                let operand = self.trans_operand(&bcx, operand, ind);
+                let operand = self.trans_operand(&bcx, operand, 892);
                 let lloperand = operand.immediate();
                 let is_float = operand.layout.ty.is_fp();
                 let llval = match op {
@@ -427,18 +426,18 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 (bcx, OperandRef {
                     val: OperandValue::Immediate(llval),
                     layout: operand.layout,
-                    index: ind,
+                    index: 553006,
                 })
             }
 
             mir::Rvalue::Discriminant(ref place) => {
                 let discr_ty = rvalue.ty(&*self.mir, bcx.tcx());
-                let discr =  self.trans_place(&bcx, place, ind)
+                let discr =  self.trans_place(&bcx, place, 660)
                     .trans_get_discr(&bcx, discr_ty);
                 (bcx, OperandRef {
                     val: OperandValue::Immediate(discr),
                     layout: self.ccx.layout_of(discr_ty),
-                    index: ind,
+                    index: 553007,
                 })
             }
 
@@ -449,7 +448,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 (bcx, OperandRef {
                     val: OperandValue::Immediate(val),
                     layout: self.ccx.layout_of(tcx.types.usize),
-                    index: ind,
+                    index: 553008,
                 })
             }
 
@@ -475,7 +474,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 let operand = OperandRef {
                     val: OperandValue::Immediate(val),
                     layout: box_layout,
-                    index: ind,
+                    index: 553009,
                 };
                 (bcx, operand)
             }
@@ -489,15 +488,14 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 // aggregate rvalues are allowed to be operands.
                 let ty = rvalue.ty(self.mir, self.ccx.tcx());
                 (bcx, OperandRef::new_zst(self.ccx,
-                    self.ccx.layout_of(self.monomorphize(&ty)), ind))
+                    self.ccx.layout_of(self.monomorphize(&ty))))
             }
         }
     }
 
     fn evaluate_array_len(&mut self,
                           bcx: &Builder<'a, 'tcx>,
-                          place: &mir::Place<'tcx>,
-                          ind: u64) -> ValueRef
+                          place: &mir::Place<'tcx>) -> ValueRef
     {
         // ZST are passed as operands and require special handling
         // because trans_place() panics if Local is operand.
@@ -510,7 +508,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
             }
         }
         // use common size calculation for non zero-sized types
-        let tr_value = self.trans_place(&bcx, place, ind);
+        let tr_value = self.trans_place(&bcx, place, 660);
         return tr_value.len(bcx.ccx);
     }
 

@@ -181,15 +181,15 @@ enum LocalRef<'tcx> {
 impl<'a, 'tcx> LocalRef<'tcx> {
     fn new_operand(ccx: &CrateContext<'a, 'tcx>,
                    layout: TyLayout<'tcx>,
-                   ind: u64)
+                   index: u64)
                    -> LocalRef<'tcx> {
         if layout.is_zst() {
             // Zero-size temporaries aren't always initialized, which
             // doesn't matter because they don't contain data, but
             // we need something in the operand.
-            LocalRef::Operand(Some(OperandRef::new_zst(ccx, layout, ind)), ind)
+            LocalRef::Operand(Some(OperandRef::new_zst(ccx, layout)), index)
         } else {
-            LocalRef::Operand(None, ind)
+            LocalRef::Operand(None, index)
         }
     }
 }
@@ -259,7 +259,7 @@ pub fn trans_mir<'a, 'tcx: 'a>(
 
     // Allocate variable and temp allocas
     mircx.locals = {
-        let args = arg_local_refs(&bcx, &mircx, &mircx.scopes, &memory_locals, 1001);
+        let args = arg_local_refs(&bcx, &mircx, &mircx.scopes, &memory_locals, 777);
 
         let mut allocate_local = |local| {
             let decl = &mir.local_decls[local];
@@ -299,11 +299,11 @@ pub fn trans_mir<'a, 'tcx: 'a>(
                     let llretptr = llvm::get_param(llfn, 0);
                     let place = PlaceRef::new_sized(llretptr,
                     layout,
-                    layout.align, placeref_index);
+                    layout.align);
                     alias_scopes.insert(placeref_index,
                         bcx.anonymous_alias_scope(bcx.anonymous_alias_scope_domain()));
                     debug!("inserting alias_scope {:?}", placeref_index);
-                    LocalRef::Place(PlaceRef::new_sized(llretptr, layout, layout.align, placeref_index),
+                    LocalRef::Place(PlaceRef::new_sized(llretptr, layout, layout.align),
                         placeref_index)
                 } else if memory_locals.contains(local.index()) {
                     debug!("alloc: {:?} -> place", local);
@@ -464,7 +464,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                 );
             });
 
-            return LocalRef::Place(place, ind);
+            return LocalRef::Place(place, 0);
         }
 
         let arg = &mircx.fn_ty.args[idx];
@@ -477,10 +477,10 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             // We don't have to cast or keep the argument in the alloca.
             // FIXME(eddyb): We should figure out how to use llvm.dbg.value instead
             // of putting everything in allocas just so we can use llvm.dbg.declare.
-            let local = |op| LocalRef::Operand(Some(op), ind);
+            let local = |op| LocalRef::Operand(Some(op), 321);
             match arg.mode {
                 PassMode::Ignore => {
-                    return local(OperandRef::new_zst(bcx.ccx, arg.layout, ind));
+                    return local(OperandRef::new_zst(bcx.ccx, arg.layout));
                 }
                 PassMode::Direct(_) => {
                     let llarg = llvm::get_param(bcx.llfn(), llarg_idx as c_uint);
@@ -501,7 +501,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                     return local(OperandRef {
                         val: OperandValue::Pair(a, b),
                         layout: arg.layout,
-                        index: ind,
+                        index: 5536,
                     });
                 }
                 _ => {}
@@ -515,7 +515,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             let llarg = llvm::get_param(bcx.llfn(), llarg_idx as c_uint);
             bcx.set_value_name(llarg, &name);
             llarg_idx += 1;
-            PlaceRef::new_sized(llarg, arg.layout, arg.layout.align, ind)
+            PlaceRef::new_sized(llarg, arg.layout, arg.layout.align)
         } else {
             let tmp = PlaceRef::alloca(bcx, arg.layout, &name);
             arg.store_fn_arg(bcx, &mut llarg_idx, tmp);
@@ -621,7 +621,7 @@ fn arg_local_refs<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                 );
             }
         });
-        LocalRef::Place(place, ind)
+        LocalRef::Place(place, 0)
     }).collect()
 }
 

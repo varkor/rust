@@ -84,12 +84,12 @@ impl<'tcx> fmt::Debug for OperandRef<'tcx> {
 
 impl<'a, 'tcx> OperandRef<'tcx> {
     pub fn new_zst(ccx: &CrateContext<'a, 'tcx>,
-                   layout: TyLayout<'tcx>, ind: u64) -> OperandRef<'tcx> {
+                   layout: TyLayout<'tcx>) -> OperandRef<'tcx> {
         assert!(layout.is_zst());
         OperandRef {
             val: OperandValue::Immediate(C_undef(layout.immediate_llvm_type(ccx))),
             layout,
-            index: ind,
+            index: 0,
         }
     }
 
@@ -119,7 +119,7 @@ impl<'a, 'tcx> OperandRef<'tcx> {
         PlaceRef {
             llval: llptr,
             llextra,
-            layout,
+            layout: layout,
             align: layout.align,
             kind,
             index: self.index,
@@ -166,7 +166,7 @@ impl<'a, 'tcx> OperandRef<'tcx> {
         }
     }
 
-    pub fn extract_field(&self, bcx: &Builder<'a, 'tcx>, i: usize, ind: u64) -> OperandRef<'tcx> {
+    pub fn extract_field(&self, bcx: &Builder<'a, 'tcx>, i: usize) -> OperandRef<'tcx> {
         let field = self.layout.field(bcx.ccx, i);
         let offset = self.layout.fields.offset(i);
 
@@ -176,7 +176,7 @@ impl<'a, 'tcx> OperandRef<'tcx> {
                 return OperandRef {
                     val: OperandValue::Immediate(C_undef(field.immediate_llvm_type(bcx.ccx))),
                     layout: field,
-                    index: ind,
+                    index: 5531,
                 };
             }
 
@@ -224,7 +224,7 @@ impl<'a, 'tcx> OperandRef<'tcx> {
         OperandRef {
             val,
             layout: field,
-            index: ind,
+            index: 5532,
         }
     }
 }
@@ -261,8 +261,7 @@ impl<'a, 'tcx> OperandValue {
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
     fn maybe_trans_consume_direct(&mut self,
                                   bcx: &Builder<'a, 'tcx>,
-                                  place: &mir::Place<'tcx>,
-                                  ind: u64)
+                                  place: &mir::Place<'tcx>)
                                    -> Option<OperandRef<'tcx>>
     {
         debug!("maybe_trans_consume_direct(place={:?})", place);
@@ -286,8 +285,8 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
         // Moves out of scalar and scalar pair fields are trivial.
         if let &mir::Place::Projection(ref proj) = place {
             if let mir::ProjectionElem::Field(ref f, _) = proj.elem {
-                if let Some(o) = self.maybe_trans_consume_direct(bcx, &proj.base, ind) {
-                    return Some(o.extract_field(bcx, f.index(), ind));
+                if let Some(o) = self.maybe_trans_consume_direct(bcx, &proj.base) {
+                    return Some(o.extract_field(bcx, f.index()));
                 }
             }
         }
@@ -308,10 +307,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         // ZSTs don't require any actual memory access.
         if layout.is_zst() {
-            return OperandRef::new_zst(bcx.ccx, layout, ind);
+            return OperandRef::new_zst(bcx.ccx, layout);
         }
 
-        if let Some(o) = self.maybe_trans_consume_direct(bcx, place, ind) {
+        if let Some(o) = self.maybe_trans_consume_direct(bcx, place) {
             return o;
         }
 
@@ -336,10 +335,10 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
             mir::Operand::Constant(ref constant) => {
                 let val = self.trans_constant(&bcx, constant);
-                let operand = val.to_operand(bcx.ccx, ind);
+                let operand = val.to_operand(bcx.ccx);
                 if let OperandValue::Ref(ptr, align) = operand.val {
                     // If this is a OperandValue::Ref to an immediate constant, load it.
-                    PlaceRef::new_sized(ptr, operand.layout, align, ind).load(bcx, ind)
+                    PlaceRef::new_sized(ptr, operand.layout, align).load(bcx, 78902)
                 } else {
                     operand
                 }

@@ -90,8 +90,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                                       fn_ty: &FnType<'tcx>,
                                       args: &[OperandRef<'tcx>],
                                       llresult: ValueRef,
-                                      span: Span,
-                                      ind: u64) {
+                                      span: Span) {
     let ccx = bcx.ccx;
     let tcx = ccx.tcx();
 
@@ -107,7 +106,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
     let name = &*tcx.item_name(def_id);
 
     let llret_ty = ccx.layout_of(ret_ty).llvm_type(ccx);
-    let result = PlaceRef::new_sized(llresult, fn_ty.ret.layout, fn_ty.ret.layout.align, ind);
+    let result = PlaceRef::new_sized(llresult, fn_ty.ret.layout, fn_ty.ret.layout.align);
 
     let simple = get_simple_intrinsic(ccx, name);
     let llval = match name {
@@ -610,8 +609,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             // cast.
             fn modify_as_needed<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                                           t: &intrinsics::Type,
-                                          arg: &OperandRef<'tcx>,
-                                          ind: u64)
+                                          arg: &OperandRef<'tcx>)
                                           -> Vec<ValueRef>
             {
                 match *t {
@@ -627,9 +625,9 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                             OperandValue::Ref(ptr, align) => (ptr, align),
                             _ => bug!()
                         };
-                        let arg = PlaceRef::new_sized(ptr, arg.layout, align, ind);
+                        let arg = PlaceRef::new_sized(ptr, arg.layout, align);
                         (0..contents.len()).map(|i| {
-                            arg.project_field(bcx, i).load(bcx, ind).immediate()
+                            arg.project_field(bcx, i).load(bcx, 543).immediate()
                         }).collect()
                     }
                     intrinsics::Type::Pointer(_, Some(ref llvm_elem), _) => {
@@ -658,7 +656,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             let outputs = one(ty_to_type(ccx, &intr.output));
 
             let llargs: Vec<_> = intr.inputs.iter().zip(args).flat_map(|(t, arg)| {
-                modify_as_needed(bcx, t, arg, ind)
+                modify_as_needed(bcx, t, arg)
             }).collect();
             assert_eq!(inputs.len(), llargs.len());
 
@@ -693,7 +691,7 @@ pub fn trans_intrinsic_call<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
             let ptr = bcx.pointercast(result.llval, ty.llvm_type(ccx).ptr_to());
             bcx.store(llval, ptr, result.align);
         } else {
-            OperandRef::from_immediate_or_packed_pair(bcx, llval, result.layout, ind)
+            OperandRef::from_immediate_or_packed_pair(bcx, llval, result.layout, 1001)
                 .val.store(bcx, result);
         }
     }

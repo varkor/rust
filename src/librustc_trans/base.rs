@@ -273,12 +273,11 @@ pub fn unsize_thin_ptr<'a, 'tcx>(
 /// to a value of type `dst_ty` and store the result in `dst`
 pub fn coerce_unsized_into<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                                      src: PlaceRef<'tcx>,
-                                     dst: PlaceRef<'tcx>,
-                                     ind: u64) {
+                                     dst: PlaceRef<'tcx>) {
     let src_ty = src.layout.ty;
     let dst_ty = dst.layout.ty;
     let coerce_ptr = || {
-        let (base, info) = match src.load(bcx, ind).val {
+        let (base, info) = match src.load(bcx, 543).val {
             OperandValue::Pair(base, info) => {
                 // fat-ptr to fat-ptr unsize preserves the vtable
                 // i.e. &'a fmt::Debug+Send => &'a fmt::Debug
@@ -319,7 +318,7 @@ pub fn coerce_unsized_into<'a, 'tcx>(bcx: &Builder<'a, 'tcx>,
                     memcpy_ty(bcx, dst_f.llval, src_f.llval, src_f.layout,
                         src_f.align.min(dst_f.align));
                 } else {
-                    coerce_unsized_into(bcx, src_f, dst_f, ind);
+                    coerce_unsized_into(bcx, src_f, dst_f);
                 }
             }
         }
