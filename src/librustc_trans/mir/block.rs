@@ -19,6 +19,7 @@ use abi::{Abi, FnType, ArgType, PassMode};
 use base;
 use callee;
 use builder::Builder;
+use builder::{AliasScoper};
 use common::{self, C_bool, C_str_slice, C_struct, C_u32, C_undef};
 use consts;
 use meth;
@@ -36,23 +37,24 @@ use super::operand::OperandRef;
 use super::operand::OperandValue::{Pair, Ref, Immediate};
 
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
-    pub fn trans_block(&mut self, bb: mir::BasicBlock) {
+    pub fn trans_block(&mut self, bb: mir::BasicBlock, alias_scoper: &mut AliasScoper) {
         let mut bcx = self.get_builder(bb);
         let data = &self.mir[bb];
 
         debug!("trans_block({:?}={:?})", bb, data);
 
         for statement in &data.statements {
-            bcx = self.trans_statement(bcx, statement);
+            bcx = self.trans_statement(bcx, statement, alias_scoper);
         }
 
-        self.trans_terminator(bcx, bb, data.terminator());
+        self.trans_terminator_vrf(bcx, bb, data.terminator(), Some(alias_scoper));
     }
 
-    fn trans_terminator(&mut self,
+    fn trans_terminator_vrf(&mut self,
                         mut bcx: Builder<'a, 'tcx>,
                         bb: mir::BasicBlock,
-                        terminator: &mir::Terminator<'tcx>)
+                        terminator: &mir::Terminator<'tcx>,
+                        alias_scoper: Option<&AliasScoper>)
     {
         debug!("trans_terminator: {:?}", terminator);
 
@@ -138,7 +140,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                     this.store_return(&ret_bcx, ret_dest, &fn_ty.ret, invokeret);
                 }
             } else {
-                let llret = bcx.call(fn_ptr, &llargs, cleanup_bundle);
+                let llret = bcx.call_vrf(fn_ptr, &llargs, cleanup_bundle, alias_scoper);
                 fn_ty.apply_attrs_callsite(llret);
                 if this.mir[bb].is_cleanup {
                     // Cleanup is always the cold path. Don't inline

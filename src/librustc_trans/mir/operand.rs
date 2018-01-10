@@ -17,6 +17,7 @@ use rustc_data_structures::indexed_vec::Idx;
 use base;
 use common::{self, CrateContext, C_undef, C_usize};
 use builder::Builder;
+use builder::{Vrf};
 use value::Value;
 use type_of::LayoutLlvmExt;
 use type_::Type;
@@ -299,6 +300,15 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                          place: &mir::Place<'tcx>)
                          -> OperandRef<'tcx>
     {
+        self.trans_consume_vrf(bcx, place, None)
+    }
+
+    pub fn trans_consume_vrf(&mut self,
+                         bcx: &Builder<'a, 'tcx>,
+                         place: &mir::Place<'tcx>,
+                         vrf: Option<&mut Vrf>)
+                         -> OperandRef<'tcx>
+    {
         debug!("trans_consume(place={:?})", place);
 
         let ty = self.monomorphized_place_ty(place);
@@ -315,7 +325,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
 
         // for most places, to consume them we just load them
         // out from their home
-        self.trans_place(bcx, place).load(bcx)
+        self.trans_place(bcx, place).load_with_vrf(bcx, vrf)
     }
 
     pub fn trans_operand(&mut self,
@@ -323,12 +333,21 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                          operand: &mir::Operand<'tcx>)
                          -> OperandRef<'tcx>
     {
+        self.trans_operand_vrf(bcx, operand, None)
+    }
+
+    pub fn trans_operand_vrf(&mut self,
+                         bcx: &Builder<'a, 'tcx>,
+                         operand: &mir::Operand<'tcx>,
+                         vrf: Option<&mut Vrf>)
+                         -> OperandRef<'tcx>
+    {
         debug!("trans_operand(operand={:?})", operand);
 
         match *operand {
             mir::Operand::Copy(ref place) |
             mir::Operand::Move(ref place) => {
-                self.trans_consume(bcx, place)
+                self.trans_consume_vrf(bcx, place, vrf)
             }
 
             mir::Operand::Constant(ref constant) => {

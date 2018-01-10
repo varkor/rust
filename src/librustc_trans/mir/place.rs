@@ -16,6 +16,7 @@ use rustc::mir::tcx::PlaceTy;
 use rustc_data_structures::indexed_vec::Idx;
 use base;
 use builder::Builder;
+use builder::{Vrf};
 use common::{CrateContext, C_usize, C_u8, C_u32, C_uint, C_int, C_null, C_uint_big};
 use consts;
 use type_of::{LayoutLlvmExt, PointerKind};
@@ -86,7 +87,11 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
     }
 
     pub fn load(&self, bcx: &Builder<'a, 'tcx>) -> OperandRef<'tcx> {
-        debug!("PlaceRef::load: {:?}", self);
+        self.load_with_vrf(bcx, None)
+    }
+
+    pub fn load_with_vrf(&self, bcx: &Builder<'a, 'tcx>, vrf: Option<&mut Vrf>) -> OperandRef<'tcx> {
+        debug!("PlaceRef::load: {:?} {:?}", self, vrf);
 
         assert!(!self.has_extra());
 
@@ -134,6 +139,20 @@ impl<'a, 'tcx> PlaceRef<'tcx> {
                 let load = bcx.load(self.llval, self.align);
                 if let layout::Abi::Scalar(ref scalar) = self.layout.abi {
                     scalar_load_metadata(load, scalar);
+                }
+                if let Some(kind) = self.kind {
+                    let no_alias = match kind {
+                        PointerKind::Shared => false,
+                        PointerKind::UniqueOwned |
+                        PointerKind::Frozen |
+                        PointerKind::UniqueBorrowed => true
+                    };
+                    if no_alias {
+                        if let Some(vrf) = vrf {
+                            debug!("vrf-alias index {:?}", vrf.index);
+                            bcx.alias_scope_metadata(load, vrf.alias_scope(bcx));
+                        }
+                    }
                 }
                 load
             };

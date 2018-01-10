@@ -27,6 +27,7 @@ use std::ffi::CString;
 use std::ops::Range;
 use std::ptr;
 use syntax_pos::Span;
+use std::collections::HashMap;
 
 // All Builders must have an llfn associated with them
 #[must_use]
@@ -922,8 +923,20 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         }
     }
 
-    pub fn call(&self, llfn: ValueRef, args: &[ValueRef],
-                bundle: Option<&OperandBundleDef>) -> ValueRef {
+    pub fn call(&self,
+                llfn: ValueRef,
+                args: &[ValueRef],
+                bundle: Option<&OperandBundleDef>)
+                -> ValueRef {
+        self.call_vrf(llfn, args, bundle, None)
+    }
+
+    pub fn call_vrf(&self,
+                llfn: ValueRef,
+                args: &[ValueRef],
+                bundle: Option<&OperandBundleDef>,
+                alias_scoper: Option<&AliasScoper>)
+                -> ValueRef {
         self.count_insn("call");
 
         debug!("Call {:?} with args ({})",
@@ -937,8 +950,14 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
         let bundle = bundle.as_ref().map(|b| b.raw()).unwrap_or(ptr::null_mut());
 
         unsafe {
-            llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
-                                    args.len() as c_uint, bundle, noname())
+            let call = llvm::LLVMRustBuildCall(self.llbuilder, llfn, args.as_ptr(),
+                                               args.len() as c_uint, bundle, noname());
+            if let Some(alias_scoper) = alias_scoper {
+                if let Some(call_scope) = alias_scoper.call_scope(&self) {
+                    self.noalias_metadata(call, call_scope);
+                }
+            }
+            call
         }
     }
 
@@ -1290,5 +1309,40 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
 
         let ptr = self.pointercast(ptr, Type::i8p(self.ccx));
         self.call(lifetime_intrinsic, &[C_u64(self.ccx, size), ptr], None);
+    }
+}
+
+#[derive(Debug)]
+pub struct AliasScoper {
+    pub scope_domain: MetadataRef,
+    pub scopes: HashMap<usize, MetadataRef>,
+}
+
+impl AliasScoper {
+    pub fn alias_scope(&mut self, bcx: &Builder, index: usize) -> MetadataRef {
+        let scope_domain = self.scope_domain;
+        let new_alias_scope_list = || {
+            bcx.anonymous_alias_scope(scope_domain)
+        };
+        *self.scopes.entry(index).or_insert_with(new_alias_scope_list)
+    }
+
+    pub fn call_scope(&self, bcx: &Builder) -> Option<MetadataRef> {
+        let alias_scopes: Vec<_> = self.scopes.values().cloned().collect();
+        if !alias_scopes.is_empty() {
+            Some(bcx.alias_scope_list(alias_scopes))
+        } else { None }
+    }
+}
+
+#[derive(Debug)]
+pub struct Vrf<'a> {
+    pub index: usize,
+    pub alias_scoper: &'a mut AliasScoper,
+}
+
+impl<'a> Vrf<'a> {
+    pub fn alias_scope(&mut self, bcx: &Builder) -> MetadataRef {
+        self.alias_scoper.alias_scope(bcx, self.index)
     }
 }

@@ -19,6 +19,7 @@ use rustc::infer::TransNormalize;
 use rustc::session::config::FullDebugInfo;
 use base;
 use builder::Builder;
+use builder::{AliasScoper};
 use common::{CrateContext, Funclet};
 use debuginfo::{self, declare_local, VariableAccess, VariableKind, FunctionDebugContext};
 use monomorphize::Instance;
@@ -28,6 +29,7 @@ use syntax_pos::{DUMMY_SP, NO_EXPANSION, BytePos, Span};
 use syntax::symbol::keywords;
 
 use std::iter;
+use std::collections::HashMap;
 
 use rustc_data_structures::bitvec::BitVector;
 use rustc_data_structures::indexed_vec::{IndexVec, Idx};
@@ -313,10 +315,15 @@ pub fn trans_mir<'a, 'tcx: 'a>(
     let rpo = traversal::reverse_postorder(&mir);
     let mut visited = BitVector::new(mir.basic_blocks().len());
 
+    let mut alias_scoper = AliasScoper {
+        scope_domain: bcx.anonymous_alias_scope_domain(),
+        scopes: HashMap::new()
+    };
+
     // Translate the body of each block using reverse postorder
     for (bb, _) in rpo {
         visited.insert(bb.index());
-        mircx.trans_block(bb);
+        mircx.trans_block(bb, &mut alias_scoper);
     }
 
     // Remove blocks that haven't been visited, or have no

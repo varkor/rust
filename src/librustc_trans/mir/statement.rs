@@ -16,10 +16,14 @@ use builder::Builder;
 use super::MirContext;
 use super::LocalRef;
 
+use rustc_data_structures::indexed_vec::Idx;
+use builder::{AliasScoper, Vrf};
+
 impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_statement(&mut self,
                            bcx: Builder<'a, 'tcx>,
-                           statement: &mir::Statement<'tcx>)
+                           statement: &mir::Statement<'tcx>,
+                           alias_scoper: &mut AliasScoper)
                            -> Builder<'a, 'tcx> {
         debug!("trans_statement(statement={:?})", statement);
 
@@ -32,7 +36,19 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                             self.trans_rvalue(bcx, tr_dest, rvalue)
                         }
                         LocalRef::Operand(None) => {
-                            let (bcx, operand) = self.trans_rvalue_operand(bcx, rvalue);
+                            let mut vrf_index = index.index();
+                            if let mir::Rvalue::Use(ref operand) = *rvalue {
+                                if let mir::Operand::Copy(ref place) = *operand {
+                                    if let mir::Place::Projection(ref proj) = *place {
+                                        if let mir::Place::Local(index) = proj.base {
+                                            vrf_index = index.index();
+                                        }
+                                    }
+                                }
+                            }
+                            let vrf = &mut Vrf { index: vrf_index, alias_scoper };
+                            let (bcx, operand) =
+                                self.trans_rvalue_operand_vrf(bcx, rvalue, Some(vrf));
                             self.locals[index] = LocalRef::Operand(Some(operand));
                             bcx
                         }

@@ -20,6 +20,7 @@ use std::{u128, i128};
 
 use base;
 use builder::Builder;
+use builder::{Vrf};
 use callee;
 use common::{self, val_ty};
 use common::{C_bool, C_u8, C_i32, C_u32, C_u64, C_null, C_usize, C_uint, C_uint_big};
@@ -181,6 +182,15 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
     pub fn trans_rvalue_operand(&mut self,
                                 bcx: Builder<'a, 'tcx>,
                                 rvalue: &mir::Rvalue<'tcx>)
+                                -> (Builder<'a, 'tcx>, OperandRef<'tcx>)
+    {
+        self.trans_rvalue_operand_vrf(bcx, rvalue, None)
+    }
+
+    pub fn trans_rvalue_operand_vrf(&mut self,
+                                bcx: Builder<'a, 'tcx>,
+                                rvalue: &mir::Rvalue<'tcx>,
+                                vrf: Option<&mut Vrf>)
                                 -> (Builder<'a, 'tcx>, OperandRef<'tcx>)
     {
         assert!(self.rvalue_creates_operand(rvalue), "cannot trans {:?} to operand", rvalue);
@@ -470,7 +480,7 @@ impl<'a, 'tcx> MirContext<'a, 'tcx> {
                 (bcx, operand)
             }
             mir::Rvalue::Use(ref operand) => {
-                let operand = self.trans_operand(&bcx, operand);
+                let operand = self.trans_operand_vrf(&bcx, operand, vrf);
                 (bcx, operand)
             }
             mir::Rvalue::Repeat(..) |
