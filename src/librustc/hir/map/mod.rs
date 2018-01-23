@@ -65,6 +65,7 @@ pub enum Node<'hir> {
 
     NodeLifetime(&'hir Lifetime),
     NodeTyParam(&'hir TyParam),
+    NodeConstParam(&'hir ConstParam),
     NodeVisibility(&'hir Visibility),
 }
 
@@ -92,6 +93,7 @@ enum MapEntry<'hir> {
     EntryStructCtor(NodeId, DepNodeIndex, &'hir VariantData),
     EntryLifetime(NodeId, DepNodeIndex, &'hir Lifetime),
     EntryTyParam(NodeId, DepNodeIndex, &'hir TyParam),
+    EntryConstParam(NodeId, DepNodeIndex, &'hir ConstParam),
     EntryVisibility(NodeId, DepNodeIndex, &'hir Visibility),
     EntryLocal(NodeId, DepNodeIndex, &'hir Local),
 
@@ -127,6 +129,7 @@ impl<'hir> MapEntry<'hir> {
             EntryStructCtor(id, _, _) => id,
             EntryLifetime(id, _, _) => id,
             EntryTyParam(id, _, _) => id,
+            EntryConstParam(id, _, _) => id,
             EntryVisibility(id, _, _) => id,
             EntryLocal(id, _, _) => id,
 
@@ -154,6 +157,7 @@ impl<'hir> MapEntry<'hir> {
             EntryStructCtor(_, _, n) => NodeStructCtor(n),
             EntryLifetime(_, _, n) => NodeLifetime(n),
             EntryTyParam(_, _, n) => NodeTyParam(n),
+            EntryConstParam(_, _, n) => NodeConstParam(n),
             EntryVisibility(_, _, n) => NodeVisibility(n),
             EntryLocal(_, _, n) => NodeLocal(n),
             EntryMacroDef(_, n) => NodeMacroDef(n),
@@ -291,6 +295,7 @@ impl<'hir> Map<'hir> {
             EntryStructCtor(_, dep_node_index, _) |
             EntryLifetime(_, dep_node_index, _) |
             EntryTyParam(_, dep_node_index, _) |
+            EntryConstParam(_, dep_node_index, _) |
             EntryVisibility(_, dep_node_index, _) |
             EntryExpr(_, dep_node_index, _) |
             EntryLocal(_, dep_node_index, _) |
@@ -852,6 +857,7 @@ impl<'hir> Map<'hir> {
             NodeField(f) => f.name,
             NodeLifetime(lt) => lt.name.name(),
             NodeTyParam(tp) => tp.name,
+            NodeConstParam(cp) => cp.name,
             NodeBinding(&Pat { node: PatKind::Binding(_,_,l,_), .. }) => l.node,
             NodeStructCtor(_) => self.name(self.get_parent(id)),
             _ => bug!("no name for {}", self.node_to_string(id))
@@ -917,6 +923,7 @@ impl<'hir> Map<'hir> {
             Some(EntryStructCtor(_, _, _)) => self.expect_item(self.get_parent(id)).span,
             Some(EntryLifetime(_, _, lifetime)) => lifetime.span,
             Some(EntryTyParam(_, _, ty_param)) => ty_param.span,
+            Some(EntryConstParam(_, _, const_param)) => const_param.span,
             Some(EntryVisibility(_, _, &Visibility::Restricted { ref path, .. })) => path.span,
             Some(EntryVisibility(_, _, v)) => bug!("unexpected Visibility {:?}", v),
             Some(EntryLocal(_, _, local)) => local.span,
@@ -1143,7 +1150,8 @@ impl<'a> print::State<'a> {
             }
             NodeLifetime(a)    => self.print_lifetime(&a),
             NodeVisibility(a)  => self.print_visibility(&a),
-            NodeTyParam(_)     => bug!("cannot print TyParam"),
+            NodeTyParam(a)     => self.print_ty_param(&a),
+            NodeConstParam(a)  => self.print_const_param(&a),
             NodeField(_)       => bug!("cannot print StructField"),
             // these cases do not carry enough information in the
             // hir_map to reconstruct their full structure for pretty
@@ -1263,6 +1271,9 @@ fn node_id_to_string(map: &Map, id: NodeId, include_id: bool) -> String {
         }
         Some(NodeTyParam(ref ty_param)) => {
             format!("typaram {:?}{}", ty_param, id_str)
+        }
+        Some(NodeConstParam(ref const_param)) => {
+            format!("const_param {:?}{}", const_param, id_str)
         }
         Some(NodeVisibility(ref vis)) => {
             format!("visibility {:?}{}", vis, id_str)

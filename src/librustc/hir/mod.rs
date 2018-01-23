@@ -461,6 +461,11 @@ pub trait GenericParamsExt {
         slice::Iter<GenericParam>,
         fn(&GenericParam) -> Option<&TyParam>,
     >;
+
+    fn const_params<'a>(&'a self) -> iter::FilterMap<
+        slice::Iter<GenericParam>,
+        fn(&GenericParam) -> Option<&ConstParam>,
+    >;
 }
 
 impl GenericParamsExt for [GenericParam] {
@@ -480,6 +485,16 @@ impl GenericParamsExt for [GenericParam] {
     > {
         self.iter().filter_map(|param| match *param {
             GenericParam::Type(ref t) => Some(t),
+            _ => None,
+        })
+    }
+
+    fn const_params<'a>(&'a self) -> iter::FilterMap<
+        slice::Iter<GenericParam>,
+        fn(&GenericParam) -> Option<&ConstParam>,
+    > {
+        self.iter().filter_map(|param| match *param {
+            GenericParam::Const(ref c) => Some(c),
             _ => None,
         })
     }
@@ -520,6 +535,10 @@ impl Generics {
 
     pub fn ty_params<'a>(&'a self) -> impl Iterator<Item = &'a TyParam> {
         self.params.ty_params()
+    }
+
+    pub fn const_params<'a>(&'a self) -> impl Iterator<Item = &'a ConstParam> {
+        self.params.const_params()
     }
 }
 

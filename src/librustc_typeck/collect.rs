@@ -1174,6 +1174,10 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             icx.to_ty(ty)
         }
 
+        NodeConstParam(&hir::ConstParam { ref ty, .. }) => {
+            icx.to_ty(ty)
+        }
+
         NodeTy(&hir::Ty { node: TyImplTraitExistential(..), .. }) => {
             let owner = tcx.hir.get_parent_did(node_id);
             let hir_id = tcx.hir.node_to_hir_id(node_id);

@@ -212,6 +212,7 @@ impl<'a, 'hir> NodeCollector<'a, 'hir> {
             NodeStructCtor(n) => EntryStructCtor(parent, dep_node_index, n),
             NodeLifetime(n) => EntryLifetime(parent, dep_node_index, n),
             NodeTyParam(n) => EntryTyParam(parent, dep_node_index, n),
+            NodeConstParam(n) => EntryConstParam(parent, dep_node_index, n),
             NodeVisibility(n) => EntryVisibility(parent, dep_node_index, n),
             NodeLocal(n) => EntryLocal(parent, dep_node_index, n),
             NodeMacroDef(n) => EntryMacroDef(dep_node_index, n),
@@ -350,6 +351,9 @@ impl<'a, 'hir> Visitor<'hir> for NodeCollector<'a, 'hir> {
     fn visit_generics(&mut self, generics: &'hir Generics) {
         for ty_param in generics.ty_params() {
             self.insert(ty_param.id, NodeTyParam(ty_param));
+        }
+        for const_param in generics.const_params() {
+            self.insert(const_param.id, NodeConstParam(const_param));
         }
 
         intravisit::walk_generics(self, generics);
