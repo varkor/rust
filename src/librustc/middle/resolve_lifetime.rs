@@ -2221,10 +2221,8 @@ fn insert_late_bound_lifetimes(
                     visit_ty_param_bound,
                     &ty_param.bounds
                 );
-            },
-            hir::GenericParam::Const(ref _const_param) => {
-                // TODO
             }
+            hir::GenericParam::Const(_) => {}
         }
     }
 

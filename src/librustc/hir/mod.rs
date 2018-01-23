@@ -551,9 +551,7 @@ impl Generics {
                         return Some(UnsafeGeneric::Type(t.clone(), "may_dangle"));
                     }
                 }
-                GenericParam::Const(ref _c) => {
-                    // TODO
-                }
+                GenericParam::Const(_) => {}
             }
         }
 
