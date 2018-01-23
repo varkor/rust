@@ -748,7 +748,8 @@ impl<'l, 'tcx: 'l> SaveContext<'l, 'tcx> {
             HirDef::TraitAlias(def_id) |
             HirDef::AssociatedTy(def_id) |
             HirDef::Trait(def_id) |
-            HirDef::TyParam(def_id) => {
+            HirDef::TyParam(def_id) |
+            HirDef::ConstParam(def_id) => {
                 let span = self.span_from_span(sub_span);
                 Some(Ref {
                     kind: RefKind::Type,

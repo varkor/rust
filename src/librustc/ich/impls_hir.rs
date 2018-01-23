@@ -1031,6 +1031,7 @@ impl_stable_hash_for!(enum hir::def::Def {
     AssociatedTy(def_id),
     PrimTy(prim_ty),
     TyParam(def_id),
+    ConstParam(def_if),
     SelfTy(trait_def_id, impl_def_id),
     TyForeign(def_id),
     Fn(def_id),

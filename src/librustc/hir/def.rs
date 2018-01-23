@@ -41,6 +41,7 @@ pub enum Def {
     AssociatedTy(DefId),
     PrimTy(hir::PrimTy),
     TyParam(DefId),
+    ConstParam(DefId),
     SelfTy(Option<DefId> /* trait */, Option<DefId> /* impl */),
 
     // Value namespace
@@ -162,7 +163,8 @@ impl Def {
             Def::Fn(id) | Def::Mod(id) | Def::Static(id, _) |
             Def::Variant(id) | Def::VariantCtor(id, ..) | Def::Enum(id) |
             Def::TyAlias(id) | Def::TraitAlias(id) |
-            Def::AssociatedTy(id) | Def::TyParam(id) | Def::Struct(id) | Def::StructCtor(id, ..) |
+            Def::AssociatedTy(id) | Def::TyParam(id) | Def::ConstParam(id) |
+            Def::Struct(id) | Def::StructCtor(id, ..) |
             Def::Union(id) | Def::Trait(id) | Def::Method(id) | Def::Const(id) |
             Def::AssociatedConst(id) | Def::Macro(id, ..) |
             Def::GlobalAsm(id) | Def::TyForeign(id) => {
@@ -205,6 +207,7 @@ impl Def {
             Def::Const(..) => "constant",
             Def::AssociatedConst(..) => "associated constant",
             Def::TyParam(..) => "type parameter",
+            Def::ConstParam(..) => "const parameter",
             Def::PrimTy(..) => "builtin type",
             Def::Local(..) => "local variable",
             Def::Upvar(..) => "closure capture",

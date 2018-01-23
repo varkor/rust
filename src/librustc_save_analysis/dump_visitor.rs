@@ -326,6 +326,7 @@ impl<'l, 'tcx: 'l, 'll, O: DumpOutput + 'll> DumpVisitor<'l, 'tcx, 'll, O> {
             HirDef::SelfTy(..) |
             HirDef::Label(_) |
             HirDef::TyParam(..) |
+            HirDef::ConstParam(..) |
             HirDef::Method(..) |
             HirDef::AssociatedTy(..) |
             HirDef::AssociatedConst(..) |
