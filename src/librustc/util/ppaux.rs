@@ -582,6 +582,15 @@ impl fmt::Debug for ty::TypeParameterDef {
     }
 }
 
+impl fmt::Debug for ty::ConstParameterDef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ConstParameterDef({}, {:?}, {})",
+               self.name,
+               self.def_id,
+               self.index)
+    }
+}
+
 impl fmt::Debug for ty::RegionParameterDef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "RegionParameterDef({}, {:?}, {})",

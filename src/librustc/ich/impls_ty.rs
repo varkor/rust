@@ -473,6 +473,7 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics {
             parent_types,
             ref regions,
             ref types,
+            ref consts,
 
             // Reverse map to each `TypeParameterDef`'s `index` field, from
             // `def_id.index` (`def_id.krate` is the same as the item's).
@@ -486,6 +487,7 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics {
         parent_types.hash_stable(hcx, hasher);
         regions.hash_stable(hcx, hasher);
         types.hash_stable(hcx, hasher);
+        consts.hash_stable(hcx, hasher);
         has_self.hash_stable(hcx, hasher);
         has_late_bound_regions.hash_stable(hcx, hasher);
     }
@@ -518,6 +520,12 @@ impl_stable_hash_for!(struct ty::TypeParameterDef {
     object_lifetime_default,
     pure_wrt_drop,
     synthetic
+});
+
+impl_stable_hash_for!(struct ty::ConstParameterDef {
+    name,
+    def_id,
+    index
 });
 
 impl<'gcx, T> HashStable<StableHashingContext<'gcx>>

@@ -974,8 +974,16 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             synthetic: p.synthetic,
         }
     });
-
     let mut types: Vec<_> = opt_self.into_iter().chain(types).collect();
+
+    let const_start = type_start + types.len() as u32;
+    let consts = ast_generics.const_params().enumerate().map(|(i, p)| {
+        ty::ConstParameterDef {
+            index: const_start + i as u32,
+            name: p.name,
+            def_id: tcx.hir.local_def_id(p.id),
+        }
+    }).collect::<Vec<_>>();
 
     // provide junk type parameter defs - the only place that
     // cares about anything but the length is instantiation,
@@ -1026,6 +1034,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         parent_types,
         regions,
         types,
+        consts,
         type_param_to_index,
         has_self: has_self || parent_has_self,
         has_late_bound_regions: has_late_bound_regions(tcx, node),
