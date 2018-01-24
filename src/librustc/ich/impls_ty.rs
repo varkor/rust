@@ -108,6 +108,15 @@ for ty::RegionKind {
     }
 }
 
+impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::ConstVid {
+    #[inline]
+    fn hash_stable<W: StableHasherResult>(&self,
+                                          hcx: &mut StableHashingContext<'gcx>,
+                                          hasher: &mut StableHasher<W>) {
+        self.index.hash_stable(hcx, hasher);
+    }
+}
+
 impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::RegionVid {
     #[inline]
     fn hash_stable<W: StableHasherResult>(&self,
@@ -377,9 +386,11 @@ for ::middle::const_val::ConstVal<'gcx> {
                 value.hash_stable(hcx, hasher);
                 times.hash_stable(hcx, hasher);
             }
-            Param(def_id, substs) => {
-                def_id.hash_stable(hcx, hasher);
-                substs.hash_stable(hcx, hasher);
+            Param(param_const) => {
+                param_const.hash_stable(hcx, hasher);
+            }
+            InferVar(const_vid) => {
+                const_vid.hash_stable(hcx, hasher);
             }
             Unevaluated(def_id, substs) => {
                 def_id.hash_stable(hcx, hasher);
@@ -710,6 +721,11 @@ for ty::TypeVariants<'gcx>
 }
 
 impl_stable_hash_for!(struct ty::ParamTy {
+    idx,
+    name
+});
+
+impl_stable_hash_for!(struct ty::ParamConst {
     idx,
     name
 });

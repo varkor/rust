@@ -890,6 +890,26 @@ impl<'a, 'gcx, 'tcx> ParamTy {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
+pub struct ParamConst {
+    pub idx: u32,
+    pub name: Name,
+}
+
+impl<'a, 'gcx, 'tcx> ParamConst {
+    pub fn new(index: u32, name: Name) -> ParamConst {
+        ParamConst { idx: index, name: name }
+    }
+
+    pub fn for_def(def: &ty::ConstParameterDef) -> ParamConst {
+        ParamConst::new(def.index, def.name)
+    }
+
+    pub fn to_const(self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> &'tcx Const<'tcx> {
+        tcx.mk_const_param(self.idx, self.name)
+    }
+}
+
 /// A [De Bruijn index][dbi] is a standard means of representing
 /// regions (and perhaps later types) in a higher-ranked setting. In
 /// particular, imagine a type like this:
@@ -1068,6 +1088,11 @@ pub struct FloatVid {
     pub index: u32,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
+pub struct ConstVid {
+    pub index: u32,
+}
+
 newtype_index!(RegionVid
     {
         pub idx
@@ -1082,6 +1107,7 @@ pub struct SkolemizedRegionVid {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
 pub enum InferTy {
     TyVar(TyVid),
+    ConstVar(ConstVid),
     IntVar(IntVid),
     FloatVar(FloatVid),
 
@@ -1089,6 +1115,7 @@ pub enum InferTy {
     /// unbound type variable. This is convenient for caching etc. See
     /// `infer::freshen` for more details.
     FreshTy(u32),
+    FreshConstTy(u32),
     FreshIntTy(u32),
     FreshFloatTy(u32),
 }

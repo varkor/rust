@@ -21,10 +21,9 @@ use hir::def_id::DefId;
 use middle::free_region::RegionRelations;
 use middle::region;
 use middle::lang_items;
-use middle::const_val::ConstVal;
 use mir::tcx::PlaceTy;
 use ty::subst::{Kind, Subst, Substs};
-use ty::{TyVid, IntVid, FloatVid};
+use ty::{TyVid, ConstVid, IntVid, FloatVid};
 use ty::{self, Ty, TyCtxt};
 use ty::error::{ExpectedFound, TypeError, UnconstrainedNumeric};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
@@ -98,6 +97,9 @@ pub struct InferCtxt<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     // types that might instantiate a general type variable have an
     // order, represented by its upper and lower bounds.
     pub type_variables: RefCell<type_variable::TypeVariableTable<'tcx>>,
+
+    // Map from const parameter variable to the kind of const it represents
+    const_unification_table: RefCell<UnificationTable<ty::ConstVid>>,
 
     // Map from integral variable to the kind of integer it represents
     int_unification_table: RefCell<UnificationTable<ty::IntVid>>,
@@ -442,6 +444,7 @@ impl<'a, 'gcx, 'tcx> InferCtxtBuilder<'a, 'gcx, 'tcx> {
             in_progress_tables,
             projection_cache: RefCell::new(traits::ProjectionCache::new()),
             type_variables: RefCell::new(type_variable::TypeVariableTable::new()),
+            const_unification_table: RefCell::new(UnificationTable::new()),
             int_unification_table: RefCell::new(UnificationTable::new()),
             float_unification_table: RefCell::new(UnificationTable::new()),
             region_constraints: RefCell::new(Some(RegionConstraintCollector::new())),
@@ -477,6 +480,7 @@ impl<'tcx, T> InferOk<'tcx, T> {
 pub struct CombinedSnapshot<'a, 'tcx:'a> {
     projection_cache_snapshot: traits::ProjectionCacheSnapshot,
     type_snapshot: type_variable::Snapshot,
+    const_snapshot: unify::Snapshot<ty::ConstVid>,
     int_snapshot: unify::Snapshot<ty::IntVid>,
     float_snapshot: unify::Snapshot<ty::FloatVid>,
     region_constraints_snapshot: RegionSnapshot,
@@ -678,6 +682,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         use ty::error::UnconstrainedNumeric::Neither;
         use ty::error::UnconstrainedNumeric::{UnconstrainedInt, UnconstrainedFloat};
         match ty.sty {
+            // TODO(varkor): Necessary to consider ConstVar here?
             ty::TyInfer(ty::IntVar(vid)) => {
                 if self.int_unification_table.borrow_mut().has_value(vid) {
                     Neither
@@ -721,6 +726,12 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                   .into_iter()
                                   .map(|t| self.tcx.mk_var(t));
 
+        let unbound_const_vars = self.const_unification_table
+                                    .borrow_mut()
+                                    .unsolved_variables()
+                                    .into_iter()
+                                    .map(|v| self.tcx.mk_const_var(v));
+
         let unbound_int_vars = self.int_unification_table
                                    .borrow_mut()
                                    .unsolved_variables()
@@ -734,6 +745,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                      .map(|v| self.tcx.mk_float_var(v));
 
         variables.extend(unbound_ty_vars);
+        variables.extend(unbound_const_vars);
         variables.extend(unbound_int_vars);
         variables.extend(unbound_float_vars);
 
@@ -787,6 +799,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
             projection_cache_snapshot: self.projection_cache.borrow_mut().snapshot(),
             type_snapshot: self.type_variables.borrow_mut().snapshot(),
             int_snapshot: self.int_unification_table.borrow_mut().snapshot(),
+            const_snapshot: self.const_unification_table.borrow_mut().snapshot(),
             float_snapshot: self.float_unification_table.borrow_mut().snapshot(),
             region_constraints_snapshot: self.borrow_region_constraints().start_snapshot(),
             region_obligations_snapshot: self.region_obligations.borrow().len(),
@@ -803,6 +816,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         debug!("rollback_to(cause={})", cause);
         let CombinedSnapshot { projection_cache_snapshot,
                                type_snapshot,
+                               const_snapshot,
                                int_snapshot,
                                float_snapshot,
                                region_constraints_snapshot,
@@ -818,6 +832,9 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.type_variables
             .borrow_mut()
             .rollback_to(type_snapshot);
+        self.const_unification_table
+            .borrow_mut()
+            .rollback_to(const_snapshot);
         self.int_unification_table
             .borrow_mut()
             .rollback_to(int_snapshot);
@@ -835,6 +852,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         debug!("commit_from()");
         let CombinedSnapshot { projection_cache_snapshot,
                                type_snapshot,
+                               const_snapshot,
                                int_snapshot,
                                float_snapshot,
                                region_constraints_snapshot,
@@ -850,6 +868,9 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.type_variables
             .borrow_mut()
             .commit(type_snapshot);
+        self.const_unification_table
+            .borrow_mut()
+            .commit(const_snapshot);
         self.int_unification_table
             .borrow_mut()
             .commit(int_snapshot);
@@ -1041,6 +1062,12 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_var(self.next_ty_var_id(true, origin))
     }
 
+    pub fn next_const_var_id(&self) -> ConstVid {
+        self.const_unification_table
+            .borrow_mut()
+            .new_key(None)
+    }
+
     pub fn next_int_var_id(&self) -> IntVid {
         self.int_unification_table
             .borrow_mut()
@@ -1121,20 +1148,11 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     /// Create a const inference variable for the given
     /// const parameter definition.
     pub fn const_var_for_def(&self,
-                             span: Span,
-                             def: &ty::ConstParameterDef,
-                             substs: &[Kind<'tcx>])
+                             _span: Span,
+                             _def: &ty::ConstParameterDef,
+                             _substs: &[Kind<'tcx>])
                               -> &'tcx ty::Const<'tcx> {
-        let ty_var_id = self.type_variables
-                            .borrow_mut()
-                            .new_var(false,
-                                    TypeVariableOrigin::ConstParameterDefinition(span, def.name),
-                                    None);
-
-        self.tcx.mk_const(ty::Const {
-            val: ConstVal::Param(def.def_id, self.tcx.mk_substs(substs.iter())),
-            ty: self.tcx.mk_var(ty_var_id),
-        })
+        unimplemented!() // TODO(varkor)
     }
 
     /// Given a set of generics defined on a type or impl, returns a substitution mapping each
@@ -1308,6 +1326,14 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                 self.type_variables.borrow_mut()
                     .probe(v)
                     .map(|t| self.shallow_resolve(t))
+                    .unwrap_or(typ)
+            }
+
+            ty::TyInfer(ty::ConstVar(v)) => {
+                self.const_unification_table
+                    .borrow_mut()
+                    .probe(v)
+                    .map(|v| v.to_type(self.tcx))
                     .unwrap_or(typ)
             }
 

@@ -2064,6 +2064,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
             obligation.predicate.skip_binder().self_ty());
 
         match self_ty.sty {
+            ty::TyInfer(ty::ConstVar(_)) |
             ty::TyInfer(ty::IntVar(_)) | ty::TyInfer(ty::FloatVar(_)) |
             ty::TyUint(_) | ty::TyInt(_) | ty::TyBool | ty::TyFloat(_) |
             ty::TyFnDef(..) | ty::TyFnPtr(_) | ty::TyRawPtr(..) |
@@ -2092,6 +2093,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
             ty::TyInfer(ty::TyVar(_)) => Ambiguous,
 
             ty::TyInfer(ty::FreshTy(_))
+            | ty::TyInfer(ty::FreshConstTy(_))
             | ty::TyInfer(ty::FreshIntTy(_))
             | ty::TyInfer(ty::FreshFloatTy(_)) => {
                 bug!("asked to assemble builtin bounds of unexpected type: {:?}",
@@ -2110,6 +2112,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
         use self::BuiltinImplConditions::{Ambiguous, None, Never, Where};
 
         match self_ty.sty {
+            ty::TyInfer(ty::ConstVar(_)) |
             ty::TyInfer(ty::IntVar(_)) | ty::TyInfer(ty::FloatVar(_)) |
             ty::TyUint(_) | ty::TyInt(_) | ty::TyBool | ty::TyFloat(_) |
             ty::TyFnDef(..) | ty::TyFnPtr(_) | ty::TyChar |
@@ -2162,7 +2165,8 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
                 Ambiguous
             }
 
-            ty::TyInfer(ty::FreshTy(_))
+            ty::TyInfer(ty::FreshTy(_)) |
+            ty::TyInfer(ty::FreshConstTy(_))
             | ty::TyInfer(ty::FreshIntTy(_))
             | ty::TyInfer(ty::FreshFloatTy(_)) => {
                 bug!("asked to assemble builtin bounds of unexpected type: {:?}",
@@ -2192,6 +2196,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
             ty::TyFnPtr(_) |
             ty::TyStr |
             ty::TyError |
+            ty::TyInfer(ty::ConstVar(_)) |
             ty::TyInfer(ty::IntVar(_)) |
             ty::TyInfer(ty::FloatVar(_)) |
             ty::TyNever |
@@ -2205,6 +2210,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
             ty::TyProjection(..) |
             ty::TyInfer(ty::TyVar(_)) |
             ty::TyInfer(ty::FreshTy(_)) |
+            ty::TyInfer(ty::FreshConstTy(_)) |
             ty::TyInfer(ty::FreshIntTy(_)) |
             ty::TyInfer(ty::FreshFloatTy(_)) => {
                 bug!("asked to assemble constituent types of unexpected type: {:?}",

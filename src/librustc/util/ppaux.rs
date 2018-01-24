@@ -881,6 +881,12 @@ impl fmt::Debug for ty::FloatVid {
     }
 }
 
+impl fmt::Debug for ty::ConstVid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "_#{}f", self.index)
+    }
+}
+
 impl fmt::Debug for ty::RegionVid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "'_#{}r", self.index())
@@ -895,9 +901,11 @@ define_print! {
             } else {
                 match *self {
                     ty::TyVar(_) => write!(f, "_"),
+                    ty::ConstVar(_) => write!(f, "{}", "{const}"),
                     ty::IntVar(_) => write!(f, "{}", "{integer}"),
                     ty::FloatVar(_) => write!(f, "{}", "{float}"),
                     ty::FreshTy(v) => write!(f, "FreshTy({})", v),
+                    ty::FreshConstTy(v) => write!(f, "FreshConstTy({})", v),
                     ty::FreshIntTy(v) => write!(f, "FreshIntTy({})", v),
                     ty::FreshFloatTy(v) => write!(f, "FreshFloatTy({})", v)
                 }
@@ -906,9 +914,11 @@ define_print! {
         debug {
             match *self {
                 ty::TyVar(ref v) => write!(f, "{:?}", v),
+                ty::ConstVar(ref v) => write!(f, "{:?}", v),
                 ty::IntVar(ref v) => write!(f, "{:?}", v),
                 ty::FloatVar(ref v) => write!(f, "{:?}", v),
                 ty::FreshTy(v) => write!(f, "FreshTy({:?})", v),
+                ty::FreshConstTy(v) => write!(f, "FreshConstTy({:?})", v),
                 ty::FreshIntTy(v) => write!(f, "FreshIntTy({:?})", v),
                 ty::FreshFloatTy(v) => write!(f, "FreshFloatTy({:?})", v)
             }
@@ -1213,6 +1223,17 @@ define_print! {
 
 define_print! {
     () ty::ParamTy, (self, f, cx) {
+        display {
+            write!(f, "{}", self.name)
+        }
+        debug {
+            write!(f, "{}/#{}", self.name, self.idx)
+        }
+    }
+}
+
+define_print! {
+    () ty::ParamConst, (self, f, cx) {
         display {
             write!(f, "{}", self.name)
         }

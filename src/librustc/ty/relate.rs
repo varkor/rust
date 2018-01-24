@@ -631,6 +631,17 @@ impl<'tcx> Relate<'tcx> for &'tcx Substs<'tcx> {
     }
 }
 
+impl<'tcx> Relate<'tcx> for &'tcx ty::Const<'tcx> {
+    fn relate<'a, 'gcx, R>(_relation: &mut R,
+                           _a: &&'tcx ty::Const<'tcx>,
+                           _b: &&'tcx ty::Const<'tcx>)
+                           -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>
+        where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
+    {
+        unimplemented!() // TODO(varkor)
+    }
+}
+
 impl<'tcx> Relate<'tcx> for ty::Region<'tcx> {
     fn relate<'a, 'gcx, R>(relation: &mut R,
                            a: &ty::Region<'tcx>,

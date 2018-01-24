@@ -63,14 +63,14 @@ use hir;
 
 pub use self::sty::{Binder, DebruijnIndex};
 pub use self::sty::{FnSig, GenSig, PolyFnSig, PolyGenSig};
-pub use self::sty::{InferTy, ParamTy, ProjectionTy, ExistentialPredicate};
+pub use self::sty::{InferTy, ParamTy, ParamConst, ProjectionTy, ExistentialPredicate};
 pub use self::sty::{ClosureSubsts, GeneratorInterior, TypeAndMut};
 pub use self::sty::{TraitRef, TypeVariants, PolyTraitRef};
 pub use self::sty::{ExistentialTraitRef, PolyExistentialTraitRef};
 pub use self::sty::{ExistentialProjection, PolyExistentialProjection, Const};
 pub use self::sty::{BoundRegion, EarlyBoundRegion, FreeRegion, Region};
 pub use self::sty::RegionKind;
-pub use self::sty::{TyVid, IntVid, FloatVid, RegionVid, SkolemizedRegionVid};
+pub use self::sty::{TyVid, IntVid, FloatVid, ConstVid, RegionVid, SkolemizedRegionVid};
 pub use self::sty::BoundRegion::*;
 pub use self::sty::InferTy::*;
 pub use self::sty::RegionKind::*;
@@ -825,25 +825,6 @@ impl<'a, 'gcx, 'tcx> Generics {
         }
     }
 
-    /// Returns the `ConstParameterDef` associated with this `ParamTy`.
-    pub fn const_param(&'tcx self,
-                       param: &ParamTy,
-                       tcx: TyCtxt<'a, 'gcx, 'tcx>)
-                       -> &ConstParameterDef {
-        if let Some(idx) = param.idx.checked_sub(self.parent_count() as u32) {
-            let const_param_offset = self.regions.len() + self.types.len();
-
-            if let Some(idx) = (idx as usize).checked_sub(const_param_offset) {
-                &self.consts[idx]
-            } else {
-                &self.consts[0]
-            }
-        } else {
-            tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))
-                .const_param(param, tcx)
-        }
-    }
-
     /// Returns the `TypeParameterDef` associated with this `ParamTy`.
     pub fn type_param(&'tcx self,
                       param: &ParamTy,
@@ -892,6 +873,25 @@ impl<'a, 'gcx, 'tcx> Generics {
         } else {
             tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))
                 .type_param(param, tcx)
+        }
+    }
+
+    /// Returns the `ConstParameterDef` associated with this `ParamConst`.
+    pub fn const_param(&'tcx self,
+                       param: &ParamConst,
+                       tcx: TyCtxt<'a, 'gcx, 'tcx>)
+                       -> &ConstParameterDef {
+        if let Some(idx) = param.idx.checked_sub(self.parent_count() as u32) {
+            let const_param_offset = self.regions.len() + self.types.len();
+
+            if let Some(idx) = (idx as usize).checked_sub(const_param_offset) {
+                &self.consts[idx]
+            } else {
+                &self.consts[0]
+            }
+        } else {
+            tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))
+                .const_param(param, tcx)
         }
     }
 }

@@ -11,7 +11,7 @@
 pub use rustc_const_math::ConstInt;
 
 use hir::def_id::DefId;
-use ty::{self, TyCtxt, layout};
+use ty::{self, TyCtxt, ParamConst, ConstVid, layout};
 use ty::subst::Substs;
 use rustc_const_math::*;
 
@@ -35,7 +35,8 @@ pub enum ConstVal<'tcx> {
     Bool(bool),
     Char(char),
     Variant(DefId),
-    Param(DefId, &'tcx Substs<'tcx>),
+    Param(ParamConst),
+    InferVar(ConstVid),
     Function(DefId, &'tcx Substs<'tcx>),
     Aggregate(ConstAggregate<'tcx>),
     Unevaluated(DefId, &'tcx Substs<'tcx>),

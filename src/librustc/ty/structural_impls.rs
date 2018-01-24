@@ -1279,9 +1279,8 @@ impl<'tcx> TypeFoldable<'tcx> for ConstVal<'tcx> {
             ConstVal::Bool(b) => ConstVal::Bool(b),
             ConstVal::Char(c) => ConstVal::Char(c),
             ConstVal::Variant(def_id) => ConstVal::Variant(def_id),
-            ConstVal::Param(def_id, substs) => {
-                ConstVal::Param(def_id, substs.fold_with(folder))
-            }
+            ConstVal::Param(param_const) => ConstVal::Param(param_const),
+            ConstVal::InferVar(const_vid) => ConstVal::InferVar(const_vid),
             ConstVal::Function(def_id, substs) => {
                 ConstVal::Function(def_id, substs.fold_with(folder))
             }
@@ -1336,8 +1335,9 @@ impl<'tcx> TypeFoldable<'tcx> for ConstVal<'tcx> {
             ConstVal::ByteStr(_) |
             ConstVal::Bool(_) |
             ConstVal::Char(_) |
-            ConstVal::Variant(_) => false,
-            ConstVal::Param(_, substs) |
+            ConstVal::Variant(_) |
+            ConstVal::Param(_) |
+            ConstVal::InferVar(_) => false,
             ConstVal::Function(_, substs) => substs.visit_with(visitor),
             ConstVal::Aggregate(ConstAggregate::Struct(fields)) => {
                 fields.iter().any(|&(_, v)| v.visit_with(visitor))

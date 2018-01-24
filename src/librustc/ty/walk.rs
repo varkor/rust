@@ -146,7 +146,9 @@ fn push_const<'tcx>(stack: &mut TypeWalkerStack<'tcx>, constant: &'tcx ty::Const
         ConstVal::ByteStr(_) |
         ConstVal::Bool(_) |
         ConstVal::Char(_) |
-        ConstVal::Variant(_) => {}
+        ConstVal::Variant(_) |
+        ConstVal::Param(_) |
+        ConstVal::InferVar(_) => {}
         ConstVal::Function(_, substs) => {
             stack.extend(substs.types().rev());
         }
@@ -164,7 +166,6 @@ fn push_const<'tcx>(stack: &mut TypeWalkerStack<'tcx>, constant: &'tcx ty::Const
         ConstVal::Aggregate(ConstAggregate::Repeat(v, _)) => {
             push_const(stack, v);
         }
-        ConstVal::Param(_, substs) |
         ConstVal::Unevaluated(_, substs) => {
             stack.extend(substs.types().rev());
         }
