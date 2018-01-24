@@ -239,7 +239,7 @@ fn type_param_predicates<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let param_owner_def_id = tcx.hir.local_def_id(param_owner);
     let generics = tcx.generics_of(param_owner_def_id);
     let index = generics.type_param_to_index[&def_id];
-    let ty = tcx.mk_param(index, tcx.hir.ty_param_name(param_id));
+    let ty = tcx.mk_ty_param(index, tcx.hir.ty_param_name(param_id));
 
     // Don't look for bounds where the type parameter isn't in scope.
     let parent = if item_def_id == param_owner_def_id {
@@ -1155,7 +1155,8 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         let region = def.to_early_bound_region_data();
                         tcx.mk_region(ty::ReEarlyBound(region))
                     },
-                    |def, _| tcx.mk_param_from_def(def)
+                    |def, _| tcx.mk_ty_param_from_def(def),
+                    |def, _| tcx.mk_const_param_from_def(def),
                 )
             };
 

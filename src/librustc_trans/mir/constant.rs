@@ -103,6 +103,7 @@ impl<'a, 'tcx> Const<'tcx> {
             }
             ConstVal::Char(c) => C_uint(Type::char(cx), c as u64),
             ConstVal::Function(..) => C_undef(llty),
+            ConstVal::Param(..) |
             ConstVal::Variant(_) |
             ConstVal::Aggregate(..) |
             ConstVal::Unevaluated(..) => {

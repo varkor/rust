@@ -877,7 +877,7 @@ impl<'a, 'gcx, 'tcx> ParamTy {
     }
 
     pub fn to_ty(self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {
-        tcx.mk_param(self.idx, self.name)
+        tcx.mk_ty_param(self.idx, self.name)
     }
 
     pub fn is_self(&self) -> bool {
@@ -1663,7 +1663,7 @@ impl<'a, 'gcx, 'tcx> TyS<'tcx> {
 }
 
 /// Typed constant value.
-#[derive(Copy, Clone, Debug, Hash, RustcEncodable, RustcDecodable, Eq, PartialEq)]
+#[derive(Copy, Clone, Hash, RustcEncodable, RustcDecodable, Eq, PartialEq)]
 pub struct Const<'tcx> {
     pub ty: Ty<'tcx>,
 

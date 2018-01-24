@@ -1311,6 +1311,13 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
                 } else {
                     self.type_var_for_def(self.span, def, cur_substs)
                 }
+            }, |def, cur_substs| {
+                let i = def.index as usize;
+                if i < substs.len() {
+                    substs.const_at(i)
+                } else {
+                    self.const_var_for_def(self.span, def, cur_substs)
+                }
             });
             xform_fn_sig.subst(self.tcx, substs)
         }
@@ -1327,7 +1334,11 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
                          |_, _| self.tcx.types.re_erased,
                          |_, _| self.next_ty_var(
                              TypeVariableOrigin::SubstitutionPlaceholder(
-                                 self.tcx.def_span(def_id))))
+                                 self.tcx.def_span(def_id))),
+                         |_, _| {
+                             unimplemented!() // TODO(varkor)
+                         }
+        )
     }
 
     /// Replace late-bound-regions bound by `value` with `'static` using

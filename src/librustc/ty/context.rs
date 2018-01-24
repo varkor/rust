@@ -2100,18 +2100,28 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(TyInfer(it))
     }
 
-    pub fn mk_param(self,
+    pub fn mk_ty_param(self,
                     index: u32,
                     name: Name) -> Ty<'tcx> {
         self.mk_ty(TyParam(ParamTy { idx: index, name: name }))
     }
 
-    pub fn mk_self_type(self) -> Ty<'tcx> {
-        self.mk_param(0, keywords::SelfType.name())
+    pub fn mk_const_param(self,
+                    _index: u32,
+                    _name: Name) -> &'tcx ty::Const<'tcx> {
+        unimplemented!() // TODO(varkor)
     }
 
-    pub fn mk_param_from_def(self, def: &ty::TypeParameterDef) -> Ty<'tcx> {
-        self.mk_param(def.index, def.name)
+    pub fn mk_self_type(self) -> Ty<'tcx> {
+        self.mk_ty_param(0, keywords::SelfType.name())
+    }
+
+    pub fn mk_ty_param_from_def(self, def: &ty::TypeParameterDef) -> Ty<'tcx> {
+        self.mk_ty_param(def.index, def.name)
+    }
+
+    pub fn mk_const_param_from_def(self, def: &ty::ConstParameterDef) -> &'tcx ty::Const<'tcx> {
+        self.mk_const_param(def.index, def.name)
     }
 
     pub fn mk_anon(self, def_id: DefId, substs: &'tcx Substs<'tcx>) -> Ty<'tcx> {

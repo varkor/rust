@@ -338,6 +338,8 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
             } else {
                 self.type_var_for_def(self.span, def, cur_substs)
             }
+        }, |_def, _cur_substs| {
+            unimplemented!() // TODO(varkor)
         })
     }
 

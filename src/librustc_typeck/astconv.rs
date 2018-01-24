@@ -295,6 +295,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 // We've already errored above about the mismatch.
                 tcx.types.err
             }
+        }, |_, _| {
+            unimplemented!() // TODO(varkor)
         });
 
         let assoc_bindings = parameters.bindings.iter().map(|binding| {
@@ -980,7 +982,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 let item_def_id = tcx.hir.local_def_id(item_id);
                 let generics = tcx.generics_of(item_def_id);
                 let index = generics.type_param_to_index[&tcx.hir.local_def_id(node_id)];
-                tcx.mk_param(index, tcx.hir.name(node_id))
+                tcx.mk_ty_param(index, tcx.hir.name(node_id))
             }
             Def::SelfTy(_, Some(def_id)) => {
                 // Self in impl (we know the concrete type).
@@ -1087,7 +1089,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 let length_def_id = tcx.hir.body_owner_def_id(length);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
                 let length = tcx.mk_const(ty::Const {
-                    val: ConstVal::Unevaluated(length_def_id, substs),
+                    val: ConstVal::Unevaluated(length_def_id, substs), // TODO(varkor)
                     ty: tcx.types.usize
                 });
                 let array_ty = tcx.mk_ty(ty::TyArray(self.ast_ty_to_ty(&ty), length));
@@ -1131,7 +1133,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 &mut substs, tcx, parent_generics,
                 &mut |def, _| tcx.mk_region(
                     ty::ReEarlyBound(def.to_early_bound_region_data())),
-                &mut |def, _| tcx.mk_param_from_def(def)
+                &mut |def, _| tcx.mk_ty_param_from_def(def),
+                &mut |def, _| tcx.mk_const_param_from_def(def)
             );
 
             // Replace all lifetimes with 'static

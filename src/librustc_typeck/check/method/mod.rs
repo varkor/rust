@@ -257,7 +257,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             } else {
                 self.type_var_for_def(span, def, substs)
             }
-        });
+        }, |def, substs| self.const_var_for_def(span, def, substs));
 
         let trait_ref = ty::TraitRef::new(trait_def_id, substs);
 

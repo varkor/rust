@@ -433,7 +433,8 @@ impl<'a, 'tcx> CloneShimBuilder<'a, 'tcx> {
             tcx,
             self.def_id,
             |_, _| tcx.types.re_erased,
-            |_, _| ty
+            |_, _| ty,
+            |_, _| unimplemented!(), // TODO(varkor)
         );
 
         // `func == Clone::clone(&ty) -> ty`

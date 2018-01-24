@@ -181,6 +181,7 @@ impl_stable_hash_for!(struct hir::PathSegment {
 impl_stable_hash_for!(struct hir::PathParameters {
     lifetimes,
     types,
+    consts,
     bindings,
     parenthesized
 });

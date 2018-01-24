@@ -35,6 +35,7 @@ pub enum ConstVal<'tcx> {
     Bool(bool),
     Char(char),
     Variant(DefId),
+    Param(DefId, &'tcx Substs<'tcx>),
     Function(DefId, &'tcx Substs<'tcx>),
     Aggregate(ConstAggregate<'tcx>),
     Unevaluated(DefId, &'tcx Substs<'tcx>),

@@ -11,7 +11,7 @@
 // Type substitutions.
 
 use hir::def_id::DefId;
-use ty::{self, Slice, Region, Ty, TyCtxt};
+use ty::{self, Slice, Region, Ty, Const, TyCtxt};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
 
 use serialize::{self, Encodable, Encoder, Decodable, Decoder};
@@ -37,6 +37,7 @@ pub struct Kind<'tcx> {
 
 const TAG_MASK: usize = 0b11;
 const TYPE_TAG: usize = 0b00;
+const CONST_TAG: usize = 0b10;
 const REGION_TAG: usize = 0b01;
 
 impl<'tcx> From<Ty<'tcx>> for Kind<'tcx> {
@@ -48,6 +49,21 @@ impl<'tcx> From<Ty<'tcx>> for Kind<'tcx> {
         Kind {
             ptr: unsafe {
                 NonZero::new_unchecked(ptr | TYPE_TAG)
+            },
+            marker: PhantomData
+        }
+    }
+}
+
+impl<'tcx> From<&'tcx ty::Const<'tcx>> for Kind<'tcx> {
+    fn from(c: &'tcx ty::Const<'tcx>) -> Kind<'tcx> {
+        // Ensure we can use the tag bits.
+        assert_eq!(mem::align_of_val(c) & TAG_MASK, 0);
+
+        let ptr = c as *const _ as usize;
+        Kind {
+            ptr: unsafe {
+                NonZero::new_unchecked(ptr | CONST_TAG)
             },
             marker: PhantomData
         }
@@ -88,6 +104,13 @@ impl<'tcx> Kind<'tcx> {
     }
 
     #[inline]
+    pub fn as_const(self) -> Option<&'tcx ty::Const<'tcx>> {
+        unsafe {
+            self.downcast(CONST_TAG)
+        }
+    }
+
+    #[inline]
     pub fn as_region(self) -> Option<ty::Region<'tcx>> {
         unsafe {
             self.downcast(REGION_TAG)
@@ -99,6 +122,8 @@ impl<'tcx> fmt::Debug for Kind<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ty) = self.as_type() {
             write!(f, "{:?}", ty)
+        } else if let Some(c) = self.as_const() {
+            write!(f, "{:?}", c)
         } else if let Some(r) = self.as_region() {
             write!(f, "{:?}", r)
         } else {
@@ -111,10 +136,11 @@ impl<'tcx> fmt::Display for Kind<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ty) = self.as_type() {
             write!(f, "{}", ty)
+        } else if let Some(c) = self.as_const() {
+            write!(f, "{}", c)
         } else if let Some(r) = self.as_region() {
             write!(f, "{}", r)
         } else {
-            // FIXME(RFC 2000): extend this if/else chain when we support const generic.
             unimplemented!();
         }
     }
@@ -124,6 +150,8 @@ impl<'tcx> TypeFoldable<'tcx> for Kind<'tcx> {
     fn super_fold_with<'gcx: 'tcx, F: TypeFolder<'gcx, 'tcx>>(&self, folder: &mut F) -> Self {
         if let Some(ty) = self.as_type() {
             Kind::from(ty.fold_with(folder))
+        } else if let Some(c) = self.as_const() {
+            Kind::from(c.fold_with(folder))
         } else if let Some(r) = self.as_region() {
             Kind::from(r.fold_with(folder))
         } else {
@@ -134,6 +162,8 @@ impl<'tcx> TypeFoldable<'tcx> for Kind<'tcx> {
     fn super_visit_with<V: TypeVisitor<'tcx>>(&self, visitor: &mut V) -> bool {
         if let Some(ty) = self.as_type() {
             ty.visit_with(visitor)
+        } else if let Some(c) = self.as_const() {
+            c.visit_with(visitor)
         } else if let Some(r) = self.as_region() {
             r.visit_with(visitor)
         } else {
@@ -149,6 +179,10 @@ impl<'tcx> Encodable for Kind<'tcx> {
                 e.emit_enum_variant("Ty", TYPE_TAG, 1, |e| {
                     e.emit_enum_variant_arg(0, |e| ty.encode(e))
                 })
+            } else if let Some(c) = self.as_const() {
+                e.emit_enum_variant("Const", CONST_TAG, 1, |e| {
+                    e.emit_enum_variant_arg(0, |e| c.encode(e))
+                })
             } else if let Some(r) = self.as_region() {
                 e.emit_enum_variant("Region", REGION_TAG, 1, |e| {
                     e.emit_enum_variant_arg(0, |e| r.encode(e))
@@ -163,9 +197,10 @@ impl<'tcx> Encodable for Kind<'tcx> {
 impl<'tcx> Decodable for Kind<'tcx> {
     fn decode<D: Decoder>(d: &mut D) -> Result<Kind<'tcx>, D::Error> {
         d.read_enum("Kind", |d| {
-            d.read_enum_variant(&["Ty", "Region"], |d, tag| {
+            d.read_enum_variant(&["Ty", "Const", "Region"], |d, tag| {
                 match tag {
                     TYPE_TAG => Ty::decode(d).map(Kind::from),
+                    CONST_TAG => <&'tcx Const>::decode(d).map(Kind::from),
                     REGION_TAG => Region::decode(d).map(Kind::from),
                     _ => Err(d.error("invalid Kind tag"))
                 }
@@ -183,7 +218,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                              -> &'tcx Substs<'tcx> {
         Substs::for_item(tcx, def_id, |def, _| {
             tcx.mk_region(ty::ReEarlyBound(def.to_early_bound_region_data()))
-        }, |def, _| tcx.mk_param_from_def(def))
+        }, |def, _| tcx.mk_ty_param_from_def(def), |def, _| tcx.mk_const_param_from_def(def))
     }
 
     /// Creates a Substs for generic parameter definitions,
@@ -191,56 +226,64 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     /// The closures get to observe the Substs as they're
     /// being built, which can be used to correctly
     /// substitute defaults of type parameters.
-    pub fn for_item<FR, FT>(tcx: TyCtxt<'a, 'gcx, 'tcx>,
+    pub fn for_item<FR, FT, FC>(tcx: TyCtxt<'a, 'gcx, 'tcx>,
                             def_id: DefId,
                             mut mk_region: FR,
-                            mut mk_type: FT)
+                            mut mk_type: FT,
+                            mut mk_const: FC)
                             -> &'tcx Substs<'tcx>
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
-          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx> {
+          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
+          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
         let defs = tcx.generics_of(def_id);
         let mut substs = Vec::with_capacity(defs.count());
-        Substs::fill_item(&mut substs, tcx, defs, &mut mk_region, &mut mk_type);
+        Substs::fill_item(&mut substs, tcx, defs, &mut mk_region, &mut mk_type, &mut mk_const);
         tcx.intern_substs(&substs)
     }
 
-    pub fn extend_to<FR, FT>(&self,
+    pub fn extend_to<FR, FT, FC>(&self,
                              tcx: TyCtxt<'a, 'gcx, 'tcx>,
                              def_id: DefId,
                              mut mk_region: FR,
-                             mut mk_type: FT)
+                             mut mk_type: FT,
+                             mut mk_const: FC)
                              -> &'tcx Substs<'tcx>
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
-          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>
+          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
+          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx>
     {
         let defs = tcx.generics_of(def_id);
         let mut result = Vec::with_capacity(defs.count());
         result.extend(self[..].iter().cloned());
-        Substs::fill_single(&mut result, defs, &mut mk_region, &mut mk_type);
+        Substs::fill_single(&mut result, defs, &mut mk_region, &mut mk_type, &mut mk_const);
         tcx.intern_substs(&result)
     }
 
-    pub fn fill_item<FR, FT>(substs: &mut Vec<Kind<'tcx>>,
+    pub fn fill_item<FR, FT, FC>(substs: &mut Vec<Kind<'tcx>>,
                              tcx: TyCtxt<'a, 'gcx, 'tcx>,
                              defs: &ty::Generics,
                              mk_region: &mut FR,
-                             mk_type: &mut FT)
+                             mk_type: &mut FT,
+                             mk_const: &mut FC)
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
-          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx> {
+          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
+          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
 
         if let Some(def_id) = defs.parent {
             let parent_defs = tcx.generics_of(def_id);
-            Substs::fill_item(substs, tcx, parent_defs, mk_region, mk_type);
+            Substs::fill_item(substs, tcx, parent_defs, mk_region, mk_type, mk_const);
         }
-        Substs::fill_single(substs, defs, mk_region, mk_type)
+        Substs::fill_single(substs, defs, mk_region, mk_type, mk_const)
     }
 
-    fn fill_single<FR, FT>(substs: &mut Vec<Kind<'tcx>>,
+    fn fill_single<FR, FT, FC>(substs: &mut Vec<Kind<'tcx>>,
                            defs: &ty::Generics,
                            mk_region: &mut FR,
-                           mk_type: &mut FT)
+                           mk_type: &mut FT,
+                           mk_const: &mut FC)
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
-          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx> {
+          FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
+          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
         // Handle Self first, before all regions.
         let mut types = defs.types.iter();
         if defs.parent.is_none() && defs.has_self {
@@ -261,6 +304,12 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
             assert_eq!(def.index as usize, substs.len());
             substs.push(Kind::from(ty));
         }
+
+        for def in &defs.consts {
+            let c = mk_const(def, substs);
+            assert_eq!(def.index as usize, substs.len());
+            substs.push(Kind::from(c));
+        }
     }
 
     pub fn is_noop(&self) -> bool {
@@ -270,6 +319,11 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     #[inline]
     pub fn types(&'a self) -> impl DoubleEndedIterator<Item=Ty<'tcx>> + 'a {
         self.iter().filter_map(|k| k.as_type())
+    }
+
+    #[inline]
+    pub fn consts(&'a self) -> impl DoubleEndedIterator<Item=&'tcx ty::Const<'tcx>> + 'a {
+        self.iter().filter_map(|k| k.as_const())
     }
 
     #[inline]
@@ -285,6 +339,13 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
+    pub fn const_at(&self, i: usize) -> &'tcx ty::Const<'tcx> {
+        self[i].as_const().unwrap_or_else(|| {
+            bug!("expected const for param #{} in {:?}", i, self);
+        })
+    }
+
+    #[inline]
     pub fn region_at(&self, i: usize) -> ty::Region<'tcx> {
         self[i].as_region().unwrap_or_else(|| {
             bug!("expected region for param #{} in {:?}", i, self);
@@ -294,6 +355,11 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     #[inline]
     pub fn type_for_def(&self, ty_param_def: &ty::TypeParameterDef) -> Ty<'tcx> {
         self.type_at(ty_param_def.index as usize)
+    }
+
+    #[inline]
+    pub fn const_for_def(&self, ty_param_def: &ty::ConstParameterDef) -> &'tcx ty::Const<'tcx> {
+        self.const_at(ty_param_def.index as usize)
     }
 
     #[inline]

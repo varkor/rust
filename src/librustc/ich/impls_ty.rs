@@ -377,6 +377,10 @@ for ::middle::const_val::ConstVal<'gcx> {
                 value.hash_stable(hcx, hasher);
                 times.hash_stable(hcx, hasher);
             }
+            Param(def_id, substs) => {
+                def_id.hash_stable(hcx, hasher);
+                substs.hash_stable(hcx, hasher);
+            }
             Unevaluated(def_id, substs) => {
                 def_id.hash_stable(hcx, hasher);
                 substs.hash_stable(hcx, hasher);

@@ -749,7 +749,8 @@ fn vtable_methods<'a, 'tcx>(
                 // regions for those
                 let substs = Substs::for_item(tcx, def_id,
                                               |_, _| tcx.types.re_erased,
-                                              |def, _| trait_ref.substs().type_for_def(def));
+                                              |def, _| trait_ref.substs().type_for_def(def),
+                                              |def, _| trait_ref.substs().const_for_def(def));
 
                 // the trait type may have higher-ranked lifetimes in it;
                 // so erase them if they appear, so that we get the type

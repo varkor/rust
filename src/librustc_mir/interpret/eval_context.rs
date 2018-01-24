@@ -270,6 +270,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             Variant(_) => bug!("should not have aggregate or variant constants in MIR"),
             // function items are zero sized and thus have no readable value
             Function(..) => PrimVal::Undef,
+            Param(..) => bug!("should not have param constants in MIR"),
         };
 
         Ok(Value::ByVal(primval))

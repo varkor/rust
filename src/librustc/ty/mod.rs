@@ -2567,7 +2567,7 @@ fn adt_dtorck_constraint<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         let result = DtorckConstraint {
             outlives: vec![],
             dtorck_types: vec![
-                tcx.mk_param_from_def(&tcx.generics_of(def_id).types[0])
+                tcx.mk_ty_param_from_def(&tcx.generics_of(def_id).types[0])
            ]
         };
         debug!("dtorck_constraint: {:?} => {:?}", def, result);

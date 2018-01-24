@@ -670,10 +670,13 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     /// a suitable "empty substs" for it.
     pub fn empty_substs_for_def_id(self, item_def_id: DefId) -> &'tcx ty::Substs<'tcx> {
         ty::Substs::for_item(self, item_def_id,
-                             |_, _| self.types.re_erased,
-                             |_, _| {
-            bug!("empty_substs_for_def_id: {:?} has type parameters", item_def_id)
-        })
+            |_, _| self.types.re_erased,
+            |_, _| {
+                bug!("empty_substs_for_def_id: {:?} has type parameters", item_def_id)
+            }, |_, _| {
+                bug!("empty_substs_for_def_id: {:?} has const parameters", item_def_id)
+            }
+        )
     }
 
     pub fn const_usize(&self, val: u16) -> ConstInt {

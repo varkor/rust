@@ -4828,6 +4828,8 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 // TyError to let type inference recover somewhat.
                 self.type_var_for_def(span, def, substs)
             }
+        }, |_def, _substs| {
+            unimplemented!() // TODO(varkor)
         });
 
         // The things we are substituting into the type should not contain

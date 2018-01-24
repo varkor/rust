@@ -1429,6 +1429,7 @@ impl<'a> LoweringContext<'a> {
         (hir::PathParameters {
             lifetimes: self.lower_lifetimes(lifetimes),
             types: types.iter().map(|ty| self.lower_ty(ty, itctx)).collect(),
+            consts: hir_vec![], // TODO(varkor)
             bindings: bindings.iter().map(|b| self.lower_ty_binding(b, itctx)).collect(),
             parenthesized: false,
         }, types.is_empty() && param_mode == ParamMode::Optional)
@@ -1448,6 +1449,7 @@ impl<'a> LoweringContext<'a> {
         (hir::PathParameters {
             lifetimes: hir::HirVec::new(),
             types: hir_vec![mk_tup(self, inputs, span)],
+            consts: hir_vec![], // TODO(varkor)
             bindings: hir_vec![hir::TypeBinding {
                 id: self.next_id().node_id,
                 name: Symbol::intern(FN_OUTPUT_NAME),

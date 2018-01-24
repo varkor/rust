@@ -21,6 +21,7 @@ use hir::def_id::DefId;
 use middle::free_region::RegionRelations;
 use middle::region;
 use middle::lang_items;
+use middle::const_val::ConstVal;
 use mir::tcx::PlaceTy;
 use ty::subst::{Kind, Subst, Substs};
 use ty::{TyVid, IntVid, FloatVid};
@@ -1117,6 +1118,25 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_var(ty_var_id)
     }
 
+    /// Create a const inference variable for the given
+    /// const parameter definition.
+    pub fn const_var_for_def(&self,
+                             span: Span,
+                             def: &ty::ConstParameterDef,
+                             substs: &[Kind<'tcx>])
+                              -> &'tcx ty::Const<'tcx> {
+        let ty_var_id = self.type_variables
+                            .borrow_mut()
+                            .new_var(false,
+                                    TypeVariableOrigin::ConstParameterDefinition(span, def.name),
+                                    None);
+
+        self.tcx.mk_const(ty::Const {
+            val: ConstVal::Param(def.def_id, self.tcx.mk_substs(substs.iter())),
+            ty: self.tcx.mk_var(ty_var_id),
+        })
+    }
+
     /// Given a set of generics defined on a type or impl, returns a substitution mapping each
     /// type/region parameter to a fresh inference variable.
     pub fn fresh_substs_for_item(&self,
@@ -1127,6 +1147,8 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
             self.region_var_for_def(span, def)
         }, |def, substs| {
             self.type_var_for_def(span, def, substs)
+        }, |def, substs| {
+            self.const_var_for_def(span, def, substs)
         })
     }
 

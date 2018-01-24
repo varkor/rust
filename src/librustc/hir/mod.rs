@@ -346,6 +346,8 @@ pub struct PathParameters {
     pub lifetimes: HirVec<Lifetime>,
     /// The type parameters for this path segment, if present.
     pub types: HirVec<P<Ty>>,
+    /// The const parameters for this path segment, if present.
+    pub consts: HirVec<P<()>>, // TODO(varkor)
     /// Bindings (equality constraints) on associated types, if present.
     /// E.g., `Foo<A=Bar>`.
     pub bindings: HirVec<TypeBinding>,
@@ -360,6 +362,7 @@ impl PathParameters {
         Self {
             lifetimes: HirVec::new(),
             types: HirVec::new(),
+            consts: HirVec::new(),
             bindings: HirVec::new(),
             parenthesized: false,
         }
