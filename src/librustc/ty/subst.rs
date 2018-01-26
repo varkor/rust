@@ -221,8 +221,8 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
         }, |def, _| tcx.mk_ty_param_from_def(def), |def, _| tcx.mk_const_param_from_def(def))
     }
 
-    /// Creates a Substs for generic parameter definitions,
-    /// by calling closures to obtain each region and type.
+    /// Creates a Substs for generic parameter definitions, by
+    /// calling closures to obtain each region, type and constant.
     /// The closures get to observe the Substs as they're
     /// being built, which can be used to correctly
     /// substitute defaults of type parameters.

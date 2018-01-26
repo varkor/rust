@@ -4642,20 +4642,28 @@ impl<'a> Parser<'a> {
         self.expect(&token::Colon)?;
         let ty = self.parse_ty()?;
 
+        let default = if self.eat(&token::Eq) {
+            unimplemented!() // TODO(varkor)
+        } else {
+            None
+        };
+
         Ok(ConstParam {
             attrs: preceding_attrs.into(),
             ident,
             id: ast::DUMMY_NODE_ID,
             ty,
+            default,
             span,
         })
     }
 
-    /// Parses (possibly empty) list of lifetime and type parameters, possibly including
-    /// trailing comma and erroneous trailing attributes.
+    /// Parses (possibly empty) list of lifetime, type and const parameters,
+    /// possibly including trailing comma and erroneous trailing attributes.
     pub fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
         let mut params = Vec::new();
         let mut seen_non_lifetime_param = false;
+        // TODO(varkor): Ensure parameters are ordered: lifetimes > types > consts.
         loop {
             let attrs = self.parse_outer_attributes()?;
             if self.check_lifetime() {

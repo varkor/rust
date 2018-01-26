@@ -740,6 +740,7 @@ pub struct ConstParameterDef {
     pub name: Name,
     pub def_id: DefId,
     pub index: u32,
+    pub has_default: bool,
 }
 
 #[derive(Copy, Clone, RustcEncodable, RustcDecodable)]

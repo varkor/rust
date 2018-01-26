@@ -540,7 +540,8 @@ impl_stable_hash_for!(struct ty::TypeParameterDef {
 impl_stable_hash_for!(struct ty::ConstParameterDef {
     name,
     def_id,
-    index
+    index,
+    has_default
 });
 
 impl<'gcx, T> HashStable<StableHashingContext<'gcx>>

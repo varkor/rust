@@ -210,6 +210,7 @@ impl_stable_hash_for!(struct hir::ConstParam {
     name,
     id,
     ty,
+    default,
     span
 });
 

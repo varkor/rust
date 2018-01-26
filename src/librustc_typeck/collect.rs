@@ -192,6 +192,10 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
         self.tcx().types.err
     }
 
+    fn const_infer(&self, _span: Span) -> &'tcx ty::Const<'tcx> {
+        unimplemented!() // TODO(varkor)
+    }
+
     fn projected_ty_from_poly_trait_ref(&self,
                                         span: Span,
                                         item_def_id: DefId,
@@ -982,6 +986,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             index: const_start + i as u32,
             name: p.name,
             def_id: tcx.hir.local_def_id(p.id),
+            has_default: p.default.is_some(),
         }
     }).collect::<Vec<_>>();
 

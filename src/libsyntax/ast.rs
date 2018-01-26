@@ -320,6 +320,7 @@ pub struct ConstParam {
     pub ident: Ident,
     pub id: NodeId,
     pub ty: P<Ty>,
+    pub default: Option<P<()>>,
     pub span: Span,
 }
 

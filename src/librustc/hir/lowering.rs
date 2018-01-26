@@ -1592,6 +1592,7 @@ impl<'a> LoweringContext<'a> {
             name: self.lower_ident(cp.ident),
             id: self.lower_node_id(cp.id).node_id,
             ty: self.lower_ty(&cp.ty, ImplTraitContext::Disallowed),
+            default: cp.default.as_ref().map(|_x| unimplemented!()), // TODO(varkor)
             span: cp.span,
         }
     }

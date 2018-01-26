@@ -29,7 +29,7 @@ use util::common::ErrorReported;
 use util::nodemap::FxHashSet;
 
 use std::iter;
-use syntax::{abi, ast};
+use syntax::{self, abi, ast};
 use syntax::feature_gate::{GateIssue, emit_feature_err};
 use syntax_pos::Span;
 
@@ -54,6 +54,17 @@ pub trait AstConv<'gcx, 'tcx> {
                         _substs: &[Kind<'tcx>],
                         span: Span) -> Ty<'tcx> {
         self.ty_infer(span)
+    }
+
+    /// What const should we use when a const is omitted?
+    fn const_infer(&self, span: Span) -> &'tcx ty::Const<'tcx>;
+
+    /// Same as const_infer, but with a known const parameter definition.
+    fn const_infer_for_def(&self,
+                           _def: &ty::ConstParameterDef,
+                           _substs: &[Kind<'tcx>],
+                           span: Span) -> &'tcx ty::Const<'tcx> {
+        self.const_infer(span)
     }
 
     /// Projecting an associated type from a (potentially)
@@ -209,6 +220,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         // whatever & would get replaced with).
         let decl_generics = tcx.generics_of(def_id);
         let num_types_provided = parameters.types.len();
+        let num_consts_provided = parameters.consts.len();
         let expected_num_region_params = decl_generics.regions.len();
         let supplied_num_region_params = parameters.lifetimes.len();
         if expected_num_region_params != supplied_num_region_params {
@@ -224,6 +236,12 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         let ty_param_defs = &decl_generics.types[self_ty.is_some() as usize..];
         if !infer_types || num_types_provided > ty_param_defs.len() {
             check_type_argument_count(tcx, span, num_types_provided, ty_param_defs);
+        }
+
+        // Check the number of constant parameters supplied by the user.
+        let const_param_defs = &decl_generics.consts;
+        if !infer_types || num_consts_provided > const_param_defs.len() {
+            check_const_argument_count(tcx, span, num_consts_provided, const_param_defs);
         }
 
         let is_object = self_ty.map_or(false, |ty| ty.sty == TRAIT_OBJECT_DUMMY_SELF);
@@ -295,8 +313,20 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 // We've already errored above about the mismatch.
                 tcx.types.err
             }
-        }, |_, _| {
-            unimplemented!() // TODO(varkor)
+        }, |def, substs| {
+            let i = def.index as usize
+                    - self_ty.is_some() as usize
+                    - decl_generics.regions.len()
+                    - decl_generics.types.len();
+            if i < num_consts_provided {
+                self.ast_const_to_const(&parameters.consts[i])
+            } else if infer_types {
+                self.const_infer_for_def(def, substs, span)
+            } else if def.has_default {
+                unimplemented!() // TODO(varkor)
+            } else {
+                unimplemented!() // TODO(varkor): Print an error message in this case (if necess.?)
+            }
         });
 
         let assoc_bindings = parameters.bindings.iter().map(|binding| {
@@ -1089,7 +1119,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 let length_def_id = tcx.hir.body_owner_def_id(length);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
                 let length = tcx.mk_const(ty::Const {
-                    val: ConstVal::Unevaluated(length_def_id, substs), // TODO(varkor)
+                    // TODO(varkor): Make this ConstVal::Param
+                    val: ConstVal::Unevaluated(length_def_id, substs),
                     ty: tcx.types.usize
                 });
                 let array_ty = tcx.mk_ty(ty::TyArray(self.ast_ty_to_ty(&ty), length));
@@ -1117,6 +1148,10 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
 
         self.record_ty(ast_ty.hir_id, result_ty, ast_ty.span);
         result_ty
+    }
+
+    pub fn ast_const_to_const(&self, _ast_const: &syntax::ptr::P<()>) -> &'tcx ty::Const<'tcx> {
+        unimplemented!() // TODO(varkor): Implement and change argument type.
     }
 
     pub fn impl_trait_ty_to_ty(&self, def_id: DefId, lifetimes: &[hir::Lifetime]) -> Ty<'tcx> {
@@ -1341,6 +1376,49 @@ fn check_type_argument_count(tcx: TyCtxt, span: Span, supplied: usize,
             .span_label(
                 span,
                 format!("{} type argument{}",
+                    if accepted == 0 { "expected no" } else { &expected },
+                    arguments_plural)
+            )
+            .emit();
+    }
+}
+
+// TODO(varkor): Refactor this with `check_type_argument_count`.
+fn check_const_argument_count(tcx: TyCtxt, span: Span, supplied: usize,
+                              const_param_defs: &[ty::ConstParameterDef]) {
+    let accepted = const_param_defs.len();
+    let required = const_param_defs.iter().take_while(|x| !x.has_default).count();
+    if supplied < required {
+        let expected = if required < accepted {
+            "expected at least"
+        } else {
+            "expected"
+        };
+        let arguments_plural = if required == 1 { "" } else { "s" };
+
+        struct_span_err!(tcx.sess, span, E0692,
+                "wrong number of const arguments: {} {}, found {}",
+                expected, required, supplied)
+            .span_label(span,
+                format!("{} {} const argument{}",
+                    expected,
+                    required,
+                    arguments_plural))
+            .emit();
+    } else if supplied > accepted {
+        let expected = if required < accepted {
+            format!("expected at most {}", accepted)
+        } else {
+            format!("expected {}", accepted)
+        };
+        let arguments_plural = if accepted == 1 { "" } else { "s" };
+
+        struct_span_err!(tcx.sess, span, E0693,
+                "wrong number of const arguments: {}, found {}",
+                expected, supplied)
+            .span_label(
+                span,
+                format!("{} const argument{}",
                     if accepted == 0 { "expected no" } else { &expected },
                     arguments_plural)
             )

@@ -4699,6 +4699,27 @@ the alignment of the zero-sized type is less than or equal to the data field's
 alignment.
 "##,
 
+E0692: r##"
+This error indicates that not enough const parameters were found in a type or
+trait.
+
+For example, TODO(varkor)
+
+```compile_fail,E0692
+// TODO(varkor)
+```
+"##,
+
+E0693: r##"
+This error indicates that too many const parameters were found in a type or
+trait.
+
+For example, TODO(varkor)
+
+```compile_fail,E0693
+// TODO(varkor)
+```
+"##,
 
 E0908: r##"
 A method was called on a raw pointer whose inner type wasn't completely known.
@@ -4746,7 +4767,6 @@ Given that we don't know what type the pointer is, and there's potential
 ambiguity for some types, we disallow calling methods on raw pointers when
 the type is unknown.
 "##,
-
 }
 
 register_diagnostics! {
