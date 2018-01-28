@@ -487,6 +487,7 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics<'gcx> {
             parent,
             parent_regions,
             parent_types,
+            parent_consts,
             ref regions,
             ref types,
             ref consts,
@@ -501,6 +502,7 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics<'gcx> {
         parent.hash_stable(hcx, hasher);
         parent_regions.hash_stable(hcx, hasher);
         parent_types.hash_stable(hcx, hasher);
+        parent_consts.hash_stable(hcx, hasher);
         regions.hash_stable(hcx, hasher);
         types.hash_stable(hcx, hasher);
         consts.hash_stable(hcx, hasher);

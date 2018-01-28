@@ -932,13 +932,14 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let has_self = opt_self.is_some();
     let mut parent_has_self = false;
     let mut own_start = has_self as u32;
-    let (parent_regions, parent_types) = parent_def_id.map_or((0, 0), |def_id| {
+    let (parent_regions, parent_types, parent_consts) = parent_def_id.map_or((0, 0, 0), |def_id| {
         let generics = tcx.generics_of(def_id);
         assert_eq!(has_self, false);
         parent_has_self = generics.has_self;
         own_start = generics.count() as u32;
         (generics.parent_regions + generics.regions.len() as u32,
-            generics.parent_types + generics.types.len() as u32)
+            generics.parent_types + generics.types.len() as u32,
+            generics.parent_consts + generics.consts.len() as u32)
     });
 
     let early_lifetimes = early_bound_lifetimes_from_generics(tcx, ast_generics);
@@ -1045,6 +1046,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         parent: parent_def_id,
         parent_regions,
         parent_types,
+        parent_consts,
         regions,
         types,
         consts,

@@ -790,6 +790,7 @@ pub struct Generics<'tcx> {
     pub parent: Option<DefId>,
     pub parent_regions: u32,
     pub parent_types: u32,
+    pub parent_consts: u32,
     pub regions: Vec<RegionParameterDef>,
     pub types: Vec<TypeParameterDef>,
     pub consts: Vec<ConstParameterDef<'tcx>>,
@@ -803,7 +804,9 @@ pub struct Generics<'tcx> {
 
 impl<'a, 'gcx, 'tcx> Generics<'tcx> {
     pub fn parent_count(&self) -> usize {
-        self.parent_regions as usize + self.parent_types as usize
+        self.parent_regions as usize +
+            self.parent_types as usize +
+            self.parent_consts as usize
     }
 
     pub fn own_count(&self) -> usize {
