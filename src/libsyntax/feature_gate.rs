@@ -449,6 +449,9 @@ declare_features! (
 
     // Use `?` as the Kleene "at most one" operator
     (active, macro_at_most_once_rep, "1.25.0", Some(48075)),
+
+    // const generics (RFC 2000)
+    (active, const_generics, "1.25.0", Some(44580)),
 );
 
 declare_features! (
@@ -1824,6 +1827,11 @@ impl<'a> Visitor<'a> for PostExpansionVisitor<'a> {
     }
 
     fn visit_generic_param(&mut self, param: &'a ast::GenericParam) {
+        if let &ast::GenericParam::Const(ref c) = param {
+            gate_feature_post!(&self, const_generics, c.span,
+                               "const generic parameters are experimental");
+        }
+
         let (attrs, explain) = match *param {
             ast::GenericParam::Lifetime(ref ld) =>
                 (&ld.attrs, "attributes on lifetime bindings are experimental"),
