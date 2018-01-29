@@ -62,7 +62,7 @@ fn cs_total_eq_assert(cx: &mut ExtCtxt, trait_span: Span, substr: &Substructure)
         let span = span.with_ctxt(cx.backtrace());
         let assert_path = cx.path_all(span, true,
                                         cx.std_path(&["cmp", helper_name]),
-                                        vec![], vec![ty], vec![]);
+                                        vec![], vec![ty], vec![], vec![]);
         stmts.push(cx.stmt_let_type_only(span, cx.ty_path(assert_path)));
     }
     fn process_variant(cx: &mut ExtCtxt, stmts: &mut Vec<ast::Stmt>, variant: &ast::VariantData) {

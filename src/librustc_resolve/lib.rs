@@ -2096,7 +2096,7 @@ impl<'a> Resolver<'a> {
                     match *param {
                         GenericParam::Type(ref type_parameter) => {
                             let ident = type_parameter.ident.modern();
-                            debug!("with_type_parameter_rib: {}", type_parameter.id);
+                            debug!("with_type_parameter_rib: {} (type)", type_parameter.id);
 
                             if seen_bindings.contains_key(&ident) {
                                 let span = seen_bindings.get(&ident).unwrap();
@@ -2116,8 +2116,20 @@ impl<'a> Resolver<'a> {
                         }
                         GenericParam::Const(ref const_parameter) => {
                             let ident = const_parameter.ident.modern();
-                            debug!("with_type_parameter_rib: {}", const_parameter.id);
+                            debug!("with_type_parameter_rib: {} (const)", const_parameter.id);
 
+                            // TODO(varkor): change to NameAlreadyUsedInParameterList?
+                            if seen_bindings.contains_key(&ident) {
+                                let span = seen_bindings.get(&ident).unwrap();
+                                let err = ResolutionError::NameAlreadyUsedInTypeParameterList(
+                                    ident.name,
+                                    span,
+                                );
+                                resolve_error(self, const_parameter.span, err);
+                            }
+                            seen_bindings.entry(ident).or_insert(const_parameter.span);
+
+                            // plain insert (no renaming)
                             let def_id = self.definitions.local_def_id(const_parameter.id);
                             let def = Def::ConstParam(def_id);
                             function_type_rib.bindings.insert(ident, def);

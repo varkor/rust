@@ -38,7 +38,7 @@ use traits;
 use ty::{self, Ty, TypeAndMut};
 use ty::{TyS, TypeVariants, Slice};
 use ty::{AdtKind, AdtDef, ClosureSubsts, GeneratorInterior, Region, Const};
-use ty::{PolyFnSig, InferTy, ParamTy, ProjectionTy, ExistentialPredicate, Predicate};
+use ty::{PolyFnSig, InferTy, ParamTy, ParamConst, ProjectionTy, ExistentialPredicate, Predicate};
 use ty::RegionKind;
 use ty::{TyVar, TyVid, ConstVar, ConstVid, IntVar, IntVid, FloatVar, FloatVid};
 use ty::TypeVariants::*;
@@ -96,7 +96,7 @@ pub struct GlobalArenas<'tcx> {
     layout: TypedArena<LayoutDetails>,
 
     // references
-    generics: TypedArena<ty::Generics>,
+    generics: TypedArena<ty::Generics<'tcx>>,
     trait_def: TypedArena<ty::TraitDef>,
     adt_def: TypedArena<ty::AdtDef>,
     steal_mir: TypedArena<Steal<Mir<'tcx>>>,
@@ -995,7 +995,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
 }
 
 impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
-    pub fn alloc_generics(self, generics: ty::Generics) -> &'gcx ty::Generics {
+    pub fn alloc_generics(self, generics: ty::Generics<'tcx>) -> &'gcx ty::Generics<'tcx> {
         self.global_arenas.generics.alloc(generics)
     }
 
@@ -2109,15 +2109,19 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn mk_ty_param(self,
-                    index: u32,
+                    idx: u32,
                     name: Name) -> Ty<'tcx> {
-        self.mk_ty(TyParam(ParamTy { idx: index, name: name }))
+        self.mk_ty(TyParam(ParamTy { idx, name }))
     }
 
     pub fn mk_const_param(self,
-                    _index: u32,
-                    _name: Name) -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor)
+                    idx: u32,
+                    name: Name,
+                    ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        self.mk_const(ty::Const {
+            val: ConstVal::Param(ParamConst { idx, name, ty }),
+            ty
+        })
     }
 
     pub fn mk_self_type(self) -> Ty<'tcx> {
@@ -2128,8 +2132,9 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty_param(def.index, def.name)
     }
 
-    pub fn mk_const_param_from_def(self, def: &ty::ConstParameterDef) -> &'tcx ty::Const<'tcx> {
-        self.mk_const_param(def.index, def.name)
+    pub fn mk_const_param_from_def(self, def: &ty::ConstParameterDef<'tcx>)
+                                   -> &'tcx ty::Const<'tcx> {
+        self.mk_const_param(def.index, def.name, def.ty)
     }
 
     pub fn mk_anon(self, def_id: DefId, substs: &'tcx Substs<'tcx>) -> Ty<'tcx> {

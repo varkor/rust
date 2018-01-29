@@ -218,7 +218,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                              -> &'tcx Substs<'tcx> {
         Substs::for_item(tcx, def_id, |def, _| {
             tcx.mk_region(ty::ReEarlyBound(def.to_early_bound_region_data()))
-        }, |def, _| tcx.mk_ty_param_from_def(def), |def, _| tcx.mk_const_param_from_def(def))
+        }, |def, _| tcx.mk_ty_param_from_def(def), |_def, _| unimplemented!()) // TODO(varkor)
     }
 
     /// Creates a Substs for generic parameter definitions, by

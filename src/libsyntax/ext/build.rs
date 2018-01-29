@@ -33,6 +33,7 @@ pub trait AstBuilder {
                 idents: Vec<ast::Ident> ,
                 lifetimes: Vec<ast::Lifetime>,
                 types: Vec<P<ast::Ty>>,
+                consts: Vec<P<ast::Expr>>,
                 bindings: Vec<ast::TypeBinding> )
         -> ast::Path;
 
@@ -45,6 +46,7 @@ pub trait AstBuilder {
                 ident: ast::SpannedIdent,
                 lifetimes: Vec<ast::Lifetime>,
                 types: Vec<P<ast::Ty>>,
+                consts: Vec<P<ast::Expr>>,
                 bindings: Vec<ast::TypeBinding>)
                 -> (ast::QSelf, ast::Path);
 
@@ -303,13 +305,13 @@ pub trait AstBuilder {
 
 impl<'a> AstBuilder for ExtCtxt<'a> {
     fn path(&self, span: Span, strs: Vec<ast::Ident> ) -> ast::Path {
-        self.path_all(span, false, strs, Vec::new(), Vec::new(), Vec::new())
+        self.path_all(span, false, strs, Vec::new(), Vec::new(), Vec::new(), Vec::new())
     }
     fn path_ident(&self, span: Span, id: ast::Ident) -> ast::Path {
         self.path(span, vec![id])
     }
     fn path_global(&self, span: Span, strs: Vec<ast::Ident> ) -> ast::Path {
-        self.path_all(span, true, strs, Vec::new(), Vec::new(), Vec::new())
+        self.path_all(span, true, strs, Vec::new(), Vec::new(), Vec::new(), Vec::new())
     }
     fn path_all(&self,
                 span: Span,
@@ -317,6 +319,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                 mut idents: Vec<ast::Ident> ,
                 lifetimes: Vec<ast::Lifetime>,
                 types: Vec<P<ast::Ty>>,
+                consts: Vec<P<ast::Expr>>,
                 bindings: Vec<ast::TypeBinding> )
                 -> ast::Path {
         use syntax::parse::token;
@@ -329,8 +332,9 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         }
 
         segments.extend(idents.into_iter().map(|i| ast::PathSegment::from_ident(i, span)));
-        let parameters = if !lifetimes.is_empty() || !types.is_empty() || !bindings.is_empty() {
-            ast::AngleBracketedParameterData { lifetimes, types, bindings, span }.into()
+        let parameters = if !lifetimes.is_empty() || !types.is_empty() || !consts.is_empty() ||
+                !bindings.is_empty() {
+            ast::AngleBracketedParameterData { lifetimes, types, consts, bindings, span }.into()
         } else {
             None
         };
@@ -346,7 +350,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
              trait_path: ast::Path,
              ident: ast::SpannedIdent)
              -> (ast::QSelf, ast::Path) {
-        self.qpath_all(self_type, trait_path, ident, vec![], vec![], vec![])
+        self.qpath_all(self_type, trait_path, ident, vec![], vec![], vec![], vec![])
     }
 
     /// Constructs a qualified path.
@@ -358,11 +362,13 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                  ident: ast::SpannedIdent,
                  lifetimes: Vec<ast::Lifetime>,
                  types: Vec<P<ast::Ty>>,
+                 consts: Vec<P<ast::Expr>>,
                  bindings: Vec<ast::TypeBinding>)
                  -> (ast::QSelf, ast::Path) {
         let mut path = trait_path;
-        let parameters = if !lifetimes.is_empty() || !types.is_empty() || !bindings.is_empty() {
-            ast::AngleBracketedParameterData { lifetimes, types, bindings, span: ident.span }.into()
+        let parameters = if !lifetimes.is_empty() || !types.is_empty() || !consts.is_empty() ||
+                !bindings.is_empty() {
+            ast::AngleBracketedParameterData { lifetimes, types, consts, bindings, span: ident.span }.into()
         } else {
             None
         };
@@ -430,6 +436,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                           self.std_path(&["option", "Option"]),
                           Vec::new(),
                           vec![ ty ],
+                          Vec::new(),
                           Vec::new()))
     }
 

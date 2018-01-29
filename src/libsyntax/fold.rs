@@ -472,9 +472,10 @@ pub fn noop_fold_angle_bracketed_parameter_data<T: Folder>(data: AngleBracketedP
                                                            fld: &mut T)
                                                            -> AngleBracketedParameterData
 {
-    let AngleBracketedParameterData { lifetimes, types, bindings, span } = data;
+    let AngleBracketedParameterData { lifetimes, types, consts, bindings, span } = data;
     AngleBracketedParameterData { lifetimes: fld.fold_lifetimes(lifetimes),
                                   types: types.move_map(|ty| fld.fold_ty(ty)),
+                                  consts: consts.move_map(|expr| fld.fold_expr(expr)),
                                   bindings: bindings.move_map(|b| fld.fold_ty_binding(b)),
                                   span: fld.new_span(span) }
 }
@@ -723,7 +724,7 @@ pub fn noop_fold_const_param<T: Folder>(cp: ConstParam, fld: &mut T) -> ConstPar
         id: fld.new_id(id),
         ident: fld.fold_ident(ident),
         ty: fld.fold_ty(ty),
-        default: default.map(|_x| unimplemented!()), // TODO(varkor)
+        default: default.map(|expr| fld.fold_expr(expr)),
         span: fld.new_span(span),
     }
 }

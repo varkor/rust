@@ -478,7 +478,8 @@ impl_stable_hash_for!(enum ty::adjustment::CustomCoerceUnsized {
     Struct(index)
 });
 
-impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics {
+// TODO(varkor): is 'gcx correct here?
+impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics<'gcx> {
     fn hash_stable<W: StableHasherResult>(&self,
                                           hcx: &mut StableHashingContext<'gcx>,
                                           hasher: &mut StableHasher<W>) {
@@ -537,10 +538,11 @@ impl_stable_hash_for!(struct ty::TypeParameterDef {
     synthetic
 });
 
-impl_stable_hash_for!(struct ty::ConstParameterDef {
+impl_stable_hash_for!(struct ty::ConstParameterDef<'tcx> {
     name,
     def_id,
     index,
+    ty,
     has_default
 });
 
@@ -726,9 +728,10 @@ impl_stable_hash_for!(struct ty::ParamTy {
     name
 });
 
-impl_stable_hash_for!(struct ty::ParamConst {
+impl_stable_hash_for!(struct ty::ParamConst<'tcx> {
     idx,
-    name
+    name,
+    ty
 });
 
 impl_stable_hash_for!(struct ty::TypeAndMut<'tcx> {

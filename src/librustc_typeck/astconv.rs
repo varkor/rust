@@ -1150,8 +1150,9 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         result_ty
     }
 
-    pub fn ast_const_to_const(&self, _ast_const: &syntax::ptr::P<()>) -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor): Implement and change argument type.
+    pub fn ast_const_to_const(&self, _ast_const: &syntax::ptr::P<hir::Expr>)
+                              -> &'tcx ty::Const<'tcx> {
+        unimplemented!() // TODO(varkor): implement.
     }
 
     pub fn impl_trait_ty_to_ty(&self, def_id: DefId, lifetimes: &[hir::Lifetime]) -> Ty<'tcx> {
@@ -1169,7 +1170,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 &mut |def, _| tcx.mk_region(
                     ty::ReEarlyBound(def.to_early_bound_region_data())),
                 &mut |def, _| tcx.mk_ty_param_from_def(def),
-                &mut |def, _| tcx.mk_const_param_from_def(def)
+                &mut |_def, _| unimplemented!(), // TODO(varkor)
             );
 
             // Replace all lifetimes with 'static

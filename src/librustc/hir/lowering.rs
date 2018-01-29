@@ -688,7 +688,7 @@ impl<'a> LoweringContext<'a> {
         let result = f(self);
         let r = self.record_body(result, decl);
         self.is_generator = prev;
-        return r
+        r
     }
 
     fn with_loop_scope<T, F>(&mut self, loop_id: NodeId, f: F) -> T
@@ -1425,7 +1425,8 @@ impl<'a> LoweringContext<'a> {
                                             param_mode: ParamMode,
                                             itctx: ImplTraitContext)
                                             -> (hir::PathParameters, bool) {
-        let &AngleBracketedParameterData { ref lifetimes, ref types, ref bindings, .. } = data;
+        let &AngleBracketedParameterData { ref lifetimes, ref types, ref bindings, /*ref consts,*/ .. }
+            = data;
         (hir::PathParameters {
             lifetimes: self.lower_lifetimes(lifetimes),
             types: types.iter().map(|ty| self.lower_ty(ty, itctx)).collect(),

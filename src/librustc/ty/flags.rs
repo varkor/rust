@@ -225,8 +225,11 @@ impl FlagComputation {
             ConstVal::Bool(_) |
             ConstVal::Char(_) |
             ConstVal::Variant(_) |
-            ConstVal::Param(_) |
             ConstVal::InferVar(_) => {}
+            ConstVal::Param(_) => {
+                self.add_flags(TypeFlags::HAS_LOCAL_NAMES);
+                self.add_flags(TypeFlags::HAS_PARAMS);
+            }
             ConstVal::Function(_, substs) => {
                 self.add_substs(substs);
             }

@@ -89,7 +89,7 @@ define_maps! { <'tcx>
 
     /// Maps from the def-id of an item (trait/struct/enum/fn) to its
     /// associated generics and predicates.
-    [] fn generics_of: GenericsOfItem(DefId) -> &'tcx ty::Generics,
+    [] fn generics_of: GenericsOfItem(DefId) -> &'tcx ty::Generics<'tcx>,
     [] fn predicates_of: PredicatesOfItem(DefId) -> ty::GenericPredicates<'tcx>,
 
     /// Maps from the def-id of a trait to the list of

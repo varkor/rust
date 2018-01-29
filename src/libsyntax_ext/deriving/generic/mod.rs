@@ -671,6 +671,10 @@ impl<'a> TraitDef<'a> {
                 _ => None,
             })
             .collect();
+        
+        // Create the const parameters on the `self` path.
+        // TODO(varkor)
+        let self_const_params = vec![];
 
         let self_lifetimes: Vec<ast::Lifetime> = generics.params
             .iter()
@@ -686,6 +690,7 @@ impl<'a> TraitDef<'a> {
                                                vec![type_ident],
                                                self_lifetimes,
                                                self_ty_params,
+                                               self_const_params,
                                                Vec::new()));
 
         let attr = cx.attribute(self.span,

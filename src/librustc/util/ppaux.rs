@@ -582,7 +582,7 @@ impl fmt::Debug for ty::TypeParameterDef {
     }
 }
 
-impl fmt::Debug for ty::ConstParameterDef {
+impl<'tcx> fmt::Debug for ty::ConstParameterDef<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ConstParameterDef({}, {:?}, {})",
                self.name,
@@ -1233,7 +1233,7 @@ define_print! {
 }
 
 define_print! {
-    () ty::ParamConst, (self, f, cx) {
+    ('tcx) ty::ParamConst<'tcx>, (self, f, cx) {
         display {
             write!(f, "{}", self.name)
         }

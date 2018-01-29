@@ -99,7 +99,7 @@ impl IntoArgs for (CrateNum, DefId) {
 provide! { <'tcx> tcx, def_id, other, cdata,
     type_of => { cdata.get_type(def_id.index, tcx) }
     generics_of => {
-        tcx.alloc_generics(cdata.get_generics(def_id.index, tcx.sess))
+        tcx.alloc_generics(cdata.get_generics(def_id.index, tcx.sess).clone())
     }
     predicates_of => { cdata.get_predicates(def_id.index, tcx) }
     super_predicates_of => { cdata.get_super_predicates(def_id.index, tcx) }
@@ -381,7 +381,8 @@ impl CrateStore for cstore::CStore {
         self.get_crate_data(def.krate).get_visibility(def.index)
     }
 
-    fn item_generics_cloned_untracked(&self, def: DefId, sess: &Session) -> ty::Generics {
+    fn item_generics_cloned_untracked<'tcx>(&self, def: DefId, sess: &Session)
+                                            -> ty::Generics<'tcx> {
         self.get_crate_data(def.krate).get_generics(def.index, sess)
     }
 

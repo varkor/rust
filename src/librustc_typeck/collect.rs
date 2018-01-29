@@ -828,7 +828,7 @@ fn has_late_bound_regions<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
 fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                          def_id: DefId)
-                         -> &'tcx ty::Generics {
+                         -> &'tcx ty::Generics<'tcx> {
     use rustc::hir::map::*;
     use rustc::hir::*;
 
@@ -982,10 +982,13 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
     let const_start = type_start + types.len() as u32;
     let consts = ast_generics.const_params().enumerate().map(|(i, p)| {
+        let const_param_def_id = tcx.hir.local_def_id(p.id);
+        let icx = ItemCtxt::new(tcx, const_param_def_id);
         ty::ConstParameterDef {
             index: const_start + i as u32,
             name: p.name,
-            def_id: tcx.hir.local_def_id(p.id),
+            def_id: const_param_def_id,
+            ty: icx.to_ty(&p.ty),
             has_default: p.default.is_some(),
         }
     }).collect::<Vec<_>>();
@@ -1161,7 +1164,7 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         tcx.mk_region(ty::ReEarlyBound(region))
                     },
                     |def, _| tcx.mk_ty_param_from_def(def),
-                    |def, _| tcx.mk_const_param_from_def(def),
+                    |_def, _| unimplemented!(), // TODO(varkor)
                 )
             };
 

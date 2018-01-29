@@ -88,14 +88,15 @@ impl<'a> Path<'a> {
         let mut idents = self.path.iter().map(|s| cx.ident_of(*s)).collect();
         let lt = mk_lifetimes(cx, span, &self.lifetime);
         let tys = self.params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics)).collect();
+        let cns = vec![]; // TODO(varkor)
 
         match self.kind {
-            PathKind::Global => cx.path_all(span, true, idents, lt, tys, Vec::new()),
-            PathKind::Local => cx.path_all(span, false, idents, lt, tys, Vec::new()),
+            PathKind::Global => cx.path_all(span, true, idents, lt, tys, cns, Vec::new()),
+            PathKind::Local => cx.path_all(span, false, idents, lt, tys, cns, Vec::new()),
             PathKind::Std => {
                 let def_site = SyntaxContext::empty().apply_mark(cx.current_expansion.mark);
                 idents.insert(0, Ident { ctxt: def_site, ..keywords::DollarCrate.ident() });
-                cx.path_all(span, false, idents, lt, tys, Vec::new())
+                cx.path_all(span, false, idents, lt, tys, cns, Vec::new())
             }
         }
 
@@ -185,13 +186,16 @@ impl<'a> Ty<'a> {
                    -> ast::Path {
         match *self {
             Self_ => {
-                let self_params = self_generics.params
+                let self_ty_params = self_generics.params
                     .iter()
                     .filter_map(|param| match *param {
                         GenericParam::Type(ref ty_param) => Some(cx.ty_ident(span, ty_param.ident)),
                         _ => None,
                     })
                     .collect();
+
+                // TODO(varkor)
+                let self_const_params = vec![];
 
                 let lifetimes: Vec<ast::Lifetime> = self_generics.params
                     .iter()
@@ -205,7 +209,8 @@ impl<'a> Ty<'a> {
                             false,
                             vec![self_ty],
                             lifetimes,
-                            self_params,
+                            self_ty_params,
+                            self_const_params,
                             Vec::new())
             }
             Literal(ref p) => p.to_path(cx, span, self_ty, self_generics),

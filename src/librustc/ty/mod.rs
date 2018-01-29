@@ -736,10 +736,11 @@ pub struct TypeParameterDef {
 }
 
 #[derive(Copy, Clone, RustcEncodable, RustcDecodable)]
-pub struct ConstParameterDef {
+pub struct ConstParameterDef<'tcx> {
     pub name: Name,
     pub def_id: DefId,
     pub index: u32,
+    pub ty: Ty<'tcx>,
     pub has_default: bool,
 }
 
@@ -785,13 +786,13 @@ impl ty::EarlyBoundRegion {
 ///     regions = Regions
 ///     types = [Self, *Other Type Params]
 #[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub struct Generics {
+pub struct Generics<'tcx> {
     pub parent: Option<DefId>,
     pub parent_regions: u32,
     pub parent_types: u32,
     pub regions: Vec<RegionParameterDef>,
     pub types: Vec<TypeParameterDef>,
-    pub consts: Vec<ConstParameterDef>,
+    pub consts: Vec<ConstParameterDef<'tcx>>,
 
     /// Reverse map to each `TypeParameterDef`'s `index` field
     pub type_param_to_index: FxHashMap<DefId, u32>,
@@ -800,7 +801,7 @@ pub struct Generics {
     pub has_late_bound_regions: Option<Span>,
 }
 
-impl<'a, 'gcx, 'tcx> Generics {
+impl<'a, 'gcx, 'tcx> Generics<'tcx> {
     pub fn parent_count(&self) -> usize {
         self.parent_regions as usize + self.parent_types as usize
     }
@@ -868,7 +869,7 @@ impl<'a, 'gcx, 'tcx> Generics {
                 assert!(!is_separated_self, "found a Self after type_param_offset");
                 &self.types[idx]
             } else {
-                assert!(is_separated_self, "non-Self param before type_param_offset");
+                assert!(is_separated_self, "non-Self type param before type_param_offset");
                 &self.types[0]
             }
         } else {
@@ -879,7 +880,7 @@ impl<'a, 'gcx, 'tcx> Generics {
 
     /// Returns the `ConstParameterDef` associated with this `ParamConst`.
     pub fn const_param(&'tcx self,
-                       param: &ParamConst,
+                       param: &ParamConst<'tcx>,
                        tcx: TyCtxt<'a, 'gcx, 'tcx>)
                        -> &ConstParameterDef {
         if let Some(idx) = param.idx.checked_sub(self.parent_count() as u32) {
@@ -888,7 +889,7 @@ impl<'a, 'gcx, 'tcx> Generics {
             if let Some(idx) = (idx as usize).checked_sub(const_param_offset) {
                 &self.consts[idx]
             } else {
-                &self.consts[0]
+                bug!("const param before const_param_offset")
             }
         } else {
             tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))

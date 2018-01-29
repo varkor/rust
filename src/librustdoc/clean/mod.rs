@@ -1261,7 +1261,7 @@ pub struct ConstParam {
     pub name: String,
     pub did: DefId,
     pub ty: Type,
-    pub default: Option<Const>,
+    pub default: Option<Expr>,
 }
 
 impl Clean<ConstParam> for hir::ConstParam {

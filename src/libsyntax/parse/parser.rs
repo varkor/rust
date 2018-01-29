@@ -2050,10 +2050,10 @@ impl<'a> Parser<'a> {
 
             let parameters = if self.eat_lt() {
                 // `<'a, T, A = U>`
-                let (lifetimes, types, bindings) = self.parse_generic_args()?;
+                let (lifetimes, types, consts, bindings) = self.parse_generic_args()?;
                 self.expect_gt()?;
                 let span = lo.to(self.prev_span);
-                AngleBracketedParameterData { lifetimes, types, bindings, span }.into()
+                AngleBracketedParameterData { lifetimes, types, consts, bindings, span }.into()
             } else {
                 // `(T, U) -> R`
                 self.bump(); // `(`
@@ -4643,6 +4643,8 @@ impl<'a> Parser<'a> {
         let ty = self.parse_ty()?;
 
         let default = if self.eat(&token::Eq) {
+            // Const parameters are either literals or blocks.
+            // Some(self.parse_lit().or_else(|_| self.parse_block())?)
             unimplemented!() // TODO(varkor)
         } else {
             None
@@ -4662,8 +4664,14 @@ impl<'a> Parser<'a> {
     /// possibly including trailing comma and erroneous trailing attributes.
     pub fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
         let mut params = Vec::new();
-        let mut seen_non_lifetime_param = false;
-        // TODO(varkor): Ensure parameters are ordered: lifetimes > types > consts.
+        #[derive(PartialEq, PartialOrd)]
+        enum ParamOrdering {
+            None,
+            Lifetime,
+            Type,
+            Const,
+        };
+        let mut previous_param = ParamOrdering::None;
         loop {
             let attrs = self.parse_outer_attributes()?;
             if self.check_lifetime() {
@@ -4679,28 +4687,40 @@ impl<'a> Parser<'a> {
                     lifetime,
                     bounds,
                 }));
-                if seen_non_lifetime_param {
+                if previous_param > ParamOrdering::Lifetime {
                     self.span_err(self.prev_span,
                         "lifetime parameters must be declared prior to type and const parameters");
+                } else {
+                    previous_param = ParamOrdering::Lifetime;
                 }
             } else if self.check_keyword(keywords::Const) {
                 params.push(ast::GenericParam::Const(self.parse_const_param(attrs)?));
-                seen_non_lifetime_param = true;
+                previous_param = ParamOrdering::Const;
             } else if self.check_ident() {
                 // Parse type parameter.
                 params.push(ast::GenericParam::Type(self.parse_ty_param(attrs)?));
-                seen_non_lifetime_param = true;
+                if previous_param > ParamOrdering::Type {
+                    self.span_err(self.prev_span,
+                        "type parameters must be declared prior to const parameters");
+                } else {
+                    previous_param = ParamOrdering::Type;
+                }
             } else {
                 // Check for trailing attributes and stop parsing.
                 if !attrs.is_empty() {
-                    let param_kind = if seen_non_lifetime_param {
-                        "type and const"
+                    if previous_param == ParamOrdering::None {
+                        self.span_err(attrs[0].span, "unrecognised parameter attribute");
                     } else {
-                        "lifetime"
-                    };
+                        let param_kind = match previous_param {
+                            ParamOrdering::Lifetime => "lifetime",
+                            ParamOrdering::Type => "type",
+                            ParamOrdering::Const => "const",
+                            _ => unreachable!(),
+                        };
 
-                    self.span_err(attrs[0].span,
-                        &format!("trailing attribute after {} parameters", param_kind));
+                        self.span_err(attrs[0].span,
+                            &format!("trailing attribute after {} parameters", param_kind));
+                    }
                 }
                 break
             }
@@ -4742,19 +4762,26 @@ impl<'a> Parser<'a> {
 
     /// Parses (possibly empty) list of lifetime and type arguments and associated type bindings,
     /// possibly including trailing comma.
-    fn parse_generic_args(&mut self) -> PResult<'a, (Vec<Lifetime>, Vec<P<Ty>>, Vec<TypeBinding>)> {
+    fn parse_generic_args(&mut self)
+                          -> PResult<'a,
+                            (Vec<Lifetime>,
+                             Vec<P<Ty>>,
+                             Vec<P<Expr>>,
+                             Vec<TypeBinding>)> {
         let mut lifetimes = Vec::new();
         let mut types = Vec::new();
+        let /*mut*/ consts = Vec::new();
         let mut bindings = Vec::new();
         let mut seen_type = false;
         let mut seen_binding = false;
+        let /*mut*/ seen_const = false;
         loop {
             if self.check_lifetime() && self.look_ahead(1, |t| t != &token::BinOp(token::Plus)) {
                 // Parse lifetime argument.
                 lifetimes.push(self.expect_lifetime());
-                if seen_type || seen_binding {
+                if seen_type || seen_binding || seen_const {
                     self.span_err(self.prev_span,
-                        "lifetime parameters must be declared prior to type parameters");
+                        "lifetime parameters must be declared prior to type adn const parameters");
                 }
             } else if self.check_ident() && self.look_ahead(1, |t| t == &token::Eq) {
                 // Parse associated type binding.
@@ -4772,20 +4799,24 @@ impl<'a> Parser<'a> {
             } else if self.check_type() {
                 // Parse type argument.
                 types.push(self.parse_ty()?);
-                if seen_binding {
+                if seen_binding || seen_const {
                     self.span_err(types[types.len() - 1].span,
-                        "type parameters must be declared prior to associated type bindings");
+                        "type parameters must be declared prior to associated type bindings and \
+                         consts");
                 }
                 seen_type = true;
             } else {
-                break
+                // Parse const argument.
+                // consts.push(self.parse_lit().or_else(|_| self.parse_block())?);
+                // seen_const = true;
+                unimplemented!(); // TODO(varkor)
             }
 
             if !self.eat(&token::Comma) {
                 break
             }
         }
-        Ok((lifetimes, types, bindings))
+        Ok((lifetimes, types, consts, bindings))
     }
 
     /// Parses an optional `where` clause and places it in `generics`.

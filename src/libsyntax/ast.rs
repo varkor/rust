@@ -191,6 +191,8 @@ pub struct AngleBracketedParameterData {
     ///
     /// E.g., `Foo<A=Bar>`.
     pub bindings: Vec<TypeBinding>,
+    /// The const parameters for this path segment, if present.
+    pub consts: Vec<P<Expr>>,
 }
 
 impl Into<Option<P<PathParameters>>> for AngleBracketedParameterData {
@@ -320,7 +322,7 @@ pub struct ConstParam {
     pub ident: Ident,
     pub id: NodeId,
     pub ty: P<Ty>,
-    pub default: Option<P<()>>,
+    pub default: Option<P<Expr>>,
     pub span: Span,
 }
 

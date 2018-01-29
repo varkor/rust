@@ -553,7 +553,7 @@ impl<'a, 'tcx> CrateMetadata {
     pub fn get_generics(&self,
                         item_id: DefIndex,
                         sess: &Session)
-                        -> ty::Generics {
+                        -> ty::Generics<'tcx> {
         self.entry(item_id).generics.unwrap().decode((self, sess))
     }
 

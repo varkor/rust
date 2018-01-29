@@ -347,7 +347,7 @@ pub struct PathParameters {
     /// The type parameters for this path segment, if present.
     pub types: HirVec<P<Ty>>,
     /// The const parameters for this path segment, if present.
-    pub consts: HirVec<P<()>>, // TODO(varkor)
+    pub consts: HirVec<P<Expr>>,
     /// Bindings (equality constraints) on associated types, if present.
     /// E.g., `Foo<A=Bar>`.
     pub bindings: HirVec<TypeBinding>,
@@ -421,7 +421,7 @@ pub struct ConstParam {
     pub name: Name,
     pub id: NodeId,
     pub ty: P<Ty>,
-    pub default: Option<P<()>>,
+    pub default: Option<P<Expr>>,
     pub span: Span,
 }
 
