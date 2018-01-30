@@ -395,12 +395,6 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                 break
             }
         }
-        for predicate in &g.where_clause.predicates {
-            if let WherePredicate::EqPredicate(ref predicate) = *predicate {
-                self.err_handler().span_err(predicate.span, "equality constraints are not yet \
-                                                             supported in where clauses (#20041)");
-            }
-        }
         visit::walk_generics(self, g)
     }
 

@@ -4813,8 +4813,7 @@ impl<'a> Parser<'a> {
                             bounds,
                         }
                     ));
-                // FIXME: Decide what should be used here, `=` or `==`.
-                } else if self.eat(&token::Eq) || self.eat(&token::EqEq) {
+                } else if self.eat(&token::Eq) {
                     let rhs_ty = self.parse_ty()?;
                     where_clause.predicates.push(ast::WherePredicate::EqPredicate(
                         ast::WhereEqPredicate {
@@ -4824,6 +4823,9 @@ impl<'a> Parser<'a> {
                             id: ast::DUMMY_NODE_ID,
                         }
                     ));
+                } else if self.eat(&token::EqEq) {
+                    self.span_err(lo.to(self.prev_span),
+                        "equality contstraints use `=` rather than `==`");
                 } else {
                     return self.unexpected();
                 }

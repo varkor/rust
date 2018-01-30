@@ -1530,8 +1530,11 @@ fn explicit_predicates_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 }
             }
 
-            &hir::WherePredicate::EqPredicate(..) => {
-                // FIXME(#20041)
+            &hir::WherePredicate::EqPredicate(ref eq_pred) => {
+                let t1 = AstConv::ast_ty_to_ty(&icx, &eq_pred.lhs_ty);
+                let t2 = AstConv::ast_ty_to_ty(&icx, &eq_pred.rhs_ty);
+                let pred = ty::Binder(ty::EquatePredicate(t1, t2));
+                predicates.push(ty::Predicate::Equate(pred))
             }
         }
     }

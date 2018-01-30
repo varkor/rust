@@ -203,9 +203,9 @@ impl<'a> fmt::Display for WhereClause<'a> {
                 }
                 &clean::WherePredicate::EqPredicate { ref lhs, ref rhs } => {
                     if f.alternate() {
-                        clause.push_str(&format!("{:#} == {:#}", lhs, rhs));
+                        clause.push_str(&format!("{:#} = {:#}", lhs, rhs));
                     } else {
-                        clause.push_str(&format!("{} == {}", lhs, rhs));
+                        clause.push_str(&format!("{} = {}", lhs, rhs));
                     }
                 }
             }
