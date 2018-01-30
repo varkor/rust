@@ -389,6 +389,7 @@ pub enum TokenType {
     Ident,
     Path,
     Type,
+    Const,
 }
 
 impl TokenType {
@@ -401,6 +402,7 @@ impl TokenType {
             TokenType::Ident => "identifier".to_string(),
             TokenType::Path => "path".to_string(),
             TokenType::Type => "type".to_string(),
+            TokenType::Const => "const".to_string(),
         }
     }
 }
@@ -882,6 +884,15 @@ impl<'a> Parser<'a> {
             true
         } else {
             self.expected_tokens.push(TokenType::Type);
+            false
+        }
+    }
+
+    fn check_const(&mut self) -> bool {
+        if self.token.can_begin_const() {
+            true
+        } else {
+            self.expected_tokens.push(TokenType::Const);
             false
         }
     }
@@ -4817,10 +4828,12 @@ impl<'a> Parser<'a> {
                          consts");
                 }
                 seen_type = true;
-            } else {
+            } else if self.check_const() {
                 // Parse const argument.
                 consts.push(self.parse_const_param_default()?);
                 seen_const = true;
+            } else {
+                break
             }
 
             if !self.eat(&token::Comma) {

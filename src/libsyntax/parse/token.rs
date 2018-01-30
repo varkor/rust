@@ -259,6 +259,15 @@ impl Token {
         }
     }
 
+    /// Returns `true` if the token can appear at the start of a const param.
+    pub fn can_begin_const(&self) -> bool {
+        match *self {
+            OpenDelim(Brace) |
+            Literal(..) => true,
+            _ => false
+        }
+    }
+
     /// Returns `true` if the token can appear at the start of a generic bound.
     pub fn can_begin_bound(&self) -> bool {
         self.is_path_start() || self.is_lifetime() || self.is_keyword(keywords::For) ||
