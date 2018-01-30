@@ -1691,21 +1691,21 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     }
 
     fn ty_infer_for_def(&self,
-                        ty_param_def: &ty::TypeParameterDef,
+                        def: &ty::TypeParameterDef,
                         substs: &[Kind<'tcx>],
                         span: Span) -> Ty<'tcx> {
-        self.type_var_for_def(span, ty_param_def, substs)
+        self.type_var_for_def(span, def, substs)
     }
 
     fn const_infer(&self, _span: Span) -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor)
+        self.next_const_var()
     }
 
     fn const_infer_for_def(&self,
-                           _def: &ty::ConstParameterDef,
-                           _substs: &[Kind<'tcx>],
-                           _span: Span) -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor)
+                           def: &ty::ConstParameterDef,
+                           substs: &[Kind<'tcx>],
+                           span: Span) -> &'tcx ty::Const<'tcx> {
+        self.const_var_for_def(span, def, substs)
     }
 
     fn projected_ty_from_poly_trait_ref(&self,

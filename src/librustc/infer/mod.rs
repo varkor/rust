@@ -724,7 +724,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                   .borrow_mut()
                                   .unsolved_variables()
                                   .into_iter()
-                                  .map(|t| self.tcx.mk_var(t));
+                                  .map(|t| self.tcx.mk_ty_var(t));
 
         let unbound_const_vars = self.const_unification_table
                                     .borrow_mut()
@@ -1055,11 +1055,16 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn next_ty_var(&self, origin: TypeVariableOrigin) -> Ty<'tcx> {
-        self.tcx.mk_var(self.next_ty_var_id(false, origin))
+        self.tcx.mk_ty_var(self.next_ty_var_id(false, origin))
     }
 
     pub fn next_diverging_ty_var(&self, origin: TypeVariableOrigin) -> Ty<'tcx> {
-        self.tcx.mk_var(self.next_ty_var_id(true, origin))
+        self.tcx.mk_ty_var(self.next_ty_var_id(true, origin))
+    }
+
+    pub fn next_const_var(&self) -> &'tcx ty::Const<'tcx> {
+        // self.tcx.mk_const_var(self.next_const_var_id())
+        unimplemented!() // TODO(varkor)
     }
 
     pub fn next_const_var_id(&self) -> ConstVid {
@@ -1142,7 +1147,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                      TypeVariableOrigin::TypeParameterDefinition(span, def.name),
                                      default);
 
-        self.tcx.mk_var(ty_var_id)
+        self.tcx.mk_ty_var(ty_var_id)
     }
 
     /// Create a const inference variable for the given
@@ -1152,7 +1157,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                              _def: &ty::ConstParameterDef,
                              _substs: &[Kind<'tcx>])
                               -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor)
+        unimplemented!()
     }
 
     /// Given a set of generics defined on a type or impl, returns a substitution mapping each

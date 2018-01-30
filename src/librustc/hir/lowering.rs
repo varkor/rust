@@ -1425,12 +1425,12 @@ impl<'a> LoweringContext<'a> {
                                             param_mode: ParamMode,
                                             itctx: ImplTraitContext)
                                             -> (hir::PathParameters, bool) {
-        let &AngleBracketedParameterData { ref lifetimes, ref types, ref bindings, /*ref consts,*/ .. }
+        let &AngleBracketedParameterData { ref lifetimes, ref types, ref bindings, ref consts, .. }
             = data;
         (hir::PathParameters {
             lifetimes: self.lower_lifetimes(lifetimes),
             types: types.iter().map(|ty| self.lower_ty(ty, itctx)).collect(),
-            consts: hir_vec![], // TODO(varkor)
+            consts: consts.iter().map(|cn| P(self.lower_expr(cn))).collect(),
             bindings: bindings.iter().map(|b| self.lower_ty_binding(b, itctx)).collect(),
             parenthesized: false,
         }, types.is_empty() && param_mode == ParamMode::Optional)

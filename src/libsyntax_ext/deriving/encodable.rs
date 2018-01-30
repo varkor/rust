@@ -132,7 +132,7 @@ fn expand_deriving_encodable_imp(cx: &mut ExtCtxt,
     let trait_def = TraitDef {
         span,
         attributes: Vec::new(),
-        path: Path::new_(vec![krate, "Encodable"], None, vec![], PathKind::Global),
+        path: Path::new_(vec![krate, "Encodable"], None, vec![], vec![], PathKind::Global),
         additional_bounds: Vec::new(),
         generics: LifetimeBounds::empty(),
         is_unsafe: false,
@@ -144,7 +144,8 @@ fn expand_deriving_encodable_imp(cx: &mut ExtCtxt,
                     lifetimes: Vec::new(),
                     bounds: vec![
                         (typaram,
-                         vec![Path::new_(vec![krate, "Encoder"], None, vec![], PathKind::Global)])
+                         vec![Path::new_(vec![krate, "Encoder"], None, vec![], vec![],
+                                              PathKind::Global)])
                     ],
                 },
                 explicit_self: borrowed_explicit_self(),
@@ -154,8 +155,9 @@ fn expand_deriving_encodable_imp(cx: &mut ExtCtxt,
                     pathvec_std!(cx, result::Result),
                     None,
                     vec![Box::new(Tuple(Vec::new())), Box::new(Literal(Path::new_(
-                        vec![typaram, "Error"], None, vec![], PathKind::Local
+                        vec![typaram, "Error"], None, vec![], vec![], PathKind::Local
                     )))],
+                    vec![], // TODO(varkor)
                     PathKind::Std
                 )),
                 attributes: Vec::new(),

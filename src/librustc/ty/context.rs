@@ -2088,7 +2088,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(TyGeneratorWitness(types))
     }
 
-    pub fn mk_var(self, v: TyVid) -> Ty<'tcx> {
+    pub fn mk_ty_var(self, v: TyVid) -> Ty<'tcx> {
         self.mk_infer(TyVar(v))
     }
 

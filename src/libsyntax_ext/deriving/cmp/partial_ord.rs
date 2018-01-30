@@ -50,6 +50,7 @@ pub fn expand_deriving_partial_ord(cx: &mut ExtCtxt,
     let ret_ty = Literal(Path::new_(pathvec_std!(cx, option::Option),
                                     None,
                                     vec![Box::new(ordering_ty)],
+                                    vec![], // TODO(varkor)
                                     PathKind::Std));
 
     let inline = cx.meta_word(span, Symbol::intern("inline"));

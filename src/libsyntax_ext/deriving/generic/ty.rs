@@ -35,12 +35,13 @@ pub enum PtrTy<'a> {
 }
 
 /// A path, e.g. `::std::option::Option::<i32>` (global). Has support
-/// for type parameters and a lifetime.
+/// for type and const parameters and a lifetime.
 #[derive(Clone, Eq, PartialEq)]
 pub struct Path<'a> {
     path: Vec<&'a str>,
     lifetime: Option<&'a str>,
-    params: Vec<Box<Ty<'a>>>,
+    ty_params: Vec<Box<Ty<'a>>>,
+    const_params: Vec<Box<Const>>,
     kind: PathKind,
 }
 
@@ -53,20 +54,22 @@ pub enum PathKind {
 
 impl<'a> Path<'a> {
     pub fn new<'r>(path: Vec<&'r str>) -> Path<'r> {
-        Path::new_(path, None, Vec::new(), PathKind::Std)
+        Path::new_(path, None, Vec::new(), Vec::new(), PathKind::Std)
     }
     pub fn new_local<'r>(path: &'r str) -> Path<'r> {
-        Path::new_(vec![path], None, Vec::new(), PathKind::Local)
+        Path::new_(vec![path], None, Vec::new(), Vec::new(), PathKind::Local)
     }
     pub fn new_<'r>(path: Vec<&'r str>,
                     lifetime: Option<&'r str>,
-                    params: Vec<Box<Ty<'r>>>,
+                    ty_params: Vec<Box<Ty<'r>>>,
+                    const_params: Vec<Box<Const>>,
                     kind: PathKind)
                     -> Path<'r> {
         Path {
             path,
             lifetime,
-            params,
+            ty_params,
+            const_params,
             kind,
         }
     }
@@ -79,6 +82,7 @@ impl<'a> Path<'a> {
                  -> P<ast::Ty> {
         cx.ty_path(self.to_path(cx, span, self_ty, self_generics))
     }
+
     pub fn to_path(&self,
                    cx: &ExtCtxt,
                    span: Span,
@@ -87,7 +91,8 @@ impl<'a> Path<'a> {
                    -> ast::Path {
         let mut idents = self.path.iter().map(|s| cx.ident_of(*s)).collect();
         let lt = mk_lifetimes(cx, span, &self.lifetime);
-        let tys = self.params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics)).collect();
+        let tys = self.ty_params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics))
+                  .collect();
         let cns = vec![]; // TODO(varkor)
 
         match self.kind {
@@ -114,6 +119,13 @@ pub enum Ty<'a> {
     Literal(Path<'a>),
     /// includes unit
     Tuple(Vec<Ty<'a>>),
+}
+
+/// A const expression. Supports literals and blocks.
+#[derive(Clone, Eq, PartialEq)]
+pub enum Const{
+    Literal,
+    Block,
 }
 
 pub fn borrowed_ptrty<'r>() -> PtrTy<'r> {
@@ -194,8 +206,14 @@ impl<'a> Ty<'a> {
                     })
                     .collect();
 
-                // TODO(varkor)
-                let self_const_params = vec![];
+                let self_const_params= self_generics.params
+                    .iter()
+                    .filter_map(|param| match *param {
+                        GenericParam::Const(ref const_param) =>
+                            Some(cx.const_ident(span, const_param.ident)),
+                        _ => None,
+                    })
+                    .collect();
 
                 let lifetimes: Vec<ast::Lifetime> = self_generics.params
                     .iter()

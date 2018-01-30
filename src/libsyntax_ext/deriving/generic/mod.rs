@@ -673,7 +673,14 @@ impl<'a> TraitDef<'a> {
             .collect();
         
         // Create the const parameters on the `self` path.
-        let self_const_params = vec![]; // TODO(varkor)
+        let self_const_params = generics.params
+            .iter()
+            .filter_map(|param| match *param {
+                GenericParam::Const(ref const_param)
+                    => Some(cx.const_ident(self.span, const_param.ident)),
+                _ => None,
+            })
+            .collect();
 
         let self_lifetimes: Vec<ast::Lifetime> = generics.params
             .iter()

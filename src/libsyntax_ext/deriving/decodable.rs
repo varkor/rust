@@ -51,7 +51,7 @@ fn expand_deriving_decodable_imp(cx: &mut ExtCtxt,
     let trait_def = TraitDef {
         span,
         attributes: Vec::new(),
-        path: Path::new_(vec![krate, "Decodable"], None, vec![], PathKind::Global),
+        path: Path::new_(vec![krate, "Decodable"], None, vec![], vec![], PathKind::Global),
         additional_bounds: Vec::new(),
         generics: LifetimeBounds::empty(),
         is_unsafe: false,
@@ -64,6 +64,7 @@ fn expand_deriving_decodable_imp(cx: &mut ExtCtxt,
                                             vec![Path::new_(vec![krate, "Decoder"],
                                                             None,
                                                             vec![],
+                                                            vec![],
                                                             PathKind::Global)])],
                           },
                           explicit_self: None,
@@ -73,8 +74,9 @@ fn expand_deriving_decodable_imp(cx: &mut ExtCtxt,
                               Literal(Path::new_(pathvec_std!(cx, result::Result),
                                                  None,
                                                  vec![Box::new(Self_), Box::new(Literal(Path::new_(
-                        vec![typaram, "Error"], None, vec![], PathKind::Local
+                        vec![typaram, "Error"], None, vec![], vec![], PathKind::Local
                     )))],
+                                                 vec![], // TODO(varkor)
                                                  PathKind::Std)),
                           attributes: Vec::new(),
                           is_unsafe: false,

@@ -24,7 +24,7 @@ pub fn expand_deriving_hash(cx: &mut ExtCtxt,
                             item: &Annotatable,
                             push: &mut FnMut(Annotatable)) {
 
-    let path = Path::new_(pathvec_std!(cx, hash::Hash), None, vec![], PathKind::Std);
+    let path = Path::new_(pathvec_std!(cx, hash::Hash), None, vec![], vec![], PathKind::Std);
 
     let typaram = &*deriving::hygienic_type_parameter(item, "__H");
 
