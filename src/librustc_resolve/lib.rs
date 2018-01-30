@@ -123,8 +123,8 @@ impl Ord for BindingError {
 enum ResolutionError<'a> {
     /// error E0401: can't use type parameters from outer function
     TypeParametersFromOuterFunction,
-    /// error E0403: the name is already used for a type parameter in this type parameter list
-    NameAlreadyUsedInTypeParameterList(Name, &'a Span),
+    /// error E0403: the name is already used for a type or const parameter in this parameter list
+    NameAlreadyUsedInParameterList(Name, &'a Span),
     /// error E0407: method is not a member of trait
     MethodNotMemberOfTrait(Name, &'a str),
     /// error E0437: type is not a member of trait
@@ -181,12 +181,12 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
             err.span_label(span, "use of type variable from outer function");
             err
         }
-        ResolutionError::NameAlreadyUsedInTypeParameterList(name, first_use_span) => {
+        ResolutionError::NameAlreadyUsedInParameterList(name, first_use_span) => {
              let mut err = struct_span_err!(resolver.session,
                                             span,
                                             E0403,
-                                            "the name `{}` is already used for a type parameter \
-                                            in this type parameter list",
+                                            "the name `{}` is already used for a type or const \
+                                             parameter in this parameter list",
                                             name);
              err.span_label(span, "already used");
              err.span_label(first_use_span.clone(), format!("first use of `{}`", name));
@@ -2100,7 +2100,7 @@ impl<'a> Resolver<'a> {
 
                             if seen_bindings.contains_key(&ident) {
                                 let span = seen_bindings.get(&ident).unwrap();
-                                let err = ResolutionError::NameAlreadyUsedInTypeParameterList(
+                                let err = ResolutionError::NameAlreadyUsedInParameterList(
                                     ident.name,
                                     span,
                                 );
@@ -2118,10 +2118,9 @@ impl<'a> Resolver<'a> {
                             let ident = const_parameter.ident.modern();
                             debug!("with_type_parameter_rib: {} (const)", const_parameter.id);
 
-                            // TODO(varkor): change to NameAlreadyUsedInParameterList?
                             if seen_bindings.contains_key(&ident) {
                                 let span = seen_bindings.get(&ident).unwrap();
-                                let err = ResolutionError::NameAlreadyUsedInTypeParameterList(
+                                let err = ResolutionError::NameAlreadyUsedInParameterList(
                                     ident.name,
                                     span,
                                 );

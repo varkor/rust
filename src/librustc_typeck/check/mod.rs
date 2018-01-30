@@ -1738,6 +1738,10 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     fn record_ty(&self, hir_id: hir::HirId, ty: Ty<'tcx>, _span: Span) {
         self.write_ty(hir_id, ty)
     }
+
+    fn record_const(&self, hir_id: hir::HirId, cn: &'tcx ty::Const<'tcx>, _span: Span) {
+        self.write_const(hir_id, cn)
+    }
 }
 
 /// Controls whether the arguments are tupled. This is used for the call
@@ -1890,6 +1894,11 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             self.has_errors.set(true);
             self.set_tainted_by_errors();
         }
+    }
+
+    #[inline]
+    pub fn write_const(&self, _id: hir::HirId, _cn: &'tcx ty::Const<'tcx>) {
+        unimplemented!() // TODO(varkor)
     }
 
     // The NodeId and the ItemLocalId must identify the same item. We just pass

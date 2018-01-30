@@ -531,16 +531,16 @@ closures or copying the parameters should still work.
 "##,
 
 E0403: r##"
-Some type parameters have the same name.
+Some type or const parameters have the same name.
 
 Erroneous code example:
 
 ```compile_fail,E0403
 fn foo<T, T>(s: T, u: T) {} // error: the name `T` is already used for a type
-                            //        parameter in this type parameter list
+                            //        or const parameter in this parameter list
 ```
 
-Please verify that none of the type parameterss are misspelled, and rename any
+Please verify that none of the type parameters are misspelled, and rename any
 clashing parameters. Example:
 
 ```

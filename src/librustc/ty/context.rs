@@ -2118,7 +2118,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                     idx: u32,
                     name: Name,
                     ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
-        self.mk_const(ty::Const {
+        &self.mk_const(ty::Const {
             val: ConstVal::Param(ParamConst { idx, name, ty }),
             ty
         })

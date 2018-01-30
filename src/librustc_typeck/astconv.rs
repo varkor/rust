@@ -90,6 +90,8 @@ pub trait AstConv<'gcx, 'tcx> {
     fn set_tainted_by_errors(&self);
 
     fn record_ty(&self, hir_id: hir::HirId, ty: Ty<'tcx>, span: Span);
+
+    fn record_const(&self, hir_id: hir::HirId, cn: &'tcx ty::Const<'tcx>, span: Span);
 }
 
 struct ConvertedBinding<'tcx> {
@@ -1119,7 +1121,12 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 let length_def_id = tcx.hir.body_owner_def_id(length);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
                 let length = tcx.mk_const(ty::Const {
-                    // TODO(varkor): Make this ConstVal::Param
+                    // TODO(varkor)
+                    /*val: ConstVal::Param(ty::ParamConst {
+                        idx: length_def_id.index.as_raw_u32(),
+                        name: ast::Name::intern("N"),
+                        ty: tcx.types.usize
+                    }),*/
                     val: ConstVal::Unevaluated(length_def_id, substs),
                     ty: tcx.types.usize
                 });
@@ -1150,9 +1157,10 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         result_ty
     }
 
-    pub fn ast_const_to_const(&self, _ast_const: &syntax::ptr::P<hir::Expr>)
+    pub fn ast_const_to_const(&self, ast_const: &syntax::ptr::P<hir::Expr>)
                               -> &'tcx ty::Const<'tcx> {
-        unimplemented!() // TODO(varkor): implement.
+        debug!("ast_const_to_const(id={:?}, ast_ty={:?})", ast_const.id, ast_const);
+        unimplemented!() // TODO(varkor)
     }
 
     pub fn impl_trait_ty_to_ty(&self, def_id: DefId, lifetimes: &[hir::Lifetime]) -> Ty<'tcx> {

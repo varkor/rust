@@ -82,7 +82,7 @@ impl UnifyKey for ty::TyVid {
 }
 
 impl UnifyKey for ty::ConstVid {
-    type Value = Option<ast::ConstTy>; // TODO(varkor)
+    type Value = Option<ast::ConstTy>;
     fn index(&self) -> u32 { self.index }
     fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
     fn tag(_: Option<ty::ConstVid>) -> &'static str { "ConstVid" }

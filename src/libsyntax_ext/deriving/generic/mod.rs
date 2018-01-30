@@ -673,8 +673,7 @@ impl<'a> TraitDef<'a> {
             .collect();
         
         // Create the const parameters on the `self` path.
-        // TODO(varkor)
-        let self_const_params = vec![];
+        let self_const_params = vec![]; // TODO(varkor)
 
         let self_lifetimes: Vec<ast::Lifetime> = generics.params
             .iter()

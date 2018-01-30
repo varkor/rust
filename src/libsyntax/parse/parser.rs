@@ -4635,6 +4635,20 @@ impl<'a> Parser<'a> {
         }))
     }
 
+    fn parse_const_param_default(&mut self) -> PResult<'a, P<Expr>> {
+        // Const parameters are either literals or blocks.
+        let lo = self.span;
+        Ok(match self.parse_lit() {
+            Ok(literal) => {
+                let literal = P(literal);
+                let hi = self.prev_span;
+                let expr = self.mk_expr(lo.to(hi), ExprKind::Lit(literal), ThinVec::new());
+                expr
+            }
+            Err(_) => self.parse_block_expr(lo, BlockCheckMode::Default, ThinVec::new())?
+        })
+    }
+
     fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, ConstParam> {
         let span = self.span;
         self.expect_keyword(keywords::Const)?;
@@ -4643,9 +4657,7 @@ impl<'a> Parser<'a> {
         let ty = self.parse_ty()?;
 
         let default = if self.eat(&token::Eq) {
-            // Const parameters are either literals or blocks.
-            // Some(self.parse_lit().or_else(|_| self.parse_block())?)
-            unimplemented!() // TODO(varkor)
+            Some(self.parse_const_param_default()?)
         } else {
             None
         };
@@ -4770,11 +4782,11 @@ impl<'a> Parser<'a> {
                              Vec<TypeBinding>)> {
         let mut lifetimes = Vec::new();
         let mut types = Vec::new();
-        let /*mut*/ consts = Vec::new();
+        let mut consts = Vec::new();
         let mut bindings = Vec::new();
         let mut seen_type = false;
         let mut seen_binding = false;
-        let /*mut*/ seen_const = false;
+        let mut seen_const = false;
         loop {
             if self.check_lifetime() && self.look_ahead(1, |t| t != &token::BinOp(token::Plus)) {
                 // Parse lifetime argument.
@@ -4807,9 +4819,8 @@ impl<'a> Parser<'a> {
                 seen_type = true;
             } else {
                 // Parse const argument.
-                // consts.push(self.parse_lit().or_else(|_| self.parse_block())?);
-                // seen_const = true;
-                unimplemented!(); // TODO(varkor)
+                consts.push(self.parse_const_param_default()?);
+                seen_const = true;
             }
 
             if !self.eat(&token::Comma) {

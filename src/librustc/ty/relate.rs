@@ -482,6 +482,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                 match x.val {
                     ConstVal::Integral(x) => Ok(x.to_u64().unwrap()),
                     ConstVal::Unevaluated(def_id, substs) => {
+                        // TODO(varkor): this case should be entirely removed.
                         // FIXME(eddyb) get the right param_env.
                         let param_env = ty::ParamEnv::empty(Reveal::UserFacing);
                         match tcx.lift_to_global(&substs) {
@@ -499,7 +500,8 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                             "array length could not be evaluated");
                         Err(ErrorReported)
                     }
-                    _ => bug!("arrays should not have {:?} as length", x)
+                    ConstVal::Param(_param_const) => unimplemented!(), // TODO(varkor)
+                    _ => bug!("arrays should not have const {:?} as length", x)
                 }
             };
             match (to_u64(sz_a), to_u64(sz_b)) {

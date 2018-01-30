@@ -192,7 +192,8 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
         self.tcx().types.err
     }
 
-    fn const_infer(&self, _span: Span) -> &'tcx ty::Const<'tcx> {
+    fn const_infer(&self, span: Span) -> &'tcx ty::Const<'tcx> {
+        self.ty_infer(span);
         unimplemented!() // TODO(varkor)
     }
 
@@ -225,6 +226,10 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
 
     fn record_ty(&self, _hir_id: hir::HirId, _ty: Ty<'tcx>, _span: Span) {
         // no place to record types from signatures?
+    }
+
+    fn record_const(&self, _hir_id: hir::HirId, _cn: &'tcx ty::Const<'tcx>, _span: Span) {
+        // see `record_ty`
     }
 }
 
