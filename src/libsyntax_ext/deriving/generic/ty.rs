@@ -93,8 +93,8 @@ impl<'a> Path<'a> {
         let lt = mk_lifetimes(cx, span, &self.lifetime);
         let tys = self.ty_params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics))
                   .collect();
-        let cns = vec![]; // TODO(varkor)
-
+        let cns = self.const_params.iter().map(|_c| unimplemented!()) // TODO(varkor)
+                  .collect();
         match self.kind {
             PathKind::Global => cx.path_all(span, true, idents, lt, tys, cns, Vec::new()),
             PathKind::Local => cx.path_all(span, false, idents, lt, tys, cns, Vec::new()),

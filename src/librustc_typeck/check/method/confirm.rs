@@ -338,8 +338,21 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
             } else {
                 self.type_var_for_def(self.span, def, cur_substs)
             }
-        }, |_def, _cur_substs| {
-            unimplemented!() // TODO(varkor)
+        }, |def, cur_substs| {
+            let i = def.index as usize;
+            if i < parent_substs.len() {
+                parent_substs.const_at(i)
+            } else if let Some(ast_const)
+                = provided.as_ref().and_then(|p| {
+                    p.consts.get(i - parent_substs.len()
+                                  - method_generics.regions.len()
+                                  - method_generics.types.len())
+                })
+            {
+                self.to_const(ast_const)
+            } else {
+                self.const_var_for_def(self.span, def, cur_substs)
+            }
         })
     }
 

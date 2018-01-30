@@ -679,10 +679,16 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn type_is_unconstrained_numeric(&'a self, ty: Ty) -> UnconstrainedNumeric {
-        use ty::error::UnconstrainedNumeric::Neither;
+        use ty::error::UnconstrainedNumeric::{Neither, UnconstrainedConst};
         use ty::error::UnconstrainedNumeric::{UnconstrainedInt, UnconstrainedFloat};
         match ty.sty {
-            // TODO(varkor): Necessary to consider ConstVar here?
+            ty::TyInfer(ty::ConstVar(vid)) => {
+                if self.const_unification_table.borrow_mut().has_value(vid) {
+                    Neither
+                } else {
+                    UnconstrainedConst
+                }
+            }
             ty::TyInfer(ty::IntVar(vid)) => {
                 if self.int_unification_table.borrow_mut().has_value(vid) {
                     Neither

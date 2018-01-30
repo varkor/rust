@@ -66,6 +66,7 @@ pub enum TypeError<'tcx> {
 pub enum UnconstrainedNumeric {
     UnconstrainedFloat,
     UnconstrainedInt,
+    UnconstrainedConst,
     Neither,
 }
 

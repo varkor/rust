@@ -104,7 +104,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 self.infcx
                     .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span))
             },
-            |_, _| unimplemented!() // TODO(varkor): What should this be?
+            |_, _| self.infcx.next_const_var()
         );
         let substs = ty::ClosureSubsts { substs };
         let closure_type = self.tcx.mk_closure(expr_def_id, substs);

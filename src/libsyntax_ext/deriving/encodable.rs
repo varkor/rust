@@ -157,7 +157,7 @@ fn expand_deriving_encodable_imp(cx: &mut ExtCtxt,
                     vec![Box::new(Tuple(Vec::new())), Box::new(Literal(Path::new_(
                         vec![typaram, "Error"], None, vec![], vec![], PathKind::Local
                     )))],
-                    vec![], // TODO(varkor)
+                    vec![],
                     PathKind::Std
                 )),
                 attributes: Vec::new(),

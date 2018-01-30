@@ -2079,6 +2079,12 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         t
     }
 
+    pub fn to_const(&self, ast_c: &P<hir::Expr>) -> &'tcx ty::Const<'tcx> {
+        let c = AstConv::ast_const_to_const(self, ast_c);
+        // TODO(varkor): register_wf_obligation?
+        c
+    }
+
     pub fn node_ty(&self, id: hir::HirId) -> Ty<'tcx> {
         match self.tables.borrow().node_types().get(id) {
             Some(&t) => t,
@@ -4848,8 +4854,35 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 // TyError to let type inference recover somewhat.
                 self.type_var_for_def(span, def, substs)
             }
-        }, |_def, _substs| {
-            unimplemented!() // TODO(varkor)
+        }, |def, substs| {
+            let mut i = def.index as usize;
+
+            let segment = if i < fn_start {
+                i -= has_self as usize;
+                type_segment
+            } else {
+                i -= fn_start;
+                fn_segment
+            };
+            let (consts, infer_types) = segment.map_or((&[][..], true), |(s, _)| {
+                (s.parameters.as_ref().map_or(&[][..], |p| &p.consts[..]), s.infer_types)
+            });
+
+            // Skip over the lifetimes and types in the same segment.
+            if let Some((_, generics)) = segment {
+                i -= generics.regions.len() + generics.types.len();
+            }
+
+            if let Some(ast_const) = consts.get(i) {
+                // A provided const parameter.
+                self.to_const(ast_const)
+            } else if !infer_types && def.has_default {
+                // No const parameter provided, but a default exists.
+                unimplemented!() // TODO(varkor)
+            } else {
+                // No const parameters were provided, we can infer all.
+                self.const_var_for_def(span, def, substs)
+            }
         });
 
         // The things we are substituting into the type should not contain
