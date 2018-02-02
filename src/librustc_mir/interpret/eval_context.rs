@@ -272,6 +272,7 @@ impl<'a, 'tcx, M: Machine<'tcx>> EvalContext<'a, 'tcx, M> {
             Function(..) => PrimVal::Undef,
             Param(_) => bug!("should not have param constants in MIR"),
             InferVar(_) => bug!("should not have variable inference constants in MIR"),
+            Error => bug!("should not have error constants in MIR"),
         };
 
         Ok(Value::ByVal(primval))

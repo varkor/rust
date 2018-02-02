@@ -251,6 +251,9 @@ impl FlagComputation {
                 self.add_flags(TypeFlags::HAS_PROJECTION);
                 self.add_substs(substs);
             }
+            ConstVal::Error => {
+                bug!("cannot add_const an error constant")
+            }
         }
     }
 

@@ -901,7 +901,6 @@ define_print! {
             } else {
                 match *self {
                     ty::TyVar(_) => write!(f, "_"),
-                    ty::ConstVar(_) => write!(f, "{}", "{const}"),
                     ty::IntVar(_) => write!(f, "{}", "{integer}"),
                     ty::FloatVar(_) => write!(f, "{}", "{float}"),
                     ty::FreshTy(v) => write!(f, "FreshTy({})", v),
@@ -914,7 +913,6 @@ define_print! {
         debug {
             match *self {
                 ty::TyVar(ref v) => write!(f, "{:?}", v),
-                ty::ConstVar(ref v) => write!(f, "{:?}", v),
                 ty::IntVar(ref v) => write!(f, "{:?}", v),
                 ty::FloatVar(ref v) => write!(f, "{:?}", v),
                 ty::FreshTy(v) => write!(f, "FreshTy({:?})", v),

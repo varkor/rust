@@ -679,16 +679,9 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn type_is_unconstrained_numeric(&'a self, ty: Ty) -> UnconstrainedNumeric {
-        use ty::error::UnconstrainedNumeric::{Neither, UnconstrainedConst};
+        use ty::error::UnconstrainedNumeric::Neither;
         use ty::error::UnconstrainedNumeric::{UnconstrainedInt, UnconstrainedFloat};
         match ty.sty {
-            ty::TyInfer(ty::ConstVar(vid)) => {
-                if self.const_unification_table.borrow_mut().has_value(vid) {
-                    Neither
-                } else {
-                    UnconstrainedConst
-                }
-            }
             ty::TyInfer(ty::IntVar(vid)) => {
                 if self.int_unification_table.borrow_mut().has_value(vid) {
                     Neither
@@ -732,11 +725,12 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                   .into_iter()
                                   .map(|t| self.tcx.mk_ty_var(t));
 
-        let unbound_const_vars = self.const_unification_table
-                                    .borrow_mut()
-                                    .unsolved_variables()
-                                    .into_iter()
-                                    .map(|v| self.tcx.mk_const_var(v));
+        // TODO(varkor)
+        // let unbound_const_vars = self.const_unification_table
+        //                             .borrow_mut()
+        //                             .unsolved_variables()
+        //                             .into_iter()
+        //                             .map(|v| self.tcx.mk_const_var(v));
 
         let unbound_int_vars = self.int_unification_table
                                    .borrow_mut()
@@ -751,7 +745,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                      .map(|v| self.tcx.mk_float_var(v));
 
         variables.extend(unbound_ty_vars);
-        variables.extend(unbound_const_vars);
+        // variables.extend(unbound_const_vars);
         variables.extend(unbound_int_vars);
         variables.extend(unbound_float_vars);
 
@@ -1068,9 +1062,8 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_ty_var(self.next_ty_var_id(true, origin))
     }
 
-    pub fn next_const_var(&self) -> &'tcx ty::Const<'tcx> {
-        // self.tcx.mk_const_var(self.next_const_var_id())
-        unimplemented!() // TODO(varkor)
+    pub fn next_const_var(&self, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        self.tcx.mk_const_var(self.next_const_var_id(), ty)
     }
 
     pub fn next_const_var_id(&self) -> ConstVid {
@@ -1146,7 +1139,6 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
             None
         };
 
-
         let ty_var_id = self.type_variables
                             .borrow_mut()
                             .new_var(false,
@@ -1160,10 +1152,13 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     /// const parameter definition.
     pub fn const_var_for_def(&self,
                              _span: Span,
-                             _def: &ty::ConstParameterDef,
+                             def: &ty::ConstParameterDef<'tcx>,
                              _substs: &[Kind<'tcx>])
                               -> &'tcx ty::Const<'tcx> {
-        unimplemented!()
+        // TODO(varkor): handle default
+
+        let const_var_id = self.next_const_var_id();
+        self.tcx.mk_const_var(const_var_id, def.ty)
     }
 
     /// Given a set of generics defined on a type or impl, returns a substitution mapping each
@@ -1337,14 +1332,6 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                 self.type_variables.borrow_mut()
                     .probe(v)
                     .map(|t| self.shallow_resolve(t))
-                    .unwrap_or(typ)
-            }
-
-            ty::TyInfer(ty::ConstVar(v)) => {
-                self.const_unification_table
-                    .borrow_mut()
-                    .probe(v)
-                    .map(|v| v.to_type(self.tcx))
                     .unwrap_or(typ)
             }
 

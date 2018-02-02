@@ -1324,6 +1324,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstVal<'tcx> {
             ConstVal::Unevaluated(def_id, substs) => {
                 ConstVal::Unevaluated(def_id, substs.fold_with(folder))
             }
+            ConstVal::Error => ConstVal::Error,
         }
     }
 
@@ -1337,7 +1338,8 @@ impl<'tcx> TypeFoldable<'tcx> for ConstVal<'tcx> {
             ConstVal::Char(_) |
             ConstVal::Variant(_) |
             ConstVal::Param(_) |
-            ConstVal::InferVar(_) => false,
+            ConstVal::InferVar(_) |
+            ConstVal::Error => false,
             ConstVal::Function(_, substs) => substs.visit_with(visitor),
             ConstVal::Aggregate(ConstAggregate::Struct(fields)) => {
                 fields.iter().any(|&(_, v)| v.visit_with(visitor))

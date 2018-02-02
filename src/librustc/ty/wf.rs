@@ -255,6 +255,9 @@ impl<'a, 'gcx, 'tcx> WfPredicates<'a, 'gcx, 'tcx> {
                                                       self.param_env,
                                                       predicate));
             }
+            ConstVal::Error => {
+                bug!("cannot compute_const an error constant")
+            }
         }
     }
 

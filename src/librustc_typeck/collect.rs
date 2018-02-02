@@ -192,9 +192,8 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
         self.tcx().types.err
     }
 
-    fn const_infer(&self, span: Span) -> &'tcx ty::Const<'tcx> {
-        self.ty_infer(span);
-        unimplemented!() // TODO(varkor)
+    fn const_infer(&self, _ty: Ty<'tcx>, _span: Span) -> &'tcx ty::Const<'tcx> {
+        bug!("it should not be possible to declare const placeholders")
     }
 
     fn projected_ty_from_poly_trait_ref(&self,
@@ -1171,7 +1170,7 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         tcx.mk_region(ty::ReEarlyBound(region))
                     },
                     |def, _| tcx.mk_ty_param_from_def(def),
-                    |_def, _| unimplemented!(), // TODO(varkor)
+                    |def, _| tcx.mk_const_param_from_def(def),
                 )
             };
 

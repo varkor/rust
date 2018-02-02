@@ -40,7 +40,7 @@ use ty::{TyS, TypeVariants, Slice};
 use ty::{AdtKind, AdtDef, ClosureSubsts, GeneratorInterior, Region, Const};
 use ty::{PolyFnSig, InferTy, ParamTy, ParamConst, ProjectionTy, ExistentialPredicate, Predicate};
 use ty::RegionKind;
-use ty::{TyVar, TyVid, ConstVar, ConstVid, IntVar, IntVid, FloatVar, FloatVid};
+use ty::{TyVar, TyVid, ConstVid, IntVar, IntVid, FloatVar, FloatVid};
 use ty::TypeVariants::*;
 use ty::layout::{LayoutDetails, TargetDataLayout};
 use ty::maps;
@@ -1909,10 +1909,6 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.interners.intern_ty(st, global_interners)
     }
 
-    pub fn mk_mach_const(self, _tm: ast::ConstTy) -> Ty<'tcx> {
-        unimplemented!() // TODO(varkor)
-    }
-
     pub fn mk_mach_int(self, tm: ast::IntTy) -> Ty<'tcx> {
         match tm {
             ast::IntTy::Isize   => self.types.isize,
@@ -2092,8 +2088,11 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_infer(TyVar(v))
     }
 
-    pub fn mk_const_var(self, v: ConstVid) -> Ty<'tcx> {
-        self.mk_infer(ConstVar(v))
+    pub fn mk_const_var(self, v: ConstVid, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        self.mk_const(ty::Const {
+            val: ConstVal::InferVar(v),
+            ty
+        })
     }
 
     pub fn mk_int_var(self, v: IntVid) -> Ty<'tcx> {

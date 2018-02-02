@@ -429,13 +429,7 @@ impl<'a, 'tcx> CloneShimBuilder<'a, 'tcx> {
     ) {
         let tcx = self.tcx;
 
-        let substs = Substs::for_item(
-            tcx,
-            self.def_id,
-            |_, _| tcx.types.re_erased,
-            |_, _| ty,
-            |_, _| unimplemented!(), // TODO(varkor): What should this be?
-        );
+        let substs = tcx.mk_substs_trait(ty, &[]);
 
         // `func == Clone::clone(&ty) -> ty`
         let func_ty = tcx.mk_fn_def(self.def_id, substs);

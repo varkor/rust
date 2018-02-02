@@ -1108,7 +1108,6 @@ pub struct SkolemizedRegionVid {
 #[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
 pub enum InferTy {
     TyVar(TyVid),
-    ConstVar(ConstVid),
     IntVar(IntVid),
     FloatVar(FloatVid),
 

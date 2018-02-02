@@ -885,7 +885,7 @@ impl<'a, 'gcx, 'tcx> Generics<'tcx> {
     pub fn const_param(&'tcx self,
                        param: &ParamConst<'tcx>,
                        tcx: TyCtxt<'a, 'gcx, 'tcx>)
-                       -> &ConstParameterDef {
+                       -> &ConstParameterDef<'tcx> {
         if let Some(idx) = param.idx.checked_sub(self.parent_count() as u32) {
             let const_param_offset = self.regions.len() + self.types.len();
 

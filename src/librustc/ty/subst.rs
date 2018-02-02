@@ -25,10 +25,10 @@ use std::marker::PhantomData;
 use std::mem;
 
 /// An entity in the Rust typesystem, which can be one of
-/// several kinds (only types and lifetimes for now).
+/// several kinds (only types, consts and  lifetimes for now).
 /// To reduce memory usage, a `Kind` is a interned pointer,
 /// with the lowest 2 bits being reserved for a tag to
-/// indicate the type (`Ty` or `Region`) it points to.
+/// indicate the type (`Ty`, `Const` or `Region`) it points to.
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Kind<'tcx> {
     ptr: NonZero<usize>,
@@ -216,11 +216,11 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     /// Creates a Substs that maps each generic parameter to itself.
     pub fn identity_for_item(tcx: TyCtxt<'a, 'gcx, 'tcx>, def_id: DefId)
                              -> &'tcx Substs<'tcx> {
-        Substs::for_item(tcx, def_id, |def, _| {
-            tcx.mk_region(ty::ReEarlyBound(def.to_early_bound_region_data()))
-        }, |def, _| tcx.mk_ty_param_from_def(def), |_def, _| {
-            unimplemented!() // TODO(varkor)
-        })
+        Substs::for_item(tcx, def_id,
+            |def, _| tcx.mk_region(ty::ReEarlyBound(def.to_early_bound_region_data())),
+            |def, _| tcx.mk_ty_param_from_def(def),
+            |def, _| tcx.mk_const_param_from_def(def)
+        )
     }
 
     /// Creates a Substs for generic parameter definitions, by
@@ -236,7 +236,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                             -> &'tcx Substs<'tcx>
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
           FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
-          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
+          FC: FnMut(&ty::ConstParameterDef<'tcx>, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
         let defs = tcx.generics_of(def_id);
         let mut substs = Vec::with_capacity(defs.count());
         Substs::fill_item(&mut substs, tcx, defs, &mut mk_region, &mut mk_type, &mut mk_const);
@@ -252,7 +252,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                              -> &'tcx Substs<'tcx>
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
           FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
-          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx>
+          FC: FnMut(&ty::ConstParameterDef<'tcx>, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx>
     {
         let defs = tcx.generics_of(def_id);
         let mut result = Vec::with_capacity(defs.count());
@@ -263,13 +263,13 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
 
     pub fn fill_item<FR, FT, FC>(substs: &mut Vec<Kind<'tcx>>,
                              tcx: TyCtxt<'a, 'gcx, 'tcx>,
-                             defs: &ty::Generics,
+                             defs: &ty::Generics<'tcx>,
                              mk_region: &mut FR,
                              mk_type: &mut FT,
                              mk_const: &mut FC)
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
           FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
-          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
+          FC: FnMut(&ty::ConstParameterDef<'tcx>, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
 
         if let Some(def_id) = defs.parent {
             let parent_defs = tcx.generics_of(def_id);
@@ -279,13 +279,13 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     fn fill_single<FR, FT, FC>(substs: &mut Vec<Kind<'tcx>>,
-                           defs: &ty::Generics,
+                           defs: &ty::Generics<'tcx>,
                            mk_region: &mut FR,
                            mk_type: &mut FT,
                            mk_const: &mut FC)
     where FR: FnMut(&ty::RegionParameterDef, &[Kind<'tcx>]) -> ty::Region<'tcx>,
           FT: FnMut(&ty::TypeParameterDef, &[Kind<'tcx>]) -> Ty<'tcx>,
-          FC: FnMut(&ty::ConstParameterDef, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
+          FC: FnMut(&ty::ConstParameterDef<'tcx>, &[Kind<'tcx>]) -> &'tcx ty::Const<'tcx> {
         // Handle Self first, before all regions.
         let mut types = defs.types.iter();
         if defs.parent.is_none() && defs.has_self {
@@ -360,7 +360,9 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
-    pub fn const_for_def(&self, ty_param_def: &ty::ConstParameterDef) -> &'tcx ty::Const<'tcx> {
+    pub fn const_for_def(&self,
+                         ty_param_def: &ty::ConstParameterDef<'tcx>)
+                         -> &'tcx ty::Const<'tcx> {
         self.const_at(ty_param_def.index as usize)
     }
 
@@ -382,7 +384,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
         tcx.mk_substs(target_substs.iter().chain(&self[defs.own_count()..]).cloned())
     }
 
-    pub fn truncate_to(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>, generics: &ty::Generics)
+    pub fn truncate_to(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>, generics: &ty::Generics<'tcx>)
                        -> &'tcx Substs<'tcx> {
         tcx.mk_substs(self.iter().take(generics.count()).cloned())
     }

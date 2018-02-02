@@ -57,14 +57,14 @@ pub trait AstConv<'gcx, 'tcx> {
     }
 
     /// What const should we use when a const is omitted?
-    fn const_infer(&self, span: Span) -> &'tcx ty::Const<'tcx>;
+    fn const_infer(&self, Ty<'tcx>, span: Span) -> &'tcx ty::Const<'tcx>;
 
     /// Same as const_infer, but with a known const parameter definition.
     fn const_infer_for_def(&self,
-                           _def: &ty::ConstParameterDef,
+                           def: &ty::ConstParameterDef<'tcx>,
                            _substs: &[Kind<'tcx>],
                            span: Span) -> &'tcx ty::Const<'tcx> {
-        self.const_infer(span)
+        self.const_infer(def.ty, span)
     }
 
     /// Projecting an associated type from a (potentially)
@@ -1178,7 +1178,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 &mut |def, _| tcx.mk_region(
                     ty::ReEarlyBound(def.to_early_bound_region_data())),
                 &mut |def, _| tcx.mk_ty_param_from_def(def),
-                &mut |_def, _| unimplemented!(), // TODO(varkor)
+                &mut |def, _| tcx.mk_const_param_from_def(def),
             );
 
             // Replace all lifetimes with 'static

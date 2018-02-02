@@ -11,7 +11,6 @@
 // The compiler code necessary to support the env! extension.  Eventually this
 // should all get sucked into either the compiler syntax extension plugin
 // interface.
-//
 
 use syntax::ast::{self, Ident};
 use syntax::ext::base::*;

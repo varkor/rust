@@ -396,6 +396,7 @@ for ::middle::const_val::ConstVal<'gcx> {
                 def_id.hash_stable(hcx, hasher);
                 substs.hash_stable(hcx, hasher);
             }
+            Error => {}
         }
     }
 }
@@ -478,7 +479,6 @@ impl_stable_hash_for!(enum ty::adjustment::CustomCoerceUnsized {
     Struct(index)
 });
 
-// TODO(varkor): is 'gcx correct here?
 impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics<'gcx> {
     fn hash_stable<W: StableHasherResult>(&self,
                                           hcx: &mut StableHashingContext<'gcx>,

@@ -169,6 +169,9 @@ fn push_const<'tcx>(stack: &mut TypeWalkerStack<'tcx>, constant: &'tcx ty::Const
         ConstVal::Unevaluated(_, substs) => {
             stack.extend(substs.types().rev());
         }
+        ConstVal::Error => {
+            bug!("cannot push_const an error constant")
+        }
     }
     stack.push(constant.ty);
 }

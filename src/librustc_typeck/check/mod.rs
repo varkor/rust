@@ -1697,12 +1697,12 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
         self.type_var_for_def(span, def, substs)
     }
 
-    fn const_infer(&self, _span: Span) -> &'tcx ty::Const<'tcx> {
-        self.next_const_var()
+    fn const_infer(&self, ty: Ty<'tcx>, _span: Span) -> &'tcx ty::Const<'tcx> {
+        self.next_const_var(ty)
     }
 
     fn const_infer_for_def(&self,
-                           def: &ty::ConstParameterDef,
+                           def: &ty::ConstParameterDef<'tcx>,
                            substs: &[Kind<'tcx>],
                            span: Span) -> &'tcx ty::Const<'tcx> {
         self.const_var_for_def(span, def, substs)

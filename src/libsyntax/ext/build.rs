@@ -75,6 +75,13 @@ pub trait AstBuilder {
                attrs: Vec<ast::Attribute>,
                bounds: ast::TyParamBounds,
                default: Option<P<ast::Ty>>) -> ast::TyParam;
+    
+    fn constparam(&self,
+                  span: Span,
+                  id: ast::Ident,
+                  attrs: Vec<ast::Attribute>,
+                  ty: P<ast::Ty>,
+                  default: Option<P<ast::Expr>>) -> ast::ConstParam;
 
     fn trait_ref(&self, path: ast::Path) -> ast::TraitRef;
     fn poly_trait_ref(&self, span: Span, path: ast::Path) -> ast::PolyTraitRef;
@@ -451,15 +458,31 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
 
     fn typaram(&self,
                span: Span,
-               id: ast::Ident,
+               ident: ast::Ident,
                attrs: Vec<ast::Attribute>,
                bounds: ast::TyParamBounds,
                default: Option<P<ast::Ty>>) -> ast::TyParam {
         ast::TyParam {
-            ident: id,
+            ident,
             id: ast::DUMMY_NODE_ID,
             attrs: attrs.into(),
             bounds,
+            default,
+            span,
+        }
+    }
+
+    fn constparam(&self,
+                  span: Span,
+                  ident: ast::Ident,
+                  attrs: Vec<ast::Attribute>,
+                  ty: P<ast::Ty>,
+                  default: Option<P<ast::Expr>>) -> ast::ConstParam {
+        ast::ConstParam {
+            ident,
+            id: ast::DUMMY_NODE_ID,
+            attrs: attrs.into(),
+            ty,
             default,
             span,
         }

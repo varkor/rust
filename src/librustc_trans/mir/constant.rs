@@ -107,7 +107,8 @@ impl<'a, 'tcx> Const<'tcx> {
             ConstVal::InferVar(_) |
             ConstVal::Variant(_) |
             ConstVal::Aggregate(..) |
-            ConstVal::Unevaluated(..) => {
+            ConstVal::Unevaluated(..) |
+            ConstVal::Error => {
                 bug!("MIR must not use `{:?}` (aggregates are expanded to MIR rvalues)", cv)
             }
         };

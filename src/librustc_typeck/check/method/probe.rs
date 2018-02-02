@@ -1335,7 +1335,7 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
                          |_, _| self.next_ty_var(
                              TypeVariableOrigin::SubstitutionPlaceholder(
                                  self.tcx.def_span(def_id))),
-                         |_, _| self.next_const_var()
+                         |_, _| self.next_const_var(self.tcx.types.usize) // TODO(varkor)
         )
     }
 

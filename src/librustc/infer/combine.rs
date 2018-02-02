@@ -75,9 +75,6 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
         let a_is_expected = relation.a_is_expected();
 
         match (&a.sty, &b.sty) {
-            // Relate const parameter variables to other types
-            // TODO(varkor)
-
             // Relate integral variables to other types
             (&ty::TyInfer(ty::IntVar(a_id)), &ty::TyInfer(ty::IntVar(b_id))) => {
                 self.int_unification_table

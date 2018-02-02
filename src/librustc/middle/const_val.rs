@@ -40,6 +40,7 @@ pub enum ConstVal<'tcx> {
     Function(DefId, &'tcx Substs<'tcx>),
     Aggregate(ConstAggregate<'tcx>),
     Unevaluated(DefId, &'tcx Substs<'tcx>),
+    Error,
 }
 
 #[derive(Copy, Clone, Debug, Hash, RustcEncodable, Eq, PartialEq)]

@@ -82,14 +82,8 @@ impl UnifyKey for ty::TyVid {
 }
 
 impl UnifyKey for ty::ConstVid {
-    type Value = Option<ast::ConstTy>;
+    type Value = Option<ast::Expr>;
     fn index(&self) -> u32 { self.index }
     fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
     fn tag(_: Option<ty::ConstVid>) -> &'static str { "ConstVid" }
-}
-
-impl ToType for ast::ConstTy {
-    fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {
-        tcx.mk_mach_const(*self)
-    }
 }

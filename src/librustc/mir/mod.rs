@@ -1824,7 +1824,8 @@ fn fmt_const_val<W: Write>(fmt: &mut W, const_val: &ConstVal) -> fmt::Result {
         Aggregate(_) => bug!("`ConstVal::{:?}` should not be in MIR", const_val),
         Param(_) |
         InferVar(_) |
-        Unevaluated(..) => write!(fmt, "{:?}", const_val)
+        Unevaluated(..) => write!(fmt, "{:?}", const_val),
+        Error => bug!("`ConstVal::{:?}` should not be in MIR", const_val),
     }
 }
 
