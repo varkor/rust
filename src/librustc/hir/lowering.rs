@@ -1450,7 +1450,7 @@ impl<'a> LoweringContext<'a> {
         (hir::PathParameters {
             lifetimes: hir::HirVec::new(),
             types: hir_vec![mk_tup(self, inputs, span)],
-            consts: hir_vec![], // TODO(varkor)
+            consts: hir::HirVec::new(),
             bindings: hir_vec![hir::TypeBinding {
                 id: self.next_id().node_id,
                 name: Symbol::intern(FN_OUTPUT_NAME),

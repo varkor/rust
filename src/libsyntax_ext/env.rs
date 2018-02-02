@@ -43,7 +43,7 @@ pub fn expand_option_env<'cx>(cx: &'cx mut ExtCtxt,
                                                      Some(cx.lifetime(sp,
                                                                       Ident::from_str("'static"))),
                                                      ast::Mutability::Immutable)],
-                                     Vec::new(), // TODO(varkor): what should be done here?
+                                     Vec::new(),
                                      Vec::new()))
         }
         Ok(s) => {

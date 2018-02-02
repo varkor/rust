@@ -349,7 +349,7 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
                                   - method_generics.types.len())
                 })
             {
-                self.to_const(ast_const)
+                self.to_const(ast_const, def.ty)
             } else {
                 self.const_var_for_def(self.span, def, cur_substs)
             }

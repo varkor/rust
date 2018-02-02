@@ -90,8 +90,6 @@ pub trait AstConv<'gcx, 'tcx> {
     fn set_tainted_by_errors(&self);
 
     fn record_ty(&self, hir_id: hir::HirId, ty: Ty<'tcx>, span: Span);
-
-    fn record_const(&self, hir_id: hir::HirId, cn: &'tcx ty::Const<'tcx>, span: Span);
 }
 
 struct ConvertedBinding<'tcx> {
@@ -321,13 +319,19 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                     - decl_generics.regions.len()
                     - decl_generics.types.len();
             if i < num_consts_provided {
-                self.ast_const_to_const(&parameters.consts[i])
+                self.ast_const_to_const(&parameters.consts[i], def.ty)
             } else if infer_types {
                 self.const_infer_for_def(def, substs, span)
             } else if def.has_default {
+                // This is a default const parameter.
+                // tcx.at(span).const_of(def.def_id, def.ty)
                 unimplemented!() // TODO(varkor)
             } else {
-                unimplemented!() // TODO(varkor): Print an error message in this case (if necess.?)
+                // Return an error const.
+                tcx.mk_const(ty::Const {
+                    val: ConstVal::Error,
+                    ty: def.ty,
+                })
             }
         });
 
@@ -1157,10 +1161,16 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         result_ty
     }
 
-    pub fn ast_const_to_const(&self, ast_const: &syntax::ptr::P<hir::Expr>)
+    pub fn ast_const_to_const(&self, ast_const: &syntax::ptr::P<hir::Expr>, ty: Ty<'tcx>)
                               -> &'tcx ty::Const<'tcx> {
         debug!("ast_const_to_const(id={:?}, ast_ty={:?})", ast_const.id, ast_const);
-        unimplemented!() // TODO(varkor)
+        let tcx = self.tcx();
+        let def_id = tcx.hir.local_def_id(ast_const.id);
+        // TODO(varkor): do we want to handle specific cases, rather than just Unevaluated?
+        tcx.mk_const(ty::Const {
+            val: ConstVal::Unevaluated(def_id, Substs::identity_for_item(tcx, def_id)),
+            ty,
+        })
     }
 
     pub fn impl_trait_ty_to_ty(&self, def_id: DefId, lifetimes: &[hir::Lifetime]) -> Ty<'tcx> {
@@ -1350,90 +1360,57 @@ fn split_auto_traits<'a, 'b, 'gcx, 'tcx>(tcx: TyCtxt<'a, 'gcx, 'tcx>,
     (auto_traits, trait_bounds)
 }
 
-fn check_type_argument_count(tcx: TyCtxt, span: Span, supplied: usize,
-                             ty_param_defs: &[ty::TypeParameterDef]) {
-    let accepted = ty_param_defs.len();
-    let required = ty_param_defs.iter().take_while(|x| !x.has_default).count();
-    if supplied < required {
-        let expected = if required < accepted {
-            "expected at least"
-        } else {
-            "expected"
-        };
-        let arguments_plural = if required == 1 { "" } else { "s" };
+macro_rules! check_param_argument_count {
+    ($p:ident, $pd:ty, $codelt:ident, $codegt:ident, $name:tt) => {
+        fn $p(tcx: TyCtxt, span: Span, supplied: usize,
+                                     param_defs: &[$pd]) {
+            let accepted = param_defs.len();
+            let required = param_defs.iter().take_while(|x| !x.has_default).count();
+            if supplied < required {
+                let expected = if required < accepted {
+                    "expected at least"
+                } else {
+                    "expected"
+                };
+                let arguments_plural = if required == 1 { "" } else { "s" };
 
-        struct_span_err!(tcx.sess, span, E0243,
-                "wrong number of type arguments: {} {}, found {}",
-                expected, required, supplied)
-            .span_label(span,
-                format!("{} {} type argument{}",
-                    expected,
-                    required,
-                    arguments_plural))
-            .emit();
-    } else if supplied > accepted {
-        let expected = if required < accepted {
-            format!("expected at most {}", accepted)
-        } else {
-            format!("expected {}", accepted)
-        };
-        let arguments_plural = if accepted == 1 { "" } else { "s" };
+                struct_span_err!(tcx.sess, span, $codelt,
+                        concat!("wrong number of ", $name, " arguments: {} {}, found {}"),
+                        expected, required, supplied)
+                    .span_label(span,
+                        format!(concat!("{} {} ", $name, " argument{}"),
+                            expected,
+                            required,
+                            arguments_plural))
+                    .emit();
+            } else if supplied > accepted {
+                let expected = if required < accepted {
+                    format!("expected at most {}", accepted)
+                } else {
+                    format!("expected {}", accepted)
+                };
+                let arguments_plural = if accepted == 1 { "" } else { "s" };
 
-        struct_span_err!(tcx.sess, span, E0244,
-                "wrong number of type arguments: {}, found {}",
-                expected, supplied)
-            .span_label(
-                span,
-                format!("{} type argument{}",
-                    if accepted == 0 { "expected no" } else { &expected },
-                    arguments_plural)
-            )
-            .emit();
-    }
+                struct_span_err!(tcx.sess, span, $codegt,
+                        concat!("wrong number of ", $name, " arguments: {}, found {}"),
+                        expected, supplied)
+                    .span_label(
+                        span,
+                        format!(concat!("{} ", $name, " argument{}"),
+                            if accepted == 0 { "expected no" } else { &expected },
+                            arguments_plural)
+                    )
+                    .emit();
+            }
+        }
+    };
 }
 
-// TODO(varkor): Refactor this with `check_type_argument_count`.
-fn check_const_argument_count(tcx: TyCtxt, span: Span, supplied: usize,
-                              const_param_defs: &[ty::ConstParameterDef]) {
-    let accepted = const_param_defs.len();
-    let required = const_param_defs.iter().take_while(|x| !x.has_default).count();
-    if supplied < required {
-        let expected = if required < accepted {
-            "expected at least"
-        } else {
-            "expected"
-        };
-        let arguments_plural = if required == 1 { "" } else { "s" };
+check_param_argument_count!(check_type_argument_count, ty::TypeParameterDef,
+                            E0243, E0244, "type");
 
-        struct_span_err!(tcx.sess, span, E0692,
-                "wrong number of const arguments: {} {}, found {}",
-                expected, required, supplied)
-            .span_label(span,
-                format!("{} {} const argument{}",
-                    expected,
-                    required,
-                    arguments_plural))
-            .emit();
-    } else if supplied > accepted {
-        let expected = if required < accepted {
-            format!("expected at most {}", accepted)
-        } else {
-            format!("expected {}", accepted)
-        };
-        let arguments_plural = if accepted == 1 { "" } else { "s" };
-
-        struct_span_err!(tcx.sess, span, E0693,
-                "wrong number of const arguments: {}, found {}",
-                expected, supplied)
-            .span_label(
-                span,
-                format!("{} const argument{}",
-                    if accepted == 0 { "expected no" } else { &expected },
-                    arguments_plural)
-            )
-            .emit();
-    }
-}
+check_param_argument_count!(check_const_argument_count, ty::ConstParameterDef,
+                            E0692, E0693, "const");
 
 fn report_lifetime_number_error(tcx: TyCtxt, span: Span, number: usize, expected: usize) {
     let label = if number < expected {

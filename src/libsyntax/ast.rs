@@ -1407,22 +1407,6 @@ pub enum ImplItemKind {
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Copy,
          PartialOrd, Ord)]
-pub struct ConstTy;
-
-impl fmt::Debug for ConstTy {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
-    }
-}
-
-impl fmt::Display for ConstTy {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self) // TODO(varkor)
-    }
-}
-
-#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Copy,
-         PartialOrd, Ord)]
 pub enum IntTy {
     Isize,
     I8,

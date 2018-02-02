@@ -1738,10 +1738,6 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     fn record_ty(&self, hir_id: hir::HirId, ty: Ty<'tcx>, _span: Span) {
         self.write_ty(hir_id, ty)
     }
-
-    fn record_const(&self, hir_id: hir::HirId, cn: &'tcx ty::Const<'tcx>, _span: Span) {
-        self.write_const(hir_id, cn)
-    }
 }
 
 /// Controls whether the arguments are tupled. This is used for the call
@@ -1894,11 +1890,6 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             self.has_errors.set(true);
             self.set_tainted_by_errors();
         }
-    }
-
-    #[inline]
-    pub fn write_const(&self, _id: hir::HirId, _cn: &'tcx ty::Const<'tcx>) {
-        unimplemented!() // TODO(varkor)
     }
 
     // The NodeId and the ItemLocalId must identify the same item. We just pass
@@ -2079,10 +2070,8 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         t
     }
 
-    pub fn to_const(&self, ast_c: &P<hir::Expr>) -> &'tcx ty::Const<'tcx> {
-        let c = AstConv::ast_const_to_const(self, ast_c);
-        // TODO(varkor): register_wf_obligation?
-        c
+    pub fn to_const(&self, ast_c: &P<hir::Expr>, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        AstConv::ast_const_to_const(self, ast_c, ty)
     }
 
     pub fn node_ty(&self, id: hir::HirId) -> Ty<'tcx> {
@@ -4875,9 +4864,10 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
 
             if let Some(ast_const) = consts.get(i) {
                 // A provided const parameter.
-                self.to_const(ast_const)
+                self.to_const(ast_const, def.ty)
             } else if !infer_types && def.has_default {
                 // No const parameter provided, but a default exists.
+                // tcx.at(span).const_of(def.def_id, def.ty)
                 unimplemented!() // TODO(varkor)
             } else {
                 // No const parameters were provided, we can infer all.

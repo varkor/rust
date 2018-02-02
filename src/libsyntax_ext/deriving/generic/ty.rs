@@ -83,6 +83,15 @@ impl<'a> Path<'a> {
         cx.ty_path(self.to_path(cx, span, self_ty, self_generics))
     }
 
+    /*pub fn to_expr(&self,
+                   _cx: &ExtCtxt,
+                   _span: Span,
+                   _self_ty: Ident,
+                   _self_generics: &Generics)
+                   -> P<ast::Expr> {
+        cx.expr_path(self.to_path(cx, span, self_ty, self_generics))
+    }*/
+
     pub fn to_path(&self,
                    cx: &ExtCtxt,
                    span: Span,
@@ -93,7 +102,8 @@ impl<'a> Path<'a> {
         let lt = mk_lifetimes(cx, span, &self.lifetime);
         let tys = self.ty_params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics))
                   .collect();
-        let cns = self.const_params.iter().map(|_c| unimplemented!()) // TODO(varkor)
+        let cns = self.const_params.iter().map(
+            |_c| /*c.to_expr(cx, span, self_ty, self_generics)*/ unimplemented!()) // TODO(varkor)
                   .collect();
         match self.kind {
             PathKind::Global => cx.path_all(span, true, idents, lt, tys, cns, Vec::new()),
@@ -123,7 +133,7 @@ pub enum Ty<'a> {
 
 /// A const expression. Supports literals and blocks.
 #[derive(Clone, Eq, PartialEq)]
-pub enum Const{
+pub enum Const {
     Literal,
     Block,
 }
@@ -238,6 +248,11 @@ impl<'a> Ty<'a> {
     }
 }
 
+impl Const {
+    pub fn to_const() {}
+    pub fn to_path() {}
+}
+
 
 fn mk_ty_param(cx: &ExtCtxt,
                span: Span,
@@ -255,6 +270,15 @@ fn mk_ty_param(cx: &ExtCtxt,
         .collect();
     cx.typaram(span, cx.ident_of(name), attrs.to_owned(), bounds, None)
 }
+
+/*fn mk_const_param(cx: &ExtCtxt,
+                  span: Span,
+                  name: &str,
+                  attrs: &[ast::Attribute],
+                  ty: P<ast::Ty>)
+                  -> ast::ConstParam {
+    cx.constparam(span, cx.ident_of(name), attrs.to_owned(), ty, None)
+}*/
 
 fn mk_generics(params: Vec<GenericParam>, span: Span) -> Generics {
     Generics {

@@ -33,7 +33,7 @@ use middle::resolve_lifetime as rl;
 use rustc::traits::Reveal;
 use rustc::ty::subst::Substs;
 use rustc::ty::{ToPredicate, ReprOptions};
-use rustc::ty::{self, AdtKind, ToPolyTraitRef, Ty, TyCtxt};
+use rustc::ty::{self, AdtKind, ToPolyTraitRef, Ty, Const, TyCtxt};
 use rustc::ty::maps::Providers;
 use rustc::ty::util::IntTypeExt;
 use util::nodemap::FxHashMap;
@@ -61,6 +61,7 @@ pub fn collect_item_types<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>) {
 pub fn provide(providers: &mut Providers) {
     *providers = Providers {
         type_of,
+        // const_of,
         generics_of,
         predicates_of,
         super_predicates_of,
@@ -225,10 +226,6 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
 
     fn record_ty(&self, _hir_id: hir::HirId, _ty: Ty<'tcx>, _span: Span) {
         // no place to record types from signatures?
-    }
-
-    fn record_const(&self, _hir_id: hir::HirId, _cn: &'tcx ty::Const<'tcx>, _span: Span) {
-        // see `record_ty`
     }
 }
 
@@ -1190,7 +1187,7 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 }
 
             x => {
-                bug!("unexpected expr parent in type_of_def_id(): {:?}", x);
+                bug!("unexpected expr parent in type_of(tcx, def_id): {:?}", x);
             }
         },
 
@@ -1209,7 +1206,35 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         }
 
         x => {
-            bug!("unexpected sort of node in type_of_def_id(): {:?}", x);
+            bug!("unexpected sort of node in type_of(tcx, def_id): {:?}", x);
+        }
+    }
+}
+
+#[allow(dead_code)]
+fn const_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
+                     def_id: DefId,
+                     _ty: Ty<'tcx>)
+                     -> &'tcx Const<'tcx> {
+     // TODO(varkor): finish this off
+    use rustc::hir::map::*;
+
+    let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
+
+    let _icx = ItemCtxt::new(tcx, def_id);
+
+    match tcx.hir.get(node_id) {
+        NodeExpr(_expr) => {
+            // AstConv::ast_const_to_const(&icx, P(expr), ty)
+            unimplemented!()
+        }
+
+        NodeBlock(_block) => {
+            unimplemented!()
+        }
+
+        x => {
+            bug!("unexpected sort of node in const_of(tcx, def_id, ty): {:?}", x);
         }
     }
 }

@@ -809,6 +809,7 @@ pub fn force_from_dep_node<'a, 'gcx, 'lcx>(tcx: TyCtxt<'a, 'gcx, 'lcx>,
         DepKind::CrateVariances => { force!(crate_variances, LOCAL_CRATE); }
         DepKind::AssociatedItems => { force!(associated_item, def_id!()); }
         DepKind::TypeOfItem => { force!(type_of, def_id!()); }
+        DepKind::ConstOfItem => { force!(const_of, def_id!()); }
         DepKind::GenericsOfItem => { force!(generics_of, def_id!()); }
         DepKind::PredicatesOfItem => { force!(predicates_of, def_id!()); }
         DepKind::InferredOutlivesOf => { force!(inferred_outlives_of, def_id!()); }
@@ -999,6 +1000,7 @@ impl_load_from_cache!(
     ContainsExternIndicator => contains_extern_indicator,
     CheckMatch => check_match,
     TypeOfItem => type_of,
+    ConstOfItem => const_of,
     GenericsOfItem => generics_of,
     PredicatesOfItem => predicates_of,
     UsedTraitImports => used_trait_imports,

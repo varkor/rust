@@ -1286,6 +1286,7 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
         // if there are any.
         let generics = self.tcx.generics_of(method);
         assert_eq!(substs.types().count(), generics.parent_types as usize);
+        assert_eq!(substs.consts().count(), generics.parent_consts as usize);
         assert_eq!(substs.regions().count(), generics.parent_regions as usize);
 
         // Erase any late-bound regions from the method and substitute
@@ -1335,7 +1336,7 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
                          |_, _| self.next_ty_var(
                              TypeVariableOrigin::SubstitutionPlaceholder(
                                  self.tcx.def_span(def_id))),
-                         |_, _| self.next_const_var(self.tcx.types.usize) // TODO(varkor)
+                         |def, _| self.next_const_var(def.ty)
         )
     }
 

@@ -490,6 +490,7 @@ define_dep_nodes!( <'tcx>
     // nodes.
     [] AssociatedItems(DefId),
     [] TypeOfItem(DefId),
+    [] ConstOfItem(DefId),
     [] GenericsOfItem(DefId),
     [] PredicatesOfItem(DefId),
     [] InferredOutlivesOf(DefId),

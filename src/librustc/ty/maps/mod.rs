@@ -33,7 +33,7 @@ use session::{CompileResult, CrateDisambiguator};
 use session::config::OutputFilenames;
 use traits::Vtable;
 use traits::specialization_graph;
-use ty::{self, CrateInherentImpls, Ty, TyCtxt};
+use ty::{self, CrateInherentImpls, Ty, Const, TyCtxt};
 use ty::steal::Steal;
 use ty::subst::Substs;
 use util::nodemap::{DefIdSet, DefIdMap, ItemLocalSet};
@@ -86,6 +86,9 @@ pub use self::on_disk_cache::OnDiskCache;
 define_maps! { <'tcx>
     /// Records the type of every item.
     [] fn type_of: TypeOfItem(DefId) -> Ty<'tcx>,
+
+    /// Records the expression of every item.
+    [] fn const_of: ConstOfItem(DefId) -> &'tcx Const<'tcx>,
 
     /// Maps from the def-id of an item (trait/struct/enum/fn) to its
     /// associated generics and predicates.

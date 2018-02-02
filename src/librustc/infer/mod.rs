@@ -725,13 +725,6 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                   .into_iter()
                                   .map(|t| self.tcx.mk_ty_var(t));
 
-        // TODO(varkor)
-        // let unbound_const_vars = self.const_unification_table
-        //                             .borrow_mut()
-        //                             .unsolved_variables()
-        //                             .into_iter()
-        //                             .map(|v| self.tcx.mk_const_var(v));
-
         let unbound_int_vars = self.int_unification_table
                                    .borrow_mut()
                                    .unsolved_variables()
@@ -745,7 +738,6 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                                      .map(|v| self.tcx.mk_float_var(v));
 
         variables.extend(unbound_ty_vars);
-        // variables.extend(unbound_const_vars);
         variables.extend(unbound_int_vars);
         variables.extend(unbound_float_vars);
 
@@ -1155,9 +1147,16 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                              def: &ty::ConstParameterDef<'tcx>,
                              _substs: &[Kind<'tcx>])
                               -> &'tcx ty::Const<'tcx> {
-        // TODO(varkor): handle default
+        let default = if def.has_default {
+            // self.tcx.at(span).const_of(def.def_id, def.ty)
+            unimplemented!() // TODO(varkor): handle default
+        } else {
+            None
+        };
 
-        let const_var_id = self.next_const_var_id();
+        let const_var_id = self.const_unification_table
+                               .borrow_mut()
+                               .new_key(default);
         self.tcx.mk_const_var(const_var_id, def.ty)
     }
 
