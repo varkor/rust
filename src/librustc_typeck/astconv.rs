@@ -22,6 +22,7 @@ use namespace::Namespace;
 use rustc::ty::subst::{Kind, Subst, Substs};
 use rustc::traits;
 use rustc::ty::{self, RegionKind, Ty, TyCtxt, ToPredicate, TypeFoldable};
+use rustc::ty::ParamConst;
 use rustc::ty::wf::object_region_bounds;
 use std::slice;
 use require_c_abi_if_variadic;
@@ -1124,14 +1125,32 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
             hir::TyArray(ref ty, length) => {
                 let length_def_id = tcx.hir.body_owner_def_id(length);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
+
+                let length_node = tcx.hir.get(tcx.hir.body_owner(length));
+                let const_val = if let hir::map::Node::NodeExpr(expr) = length_node {
+                    if let hir::Expr_::ExprPath(hir::QPath::Resolved(None, ref path)) = expr.node {
+                        if let Def::ConstParam(def_id) = path.def {
+                            self.prohibit_type_params(&path.segments);
+
+                            let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
+                            let item_id = tcx.hir.get_parent_node(node_id);
+                            let item_def_id = tcx.hir.local_def_id(item_id);
+                            let generics = tcx.generics_of(item_def_id);
+                            let index = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
+                            //TODO(yodaldevoid) get the actual type from somewhere
+                            ConstVal::Param(ParamConst::new(index, tcx.hir.name(node_id), tcx.types.usize))
+                        } else {
+                            ConstVal::Unevaluated(length_def_id, substs)
+                        }
+                    } else {
+                        ConstVal::Unevaluated(length_def_id, substs)
+                    }
+                } else {
+                    ConstVal::Unevaluated(length_def_id, substs)
+                };
+
                 let length = tcx.mk_const(ty::Const {
-                    // TODO(varkor)
-                    /*val: ConstVal::Param(ty::ParamConst {
-                        idx: length_def_id.index.as_raw_u32(),
-                        name: ast::Name::intern("N"),
-                        ty: tcx.types.usize
-                    }),*/
-                    val: ConstVal::Unevaluated(length_def_id, substs),
+                    val: const_val,
                     ty: tcx.types.usize
                 });
                 let array_ty = tcx.mk_ty(ty::TyArray(self.ast_ty_to_ty(&ty), length));

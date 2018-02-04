@@ -1038,6 +1038,10 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                    .map(|param| (param.def_id, param.index))
                                    .collect();
 
+    let const_param_to_index = consts.iter()
+                                     .map(|param| (param.def_id, param.index))
+                                     .collect();
+
     tcx.alloc_generics(ty::Generics {
         parent: parent_def_id,
         parent_regions,
@@ -1047,6 +1051,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         types,
         consts,
         type_param_to_index,
+        const_param_to_index,
         has_self: has_self || parent_has_self,
         has_late_bound_regions: has_late_bound_regions(tcx, node),
     })

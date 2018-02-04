@@ -4755,6 +4755,7 @@ impl<'a> Parser<'a> {
         Ok(params)
     }
 
+    // TODO(yodaldevoid): ammend docs with const params
     /// Parse a set of optional generic type parameter declarations. Where
     /// clauses are not parsed here, and must be added later via
     /// `parse_where_clause()`.

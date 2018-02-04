@@ -495,6 +495,9 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::Generics<'gcx> {
             // Reverse map to each `TypeParameterDef`'s `index` field, from
             // `def_id.index` (`def_id.krate` is the same as the item's).
             type_param_to_index: _, // Don't hash this
+            // Reverse map to each `ConstParameterDef`'s `index` field, from
+            // `def_id.index` (`def_id.krate` is the same as the item's).
+            const_param_to_index: _, // Don't hash this
             has_self,
             has_late_bound_regions,
         } = *self;

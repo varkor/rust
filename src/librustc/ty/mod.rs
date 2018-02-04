@@ -797,6 +797,8 @@ pub struct Generics<'tcx> {
 
     /// Reverse map to each `TypeParameterDef`'s `index` field
     pub type_param_to_index: FxHashMap<DefId, u32>,
+    /// Reverse map to each `ConstParameterDef`'s `index` field
+    pub const_param_to_index: FxHashMap<DefId, u32>,
 
     pub has_self: bool,
     pub has_late_bound_regions: Option<Span>,
