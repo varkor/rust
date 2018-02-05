@@ -4661,10 +4661,11 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, ConstParam> {
-        let span = self.span;
+        let lo = self.span;
         self.expect_keyword(keywords::Const)?;
         let ident = self.parse_ident()?;
         self.expect(&token::Colon)?;
+        // TODO(varkor): error message if type parameter is used instead of type
         let ty = self.parse_ty()?;
 
         let default = if self.eat(&token::Eq) {
@@ -4673,13 +4674,14 @@ impl<'a> Parser<'a> {
             None
         };
 
+        let hi = self.prev_span;
         Ok(ConstParam {
             attrs: preceding_attrs.into(),
             ident,
             id: ast::DUMMY_NODE_ID,
             ty,
             default,
-            span,
+            span: lo.to(hi),
         })
     }
 

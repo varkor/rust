@@ -5159,6 +5159,16 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 .emit();
         }
     }
+
+    for (&used, param) in tps_used.iter().zip(generics.const_params()) {
+        if !used {
+            struct_span_err!(tcx.sess, param.span, E0694,
+                "const parameter `{}` is unused",
+                param.name)
+                .span_label(param.span, "unused const parameter")
+                .emit();
+        }
+    }
 }
 
 fn fatally_break_rust(sess: &Session) {

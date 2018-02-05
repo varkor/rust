@@ -1769,8 +1769,8 @@ reason to also specify it in a `where` clause.
 "##,
 
 E0194: r##"
-A type parameter was declared which shadows an existing one. An example of this
-error:
+A type or const parameter was declared which shadows an existing one.
+An example of this error:
 
 ```compile_fail,E0194
 trait Foo<T> {
@@ -3149,7 +3149,7 @@ impl Bar for *mut Foo {
 "##,
 
 E0392: r##"
-This error indicates that a type or lifetime parameter has been declared
+This error indicates that a type, const or lifetime parameter has been declared
 but not actually used. Here is an example that demonstrates the error:
 
 ```compile_fail,E0392
@@ -3158,8 +3158,8 @@ enum Foo<T> {
 }
 ```
 
-If the type parameter was included by mistake, this error can be fixed
-by simply removing the type parameter, as shown below:
+If the parameter was included by mistake, this error can be fixed
+by simply removing the parameter, as shown below:
 
 ```
 enum Foo {
@@ -3167,7 +3167,7 @@ enum Foo {
 }
 ```
 
-Alternatively, if the type parameter was intentionally inserted, it must be
+Alternatively, if the parameter was intentionally inserted, it must be
 used. A simple fix is shown below:
 
 ```
@@ -4718,6 +4718,24 @@ For example, TODO(varkor)
 
 ```compile_fail,E0693
 // TODO(varkor)
+```
+"##,
+
+E0694: r##"
+You gave an unnecessary const parameter in a type alias. Erroneous code
+example:
+
+```compile_fail,E0694
+type Foo<const N: usize> = u32; // error: const parameter `N` is unused
+// or:
+type Foo<A, B: u32> = Box<A>; // error: const parameter `B` is unused
+```
+
+Please check you didn't write too many const parameters. Example:
+
+```
+type Foo = u32; // ok!
+type Foo2<A> = Box<A>; // ok!
 ```
 "##,
 

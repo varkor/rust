@@ -531,32 +531,39 @@ impl<'a, 'gcx> CheckTypeWellFormedVisitor<'a, 'gcx> {
                 continue;
             }
 
-            let (span, name) = match ast_generics.params[index] {
-                hir::GenericParam::Lifetime(ref ld) => (ld.lifetime.span, ld.lifetime.name.name()),
-                hir::GenericParam::Type(ref tp) => (tp.span, tp.name),
-                hir::GenericParam::Const(ref cp) => (cp.span, cp.name),
+            let (span, name, kind) = match ast_generics.params[index] {
+                hir::GenericParam::Lifetime(ref ld) =>
+                    (ld.lifetime.span, ld.lifetime.name.name(), "lifetime"),
+                hir::GenericParam::Type(ref tp) => (tp.span, tp.name, "type"),
+                hir::GenericParam::Const(ref cp) => (cp.span, cp.name, "const"),
             };
-            self.report_bivariance(span, name);
+            self.report_bivariance(span, name, kind);
         }
     }
 
     fn report_bivariance(&self,
                          span: Span,
-                         param_name: ast::Name)
+                         param_name: ast::Name,
+                         kind: &str)
     {
-        let mut err = error_392(self.tcx, span, param_name);
+        let mut err = error_392(self.tcx, span, param_name, kind);
 
-        let suggested_marker_id = self.tcx.lang_items().phantom_data();
-        match suggested_marker_id {
-            Some(def_id) => {
-                err.help(
-                    &format!("consider removing `{}` or using a marker such as `{}`",
-                             param_name,
-                             self.tcx.item_path_str(def_id)));
+        let suggest_marker = kind == "type";
+        if suggest_marker {
+            let suggested_marker_id = self.tcx.lang_items().phantom_data();
+            match suggested_marker_id {
+                Some(def_id) => {
+                    err.help(
+                        &format!("consider removing `{}` or using a marker such as `{}`",
+                                param_name,
+                                self.tcx.item_path_str(def_id)));
+                }
+                None => {
+                    // no lang items, no help!
+                }
             }
-            None => {
-                // no lang items, no help!
-            }
+        } else {
+            err.help(&format!("consider removing `{}`", param_name));
         }
         err.emit();
     }
@@ -570,17 +577,24 @@ fn reject_shadowing_type_parameters(tcx: TyCtxt, def_id: DefId) {
                                        .map(|tp| (tp.name, tp.def_id))
                                        .collect();
 
-    for method_param in &generics.types {
-        if impl_params.contains_key(&method_param.name) {
+    let error_if_shadowing = |name: ast::Name, def_id: DefId, kind: &str| {
+        if impl_params.contains_key(&name) {
             // Tighten up the span to focus on only the shadowing type
-            let type_span = tcx.def_span(method_param.def_id);
+            let type_span = tcx.def_span(def_id);
 
             // The expectation here is that the original trait declaration is
             // local so it should be okay to just unwrap everything.
-            let trait_def_id = impl_params[&method_param.name];
+            let trait_def_id = impl_params[&name];
             let trait_decl_span = tcx.def_span(trait_def_id);
-            error_194(tcx, type_span, trait_decl_span, method_param.name);
+            error_194(tcx, type_span, trait_decl_span, name, kind);
         }
+    };
+
+    for method_param in &generics.types {
+        error_if_shadowing(method_param.name, method_param.def_id, "type")
+    }
+    for method_param in &generics.consts {
+        error_if_shadowing(method_param.name, method_param.def_id, "const")
     }
 }
 
@@ -667,19 +681,20 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
     }
 }
 
-fn error_392<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, span: Span, param_name: ast::Name)
+fn error_392<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, span: Span, param_name: ast::Name, kind: &str)
                        -> DiagnosticBuilder<'tcx> {
     let mut err = struct_span_err!(tcx.sess, span, E0392,
                   "parameter `{}` is never used", param_name);
-    err.span_label(span, "unused type parameter");
+    err.span_label(span, format!("unused {} parameter", kind));
     err
 }
 
-fn error_194(tcx: TyCtxt, span: Span, trait_decl_span: Span, name: ast::Name) {
+fn error_194(tcx: TyCtxt, span: Span, trait_decl_span: Span, name: ast::Name, kind: &str) {
     struct_span_err!(tcx.sess, span, E0194,
-              "type parameter `{}` shadows another type parameter of the same name",
+              "{} parameter `{}` shadows another parameter of the same name",
+              kind,
               name)
-        .span_label(span, "shadows another type parameter")
+        .span_label(span, "shadows another parameter")
         .span_label(trait_decl_span, format!("first `{}` declared here", name))
         .emit();
 }
