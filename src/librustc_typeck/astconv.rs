@@ -1127,7 +1127,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 let substs = Substs::identity_for_item(tcx, length_def_id);
 
                 let length_node = tcx.hir.get(tcx.hir.body_owner(length));
-                let const_val = if let hir::map::Node::NodeExpr(expr) = length_node {
+                let mut const_val = ConstVal::Unevaluated(length_def_id, substs);
+                if let hir::map::Node::NodeExpr(expr) = length_node {
                     if let hir::Expr_::ExprPath(hir::QPath::Resolved(None, ref path)) = expr.node {
                         if let Def::ConstParam(def_id) = path.def {
                             self.prohibit_type_params(&path.segments);
@@ -1136,18 +1137,13 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                             let item_id = tcx.hir.get_parent_node(node_id);
                             let item_def_id = tcx.hir.local_def_id(item_id);
                             let generics = tcx.generics_of(item_def_id);
-                            let index = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
-                            //TODO(yodaldevoid) get the actual type from somewhere
-                            ConstVal::Param(ParamConst::new(index, tcx.hir.name(node_id), tcx.types.usize))
-                        } else {
-                            ConstVal::Unevaluated(length_def_id, substs)
+                            let idx = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
+                            const_val = ConstVal::Param(ParamConst::new(idx,
+                                                                        tcx.hir.name(node_id),
+                                                                        tcx.types.usize))
                         }
-                    } else {
-                        ConstVal::Unevaluated(length_def_id, substs)
                     }
-                } else {
-                    ConstVal::Unevaluated(length_def_id, substs)
-                };
+                }
 
                 let length = tcx.mk_const(ty::Const {
                     val: const_val,

@@ -674,7 +674,7 @@ impl<'a, 'gcx, 'tcx> MemCategorizationContext<'a, 'gcx, 'tcx> {
 
         match def {
           Def::StructCtor(..) | Def::VariantCtor(..) | Def::Const(..) |
-          Def::AssociatedConst(..) | Def::Fn(..) | Def::Method(..) => {
+          Def::AssociatedConst(..) | Def::ConstParam(..) | Def::Fn(..) | Def::Method(..) => {
                 Ok(self.cat_rvalue_node(id, span, expr_ty))
           }
 

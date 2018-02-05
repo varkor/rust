@@ -4709,7 +4709,8 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             // Case 2. Reference to a top-level value.
             Def::Fn(def_id) |
             Def::Const(def_id) |
-            Def::Static(def_id, _) => {
+            Def::Static(def_id, _) |
+            Def::ConstParam(def_id) => {
                 fn_segment = Some((segments.last().unwrap(),
                                    self.tcx.generics_of(def_id)));
             }

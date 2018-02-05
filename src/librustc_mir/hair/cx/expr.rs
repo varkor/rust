@@ -695,7 +695,8 @@ fn convert_path_expr<'a, 'gcx, 'tcx>(cx: &mut Cx<'a, 'gcx, 'tcx>,
         },
 
         Def::Const(def_id) |
-        Def::AssociatedConst(def_id) => ExprKind::Literal {
+        Def::AssociatedConst(def_id) |
+        Def::ConstParam(def_id) => ExprKind::Literal {
             literal: Literal::Value {
                 value: cx.tcx.mk_const(ty::Const {
                     val: ConstVal::Unevaluated(def_id, substs),

@@ -41,7 +41,6 @@ pub enum Def {
     AssociatedTy(DefId),
     PrimTy(hir::PrimTy),
     TyParam(DefId),
-    ConstParam(DefId),
     SelfTy(Option<DefId> /* trait */, Option<DefId> /* impl */),
 
     // Value namespace
@@ -52,6 +51,7 @@ pub enum Def {
     VariantCtor(DefId, CtorKind),
     Method(DefId),
     AssociatedConst(DefId),
+    ConstParam(DefId),
 
     Local(ast::NodeId),
     Upvar(ast::NodeId,  // node id of closed over local

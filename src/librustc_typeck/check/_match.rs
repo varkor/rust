@@ -61,7 +61,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             PatKind::Path(ref qpath) => {
                 let (def, _, _) = self.resolve_ty_and_def_ufcs(qpath, pat.id, pat.span);
                 match def {
-                    Def::Const(..) | Def::AssociatedConst(..) => false,
+                    Def::Const(..) | Def::AssociatedConst(..) | Def::ConstParam(..) => false,
                     _ => true,
                 }
             }
@@ -772,7 +772,7 @@ https://doc.rust-lang.org/reference/types.html#trait-objects");
             }
             Def::VariantCtor(_, CtorKind::Const) |
             Def::StructCtor(_, CtorKind::Const) |
-            Def::Const(..) | Def::AssociatedConst(..) => {} // OK
+            Def::Const(..) | Def::AssociatedConst(..) | Def::ConstParam(..) => {} // OK
             _ => bug!("unexpected pattern definition: {:?}", def)
         }
 
@@ -813,7 +813,7 @@ https://doc.rust-lang.org/reference/types.html#trait-objects");
                 on_error();
                 return tcx.types.err;
             }
-            Def::AssociatedConst(..) | Def::Method(..) => {
+            Def::AssociatedConst(..) | Def::ConstParam(..) | Def::Method(..) => {
                 report_unexpected_def(def);
                 return tcx.types.err;
             }

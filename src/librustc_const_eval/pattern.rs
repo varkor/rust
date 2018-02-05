@@ -644,7 +644,7 @@ impl<'a, 'tcx> PatternContext<'a, 'tcx> {
             _ => false,
         };
         let kind = match def {
-            Def::Const(def_id) | Def::AssociatedConst(def_id) => {
+            Def::Const(def_id) | Def::AssociatedConst(def_id) | Def::ConstParam(def_id) => {
                 let substs = self.tables.node_substs(id);
                 match eval::lookup_const_by_id(self.tcx, self.param_env.and((def_id, substs))) {
                     Some((def_id, substs)) => {

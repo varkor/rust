@@ -239,6 +239,7 @@ impl<'a, 'b: 'a, 'hir: 'b> Visitor<'hir> for CheckItemRecursionVisitor<'a, 'b, '
         match path.def {
             Def::Static(def_id, _) |
             Def::AssociatedConst(def_id) |
+            Def::ConstParam(def_id) |
             Def::Const(def_id) => {
                 if let Some(node_id) = self.hir_map.as_local_node_id(def_id) {
                     match self.hir_map.get(node_id) {

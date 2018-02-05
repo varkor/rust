@@ -76,7 +76,7 @@ impl hir::Pat {
             PatKind::Path(hir::QPath::TypeRelative(..)) => true,
             PatKind::Path(hir::QPath::Resolved(_, ref path)) => {
                 match path.def {
-                    Def::Const(..) | Def::AssociatedConst(..) => true,
+                    Def::Const(..) | Def::AssociatedConst(..) | Def::ConstParam(..) => true,
                     _ => false
                 }
             }

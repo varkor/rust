@@ -426,7 +426,8 @@ fn check_expr<'a, 'tcx>(v: &mut CheckCrateVisitor<'a, 'tcx>, e: &hir::Expr, node
                 }
 
                 Def::Const(did) |
-                Def::AssociatedConst(did) => {
+                Def::AssociatedConst(did) |
+                Def::ConstParam(did) => {
                     let promotable = if v.tcx.trait_of_item(did).is_some() {
                         // Don't peek inside trait associated constants.
                         false
