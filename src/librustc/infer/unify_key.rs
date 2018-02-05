@@ -9,8 +9,10 @@
 // except according to those terms.
 
 use syntax::ast;
+use middle::const_val::ConstVal;
 use ty::{self, IntVarValue, Ty, TyCtxt};
 use rustc_data_structures::unify::{Combine, UnifyKey};
+use std::marker::PhantomData;
 
 pub trait ToType {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx>;
@@ -81,9 +83,9 @@ impl UnifyKey for ty::TyVid {
     fn tag(_: Option<ty::TyVid>) -> &'static str { "TyVid" }
 }
 
-impl UnifyKey for ty::ConstVid {
-    type Value = Option<ast::Expr>;
+impl<'tcx> UnifyKey for ty::ConstVid<'tcx> {
+    type Value = Option<ConstVal<'tcx>>;
     fn index(&self) -> u32 { self.index }
-    fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
-    fn tag(_: Option<ty::ConstVid>) -> &'static str { "ConstVid" }
+    fn from_index(i: u32) -> ty::ConstVid<'tcx> { ty::ConstVid { index: i, phantom: PhantomData } }
+    fn tag(_: Option<ty::ConstVid<'tcx>>) -> &'static str { "ConstVid" }
 }

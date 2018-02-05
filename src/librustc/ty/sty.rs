@@ -25,6 +25,7 @@ use std::cmp::Ordering;
 use syntax::abi;
 use syntax::ast::{self, Name};
 use syntax::symbol::keywords;
+use std::marker::PhantomData;
 
 use serialize;
 
@@ -1090,8 +1091,9 @@ pub struct FloatVid {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
-pub struct ConstVid {
+pub struct ConstVid<'tcx> {
     pub index: u32,
+    pub phantom: PhantomData<&'tcx ()>,
 }
 
 newtype_index!(RegionVid

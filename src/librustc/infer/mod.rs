@@ -99,7 +99,7 @@ pub struct InferCtxt<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     pub type_variables: RefCell<type_variable::TypeVariableTable<'tcx>>,
 
     // Map from const parameter variable to the kind of const it represents
-    const_unification_table: RefCell<UnificationTable<ty::ConstVid>>,
+    const_unification_table: RefCell<UnificationTable<ty::ConstVid<'tcx>>>,
 
     // Map from integral variable to the kind of integer it represents
     int_unification_table: RefCell<UnificationTable<ty::IntVid>>,
@@ -417,7 +417,6 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'gcx> {
             global_tcx: self,
             arena: DroplessArena::new(),
             fresh_tables: None,
-
         }
     }
 }
@@ -480,7 +479,7 @@ impl<'tcx, T> InferOk<'tcx, T> {
 pub struct CombinedSnapshot<'a, 'tcx:'a> {
     projection_cache_snapshot: traits::ProjectionCacheSnapshot,
     type_snapshot: type_variable::Snapshot,
-    const_snapshot: unify::Snapshot<ty::ConstVid>,
+    const_snapshot: unify::Snapshot<ty::ConstVid<'tcx>>,
     int_snapshot: unify::Snapshot<ty::IntVid>,
     float_snapshot: unify::Snapshot<ty::FloatVid>,
     region_constraints_snapshot: RegionSnapshot,
@@ -804,7 +803,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         }
     }
 
-    fn rollback_to(&self, cause: &str, snapshot: CombinedSnapshot) {
+    fn rollback_to<'b>(&'b self, cause: &str, snapshot: CombinedSnapshot<'b, 'tcx>) {
         debug!("rollback_to(cause={})", cause);
         let CombinedSnapshot { projection_cache_snapshot,
                                type_snapshot,
@@ -840,7 +839,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
             .rollback_to(region_constraints_snapshot);
     }
 
-    fn commit_from(&self, snapshot: CombinedSnapshot) {
+    fn commit_from<'b>(&'b self, snapshot: CombinedSnapshot<'b, 'tcx>) {
         debug!("commit_from()");
         let CombinedSnapshot { projection_cache_snapshot,
                                type_snapshot,
@@ -1058,7 +1057,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_const_var(self.next_const_var_id(), ty)
     }
 
-    pub fn next_const_var_id(&self) -> ConstVid {
+    pub fn next_const_var_id(&self) -> ConstVid<'tcx> {
         self.const_unification_table
             .borrow_mut()
             .new_key(None)

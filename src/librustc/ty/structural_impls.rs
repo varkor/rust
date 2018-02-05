@@ -583,14 +583,40 @@ impl<'a, 'tcx> Lift<'tcx> for ty::error::TypeError<'a> {
             CyclicTy(t) => return tcx.lift(&t).map(|t| CyclicTy(t)),
             ProjectionMismatched(x) => ProjectionMismatched(x),
             ProjectionBoundsLength(x) => ProjectionBoundsLength(x),
-
             Sorts(ref x) => return tcx.lift(x).map(Sorts),
+            ConstError(ref x) => return tcx.lift(x).map(ConstError),
             TyParamDefaultMismatch(ref x) => {
                 return tcx.lift(x).map(TyParamDefaultMismatch)
             }
             ExistentialMismatch(ref x) => return tcx.lift(x).map(ExistentialMismatch),
             OldStyleLUB(ref x) => return tcx.lift(x).map(OldStyleLUB),
         })
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for ty::error::ConstError<'a> {
+    type Lifted = ty::error::ConstError<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        use ty::error::ConstError::*;
+
+        match *self {
+            Types(ref x) => return tcx.lift(x).map(Types),
+            Mismatch(ty::error::ExpectedFound { ref expected, ref found }) => {
+                if let Some(expected) = tcx.lift(expected) {
+                    if let Some(found) = tcx.lift(found) {
+                        return Some(Mismatch(ty::error::ExpectedFound { expected, found }))
+                    }
+                }
+                return None
+            }
+        }
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for ConstVal<'a> {
+    type Lifted = ConstVal<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        unimplemented!() // TODO(varkor)
     }
 }
 
@@ -1230,6 +1256,7 @@ impl<'tcx> TypeFoldable<'tcx> for ty::error::TypeError<'tcx> {
             ProjectionMismatched(x) => ProjectionMismatched(x),
             ProjectionBoundsLength(x) => ProjectionBoundsLength(x),
             Sorts(x) => Sorts(x.fold_with(folder)),
+            ConstError(ref _x) => unimplemented!(), // TODO(varkor)
             TyParamDefaultMismatch(ref x) => TyParamDefaultMismatch(x.fold_with(folder)),
             ExistentialMismatch(x) => ExistentialMismatch(x.fold_with(folder)),
             OldStyleLUB(ref x) => OldStyleLUB(x.fold_with(folder)),
@@ -1254,6 +1281,7 @@ impl<'tcx> TypeFoldable<'tcx> for ty::error::TypeError<'tcx> {
             TyParamDefaultMismatch(ref x) => x.visit_with(visitor),
             ExistentialMismatch(x) => x.visit_with(visitor),
             CyclicTy(t) => t.visit_with(visitor),
+            ConstError(_) |
             Mismatch |
             Mutability |
             TupleSize(_) |

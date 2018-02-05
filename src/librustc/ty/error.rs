@@ -11,7 +11,7 @@
 use hir::def_id::DefId;
 use infer::type_variable;
 use middle::const_val::ConstVal;
-use ty::{self, BoundRegion, DefIdTree, Region, Ty, TyCtxt};
+use ty::{self, BoundRegion, DefIdTree, Region, Ty, Const, TyCtxt};
 
 use std::fmt;
 use syntax::abi;
@@ -49,6 +49,8 @@ pub enum TypeError<'tcx> {
     FloatMismatch(ExpectedFound<ast::FloatTy>),
     Traits(ExpectedFound<DefId>),
     VariadicMismatch(ExpectedFound<bool>),
+
+    ConstError(ConstError<'tcx>),
 
     /// Instantiating a type variable with the given type would have
     /// created a cycle (because it appears somewhere within that
@@ -131,6 +133,16 @@ impl<'tcx> fmt::Display for TypeError<'tcx> {
                        if br.is_named() { " " } else { "" },
                        br)
             }
+            ConstError(ref const_error) => {
+                match const_error {
+                    &ty::error::ConstError::Types(_) => {
+                        write!(f, "const type mismatch")
+                    }
+                    &ty::error::ConstError::Mismatch(_) => {
+                        write!(f, "const value mismatch")
+                    }
+                }
+            }
             Sorts(values) => ty::tls::with(|tcx| {
                 report_maybe_different(f, values.expected.sort_string(tcx),
                                        values.found.sort_string(tcx))
@@ -181,6 +193,13 @@ impl<'tcx> fmt::Display for TypeError<'tcx> {
             }
         }
     }
+}
+
+// Data structure used in const unification
+#[derive(Clone, Debug)]
+pub enum ConstError<'tcx> {
+    Types(ExpectedFound<&'tcx Const<'tcx>>),
+    Mismatch(ExpectedFound<ConstVal<'tcx>>),
 }
 
 impl<'a, 'gcx, 'lcx, 'tcx> ty::TyS<'tcx> {

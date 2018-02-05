@@ -14,7 +14,7 @@ use super::lattice::{self, LatticeDir};
 use super::Subtype;
 
 use traits::ObligationCause;
-use ty::{self, Ty, TyCtxt};
+use ty::{self, Ty, Const, TyCtxt};
 use ty::error::TypeError;
 use ty::relate::{Relate, RelateResult, TypeRelation};
 
@@ -58,6 +58,13 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
 
     fn tys(&mut self, a: Ty<'tcx>, b: Ty<'tcx>) -> RelateResult<'tcx, Ty<'tcx>> {
         lattice::super_lattice_tys(self, a, b)
+    }
+
+    fn consts(&mut self,
+              a: &'tcx Const<'tcx>,
+              b: &'tcx Const<'tcx>)
+              -> RelateResult<'tcx, &'tcx Const<'tcx>> {
+        self.infcx().super_combine_consts(self, a, b)
     }
 
     fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)

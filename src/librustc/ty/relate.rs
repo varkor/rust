@@ -17,9 +17,9 @@ use hir::def_id::DefId;
 use middle::const_val::ConstVal;
 use traits::Reveal;
 use ty::subst::{Kind, Substs};
-use ty::{self, Ty, TyCtxt, TypeFoldable};
+use ty::{self, Ty, Const, TyCtxt, TypeFoldable};
 use ty::fold::{TypeVisitor, TypeFolder};
-use ty::error::{ExpectedFound, TypeError};
+use ty::error::{ExpectedFound, TypeError, ConstError};
 use util::common::ErrorReported;
 use std::rc::Rc;
 use std::iter;
@@ -88,6 +88,9 @@ pub trait TypeRelation<'a, 'gcx: 'a+'tcx, 'tcx: 'a> : Sized {
 
     fn tys(&mut self, a: Ty<'tcx>, b: Ty<'tcx>)
            -> RelateResult<'tcx, Ty<'tcx>>;
+
+    fn consts(&mut self, a: &'tcx Const<'tcx>, b: &'tcx Const<'tcx>)
+              -> RelateResult<'tcx, &'tcx Const<'tcx>>;
 
     fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)
                -> RelateResult<'tcx, ty::Region<'tcx>>;
@@ -478,7 +481,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
             let t = relation.relate(&a_t, &b_t)?;
             assert_eq!(sz_a.ty, tcx.types.usize);
             assert_eq!(sz_b.ty, tcx.types.usize);
-            let to_u64 = |x: &'tcx ty::Const<'tcx>| -> Result<u64, ErrorReported> {
+            let to_u64 = |x: &'tcx Const<'tcx>| -> Result<u64, ErrorReported> {
                 match x.val {
                     ConstVal::Integral(x) => Ok(x.to_u64().unwrap()),
                     ConstVal::Unevaluated(def_id, substs) => {
@@ -487,7 +490,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                         match tcx.lift_to_global(&substs) {
                             Some(substs) => {
                                 match tcx.const_eval(param_env.and((def_id, substs))) {
-                                    Ok(&ty::Const { val: ConstVal::Integral(x), .. }) => {
+                                    Ok(&Const { val: ConstVal::Integral(x), .. }) => {
                                         return Ok(x.to_u64().unwrap());
                                     }
                                     _ => {}
@@ -632,14 +635,67 @@ impl<'tcx> Relate<'tcx> for &'tcx Substs<'tcx> {
     }
 }
 
-impl<'tcx> Relate<'tcx> for &'tcx ty::Const<'tcx> {
-    fn relate<'a, 'gcx, R>(_relation: &mut R,
-                           _a: &&'tcx ty::Const<'tcx>,
-                           _b: &&'tcx ty::Const<'tcx>)
-                           -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>
+/// The main "const relation" routine.
+impl<'tcx> Relate<'tcx> for &'tcx Const<'tcx> {
+    fn relate<'a, 'gcx, R>(relation: &mut R,
+                           a: &&'tcx Const<'tcx>,
+                           b: &&'tcx Const<'tcx>)
+                           -> RelateResult<'tcx, &'tcx Const<'tcx>>
         where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
     {
-        unimplemented!() // TODO(varkor)
+        relation.consts(&a, &b)
+    }
+}
+
+pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
+                                              a: &&'tcx Const<'tcx>,
+                                              b: &&'tcx Const<'tcx>)
+                                              -> RelateResult<'tcx, &'tcx Const<'tcx>>
+    where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
+{
+    if a.ty != b.ty {
+        return Err(TypeError::ConstError(
+            ConstError::Types(expected_found(relation, &a, &b))
+        ));
+    }
+    let tcx = relation.tcx();
+    // Currently, the values that can be unified are those that
+    // implement both `PartialEq` and `Eq`, corresponding to
+    // `structural_match` types.
+    match (&a.val, &b.val) {
+        (&ConstVal::InferVar(_), _) | (_, &ConstVal::InferVar(_)) => {
+            // The caller should handle these cases!
+            bug!("var types encountered in super_relate_consts")
+        }
+
+        (&ConstVal::Error, _) | (_, &ConstVal::Error) => {
+            Ok(tcx.mk_const(Const {
+                val: ConstVal::Error,
+                ty: a.ty,
+            }))
+        }
+
+        (&ConstVal::Integral(_), _) |
+        (&ConstVal::Str(_), _) |
+        (&ConstVal::ByteStr(_), _) |
+        (&ConstVal::Bool(_), _) |
+        (&ConstVal::Char(_), _)
+            if a == b =>
+        {
+            Ok(a)
+        }
+        // TODO(varkor): it'd be nice to support Variant here too
+        // TODO(varkor): handle unevaluated
+        (&ConstVal::Param(ref a_p), &ConstVal::Param(ref b_p))
+            if a_p.idx == b_p.idx =>
+        {
+            Ok(a)
+        }
+        _ => {
+            Err(TypeError::ConstError(
+                ConstError::Types(expected_found(relation, &a, &b))
+            ))
+        }
     }
 }
 

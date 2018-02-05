@@ -108,7 +108,7 @@ for ty::RegionKind {
     }
 }
 
-impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::ConstVid {
+impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::ConstVid<'gcx> {
     #[inline]
     fn hash_stable<W: StableHasherResult>(&self,
                                           hcx: &mut StableHashingContext<'gcx>,

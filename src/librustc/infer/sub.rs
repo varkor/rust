@@ -12,7 +12,7 @@ use super::SubregionOrigin;
 use super::combine::{CombineFields, RelationDir};
 
 use traits::Obligation;
-use ty::{self, Ty, TyCtxt};
+use ty::{self, Ty, Const, TyCtxt};
 use ty::TyVar;
 use ty::fold::TypeFoldable;
 use ty::relate::{Cause, Relate, RelateResult, TypeRelation};
@@ -126,6 +126,17 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
                 Ok(a)
             }
         }
+    }
+
+    fn consts(&mut self,
+              a: &'tcx Const<'tcx>,
+              b: &'tcx Const<'tcx>)
+              -> RelateResult<'tcx, &'tcx Const<'tcx>> {
+        debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
+        if a == b { return Ok(a); }
+
+        self.fields.infcx.super_combine_consts(self, a, b)?;
+        Ok(a)
     }
 
     fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)

@@ -8,8 +8,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ty::{self, Ty, TyCtxt};
-use ty::error::TypeError;
+use middle::const_val::ConstVal;
+use ty::{self, Ty, Const, TyCtxt};
+use ty::error::{TypeError, ConstError};
 use ty::relate::{self, Relate, TypeRelation, RelateResult};
 
 /// A type "A" *matches* "B" if the fresh types in B could be
@@ -84,6 +85,32 @@ impl<'a, 'gcx, 'tcx> TypeRelation<'a, 'gcx, 'tcx> for Match<'a, 'gcx, 'tcx> {
 
             _ => {
                 relate::super_relate_tys(self, a, b)
+            }
+        }
+    }
+
+    fn consts(&mut self,
+              a: &'tcx Const<'tcx>,
+              b: &'tcx Const<'tcx>)
+              -> RelateResult<'tcx, &'tcx Const<'tcx>> {
+        if a == b { return Ok(a); }
+
+        match (&a.val, &b.val) {
+            (&ConstVal::InferVar(_), _) | (_, &ConstVal::InferVar(_)) => {
+                Err(TypeError::ConstError(
+                    ConstError::Types(ty::relate::expected_found(self, &a, &b))
+                ))
+            }
+
+            (&ConstVal::Error, _) | (_, &ConstVal::Error) => {
+                Ok(self.tcx().mk_const(Const {
+                    val: ConstVal::Error,
+                    ty: a.ty,
+                }))
+            }
+
+            _ => {
+                ty::relate::super_relate_consts(self, &a, &b)
             }
         }
     }

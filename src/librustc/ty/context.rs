@@ -2088,7 +2088,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_infer(TyVar(v))
     }
 
-    pub fn mk_const_var(self, v: ConstVid, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+    pub fn mk_const_var(self, v: ConstVid<'tcx>, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
         self.mk_const(ty::Const {
             val: ConstVal::InferVar(v),
             ty
