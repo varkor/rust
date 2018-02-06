@@ -1231,7 +1231,7 @@ define_print! {
 }
 
 define_print! {
-    ('tcx) ty::ParamConst<'tcx>, (self, f, cx) {
+    () ty::ParamConst, (self, f, cx) {
         display {
             write!(f, "{}", self.name)
         }

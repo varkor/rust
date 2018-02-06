@@ -1138,9 +1138,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                             let item_def_id = tcx.hir.local_def_id(item_id);
                             let generics = tcx.generics_of(item_def_id);
                             let idx = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
-                            const_val = ConstVal::Param(ParamConst::new(idx,
-                                                                        tcx.hir.name(node_id),
-                                                                        tcx.types.usize))
+                            const_val = ConstVal::Param(ParamConst::new(idx, tcx.hir.name(node_id)))
                         }
                     }
                 }

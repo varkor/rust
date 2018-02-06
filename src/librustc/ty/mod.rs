@@ -885,7 +885,7 @@ impl<'a, 'gcx, 'tcx> Generics<'tcx> {
 
     /// Returns the `ConstParameterDef` associated with this `ParamConst`.
     pub fn const_param(&'tcx self,
-                       param: &ParamConst<'tcx>,
+                       param: &ParamConst,
                        tcx: TyCtxt<'a, 'gcx, 'tcx>)
                        -> &ConstParameterDef<'tcx> {
         if let Some(idx) = param.idx.checked_sub(self.parent_count() as u32) {

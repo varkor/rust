@@ -733,10 +733,9 @@ impl_stable_hash_for!(struct ty::ParamTy {
     name
 });
 
-impl_stable_hash_for!(struct ty::ParamConst<'tcx> {
+impl_stable_hash_for!(struct ty::ParamConst {
     idx,
-    name,
-    ty
+    name
 });
 
 impl_stable_hash_for!(struct ty::TypeAndMut<'tcx> {
