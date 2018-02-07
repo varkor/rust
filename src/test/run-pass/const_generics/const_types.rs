@@ -15,6 +15,14 @@ struct ConstArray<T, const LEN: usize> {
     array: [T; LEN],
 }
 
+impl<T, const LEN: usize> ConstArray<T, LEN> {
+    fn new() -> ConstArray<T, LEN> {
+        ConstArray {
+            array: [Default::default(); LEN],
+        }
+    }
+}
+
 fn main() {
     let arr: ConstArray<i32, 8> = ConstArray::new();
 }
