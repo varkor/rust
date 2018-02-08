@@ -46,6 +46,7 @@ use hir::HirVec;
 use hir::map::{DefKey, DefPathData, Definitions};
 use hir::def_id::{DefId, DefIndex, DefIndexAddressSpace, CRATE_DEF_INDEX};
 use hir::def::{Def, PathResolution};
+use hir::GenericPathParam;
 use lint::builtin::{self, PARENTHESIZED_PARAMS_IN_TYPES_AND_MODULES};
 use middle::cstore::CrateStore;
 use rustc_data_structures::indexed_vec::IndexVec;
@@ -1001,6 +1002,20 @@ impl<'a> LoweringContext<'a> {
         }
     }
 
+    fn lower_param(&mut self,
+                   p: &GenericAngleBracketedParam,
+                   itctx: ImplTraitContext)
+                   -> GenericPathParam {
+        match p {
+            GenericAngleBracketedParam::Lifetime(lt) => {
+                GenericPathParam::Lifetime(self.lower_lifetime(&lt))
+            }
+            GenericAngleBracketedParam::Type(ty) => {
+                GenericPathParam::Type(self.lower_ty(&ty, itctx))
+            }
+        }
+    }
+
     fn lower_ty(&mut self, t: &Ty, itctx: ImplTraitContext) -> P<hir::Ty> {
         let kind = match t.node {
             TyKind::Infer => hir::TyInfer,
@@ -1552,7 +1567,7 @@ impl<'a> LoweringContext<'a> {
     ) -> hir::PathSegment {
         let (mut parameters, infer_types) = if let Some(ref parameters) = segment.parameters {
             let msg = "parenthesized parameters may only be used with a trait";
-            match **parameters {
+            match **path_params {
                 PathParameters::AngleBracketed(ref data) => {
                     self.lower_angle_bracketed_parameter_data(data, param_mode, itctx)
                 }
@@ -1580,12 +1595,14 @@ impl<'a> LoweringContext<'a> {
         };
 
         if !parameters.parenthesized && parameters.lifetimes.is_empty() {
-            parameters.lifetimes = self.elided_path_lifetimes(path_span, expected_lifetimes);
+            path_params.parameters = (0..expected_lifetimes).map(|_| {
+                GenericPathParam::Lifetime(self.elided_lifetime(path_span))
+            }).chain(path_params.parameters.into_iter()).collect();
         }
 
         hir::PathSegment::new(
             self.lower_ident(segment.ident),
-            parameters,
+            path_params,
             infer_types,
         )
     }
@@ -1596,24 +1613,13 @@ impl<'a> LoweringContext<'a> {
         param_mode: ParamMode,
         itctx: ImplTraitContext,
     ) -> (hir::PathParameters, bool) {
-        let &AngleBracketedParameterData {
-            ref lifetimes,
-            ref types,
-            ref bindings,
-            ..
-        } = data;
-        (
-            hir::PathParameters {
-                lifetimes: self.lower_lifetimes(lifetimes),
-                types: types.iter().map(|ty| self.lower_ty(ty, itctx)).collect(),
-                bindings: bindings
-                    .iter()
-                    .map(|b| self.lower_ty_binding(b, itctx))
-                    .collect(),
-                parenthesized: false,
-            },
-            types.is_empty() && param_mode == ParamMode::Optional,
-        )
+        let &AngleBracketedParameterData { ref parameters, ref bindings, .. } = data;
+        (hir::PathParameters {
+            parameters: parameters.iter().map(|p| self.lower_param(p, itctx)).collect(),
+            bindings: bindings.iter().map(|b| self.lower_ty_binding(b, itctx)).collect(),
+            parenthesized: false,
+        },
+        types.is_empty() && param_mode == ParamMode::Optional)
     }
 
     fn lower_parenthesized_parameter_data(
@@ -1642,8 +1648,7 @@ impl<'a> LoweringContext<'a> {
 
         (
             hir::PathParameters {
-                lifetimes: hir::HirVec::new(),
-                types: hir_vec![mk_tup(self, inputs, span)],
+                parameters: hir_vec![GenericPathParam::Type(mk_tup(self, inputs, span))],
                 bindings: hir_vec![
                     hir::TypeBinding {
                         id: self.next_id().node_id,
