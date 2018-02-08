@@ -1972,8 +1972,8 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             return;
         }
 
-        let span = lifetime_refs.first().unwrap().span;
-        let id = lifetime_refs.first().unwrap().id;
+        let span = lifetime_refs[0].span;
+        let id = lifetime_refs[0].id;
         let mut late_depth = 0;
         let mut scope = self.scope;
         if deprecated {

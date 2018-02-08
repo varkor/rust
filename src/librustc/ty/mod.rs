@@ -883,6 +883,21 @@ pub struct GenericParamCount {
     pub types: usize,
 }
 
+#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
+pub enum GenericParameterDef {
+    Lifetime(RegionParameterDef),
+    Type(TypeParameterDef),
+}
+
+impl GenericParameterDef {
+    pub fn index(&self) -> u32 {
+        match self {
+            GenericParameterDef::Lifetime(lt) => lt.index,
+            GenericParameterDef::Type(ty)     => ty.index,
+        }
+    }
+}
+
 /// Information about the formal type/lifetime parameters associated
 /// with an item or method. Analogous to hir::Generics.
 ///
@@ -938,6 +953,34 @@ impl<'a, 'gcx, 'tcx> Generics {
         } else {
             false
         }
+    }
+
+    pub fn lifetimes(&self) -> Vec<&RegionParameterDef> {
+        self.parameters.iter().filter_map(|p| {
+            if let GenericParameterDef::Lifetime(lt) = p {
+                Some(lt)
+            } else {
+                None
+            }
+        }).collect()
+    }
+
+    pub fn types(&self) -> Vec<&TypeParameterDef> {
+        self.parameters.iter().filter_map(|p| {
+            if let GenericParameterDef::Type(ty) = p {
+                Some(ty)
+            } else {
+                None
+            }
+        }).collect()
+    }
+
+    pub fn parent_lifetimes(&self) -> u32 {
+        self.parent_parameters[0]
+    }
+
+    pub fn parent_types(&self) -> u32 {
+        self.parent_parameters[1]
     }
 
     pub fn region_param(&'tcx self,

@@ -192,11 +192,8 @@ use std::collections::HashSet;
 use std::vec;
 
 use rustc_target::spec::abi::Abi;
-use syntax::ast::{
-    self, BinOpKind, EnumDef, Expr, GenericParam, Generics, Ident, PatKind, VariantData,
-    GenericAngleBracketedParam,
-};
-
+use syntax::ast::{self, BinOpKind, EnumDef, Expr, GenericParam, Generics, Ident, PatKind};
+use syntax::ast::{VariantData, GenericAngleBracketedParam};
 use syntax::attr;
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::ext::build::AstBuilder;

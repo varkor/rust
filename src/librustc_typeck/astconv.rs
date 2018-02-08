@@ -966,23 +966,27 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
 
     pub fn prohibit_type_params(&self, segments: &[hir::PathSegment]) {
         for segment in segments {
-            segment.with_parameters(|parameters| {
-                for typ in &parameters.types() {
-                    struct_span_err!(self.tcx().sess, typ.span, E0109,
-                                     "type parameters are not allowed on this type")
-                        .span_label(typ.span, "type parameter not allowed")
-                        .emit();
+            segment.with_parameters(|params| {
+                for p in &params.parameters {
+                    let (mut span_err, span, kind) = match p {
+                        hir::GenericPathParam::Lifetime(lt) => {
+                            (struct_span_err!(self.tcx().sess, lt.span, E0110,
+                                              "lifetime parameters are not allowed on this type"),
+                             lt.span,
+                             "lifetime")
+                        }
+                        hir::GenericPathParam::Type(ty) => {
+                            (struct_span_err!(self.tcx().sess, ty.span, E0109,
+                                              "type parameters are not allowed on this type"),
+                             ty.span,
+                             "type")
+                        }
+                    };
+                    span_err.span_label(span, format!("{} parameter not allowed", kind))
+                            .emit();
                     break;
                 }
-                for lifetime in &parameters.lifetimes() {
-                    struct_span_err!(self.tcx().sess, lifetime.span, E0110,
-                                     "lifetime parameters are not allowed on this type")
-                        .span_label(lifetime.span,
-                                    "lifetime parameter not allowed on this type")
-                        .emit();
-                    break;
-                }
-                for binding in &parameters.bindings {
+                for binding in &params.bindings {
                     self.prohibit_projection(binding.span);
                     break;
                 }

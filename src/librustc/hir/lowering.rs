@@ -1449,7 +1449,7 @@ impl<'a> LoweringContext<'a> {
                         assert!(!def_id.is_local());
                         let item_generics =
                             self.cstore.item_generics_cloned_untracked(def_id, self.sess);
-                        let n = item_generics.own_counts().lifetimes;
+                        let n = item_generics.own_counts().lifetimes();
                         self.type_def_lifetime_params.insert(def_id, n);
                         n
                     });
@@ -1847,7 +1847,7 @@ impl<'a> LoweringContext<'a> {
 
         let def = hir::LifetimeDef {
             lifetime: self.lower_lifetime(&l.lifetime),
-            bounds: self.lower_lifetimes(&l.bounds),
+            bounds: l.bounds.iter().map(|l| self.lower_lifetime(l)).collect(),
             pure_wrt_drop: attr::contains_name(&l.attrs, "may_dangle"),
             in_band: false,
         };
@@ -1855,10 +1855,6 @@ impl<'a> LoweringContext<'a> {
         self.is_collecting_in_band_lifetimes = was_collecting_in_band;
 
         def
-    }
-
-    fn lower_lifetimes(&mut self, lts: &Vec<Lifetime>) -> hir::HirVec<hir::Lifetime> {
-        lts.iter().map(|l| self.lower_lifetime(l)).collect()
     }
 
     fn lower_generic_params(
