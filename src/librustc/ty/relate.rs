@@ -681,13 +681,23 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
         (&ConstVal::Str(_), _) |
         (&ConstVal::ByteStr(_), _) |
         (&ConstVal::Bool(_), _) |
-        (&ConstVal::Char(_), _)
+        (&ConstVal::Char(_), _) |
+        (&ConstVal::Variant(_), _)
             if a == b =>
         {
             Ok(a)
         }
-        // TODO(varkor): it'd be nice to support Variant here too
-        // TODO(varkor): handle unevaluated
+
+        (&ConstVal::Unevaluated(a_def_id, a_substs), &ConstVal::Unevaluated(b_def_id, b_substs))
+            if a_def_id == b_def_id =>
+        {
+            let substs = relation.relate_item_substs(a_def_id, a_substs, b_substs)?;
+            Ok(tcx.mk_const(ty::Const {
+                val: ConstVal::Unevaluated(a_def_id, substs),
+                ty: a.ty,
+            }))
+        }
+
         (&ConstVal::Param(ref a_p), &ConstVal::Param(ref b_p))
             if a_p.idx == b_p.idx =>
         {
