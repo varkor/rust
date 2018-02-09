@@ -615,8 +615,59 @@ impl<'a, 'tcx> Lift<'tcx> for ty::error::ConstError<'a> {
 
 impl<'a, 'tcx> Lift<'tcx> for ConstVal<'a> {
     type Lifted = ConstVal<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        match *self {
+            ConstVal::Integral(i) => Some(ConstVal::Integral(i)),
+            ConstVal::Float(f) => Some(ConstVal::Float(f)),
+            ConstVal::Str(s) => Some(ConstVal::Str(s)),
+            ConstVal::Bool(b) => Some(ConstVal::Bool(b)),
+            ConstVal::Char(c) => Some(ConstVal::Char(c)),
+            ConstVal::Variant(def_id) => Some(ConstVal::Variant(def_id)),
+            ConstVal::Param(p) => Some(ConstVal::Param(p)),
+
+            ConstVal::Error => Some(ConstVal::Error),
+
+            ConstVal::ByteStr(ref a) => {
+                tcx.lift(a).map(ConstVal::ByteStr)
+            }
+            ConstVal::InferVar(ref v) => {
+                tcx.lift(v).map(ConstVal::InferVar)
+            }
+            ConstVal::Function(def_id, ref subst) => {
+                tcx.lift(subst).map(|subst| {
+                    ConstVal::Function(def_id, subst)
+                })
+            }
+            ConstVal::Aggregate(ref a) => {
+                tcx.lift(a).map(ConstVal::Aggregate)
+            }
+            ConstVal::Unevaluated(def_id, ref subst) => {
+                tcx.lift(subst).map(|subst| {
+                    ConstVal::Unevaluated(def_id, subst)
+                })
+            }
+        }
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for const_val::ByteArray<'a> {
+    type Lifted = const_val::ByteArray<'tcx>;
     fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
-        unimplemented!() // TODO(varkor)
+        unimplemented!() // TODO(yodaldevoid)
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for ty::ConstVid<'a> {
+    type Lifted = ty::ConstVid<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        unimplemented!() // TODO(yodaldevoid)
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for const_val::ConstAggregate<'a> {
+    type Lifted = const_val::ConstAggregate<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        unimplemented!() // TODO(yodaldevoid)
     }
 }
 
