@@ -149,6 +149,8 @@ pub fn relate_substs<'a, 'gcx, 'tcx, R>(relation: &mut R,
             Ok(Kind::from(relation.relate_with_variance(variance, &a_ty, &b_ty)?))
         } else if let (Some(a_r), Some(b_r)) = (a.as_region(), b.as_region()) {
             Ok(Kind::from(relation.relate_with_variance(variance, &a_r, &b_r)?))
+        } else if let (Some(a_c), Some(b_c)) = (a.as_const(), b.as_const()) {
+            Ok(Kind::from(relation.relate_with_variance(variance, &a_c, &b_c)?))
         } else {
             bug!()
         }
