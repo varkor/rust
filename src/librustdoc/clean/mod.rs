@@ -1261,7 +1261,7 @@ pub struct ConstParam {
     pub name: String,
     pub did: DefId,
     pub ty: Type,
-    pub default: Option<Expr>,
+    pub default: Option<hir::Expr>,
 }
 
 impl Clean<ConstParam> for hir::ConstParam {
@@ -1270,6 +1270,7 @@ impl Clean<ConstParam> for hir::ConstParam {
             name: self.name.clean(cx),
             did: cx.tcx.hir.local_def_id(self.id),
             ty: self.ty.clean(cx),
+            default: None, // TODO(yodaldevoid)
         }
     }
 }
@@ -1634,7 +1635,7 @@ impl Clean<Generics> for hir::Generics {
     }
 }
 
-impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics,
+impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics<'tcx>,
                                     &'a ty::GenericPredicates<'tcx>) {
     fn clean(&self, cx: &DocContext) -> Generics {
         use self::WherePredicate as WP;
