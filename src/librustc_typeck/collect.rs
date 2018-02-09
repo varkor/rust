@@ -986,7 +986,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                       .map(|param| (param.def_id, param.index))
                                       .collect();
 
-    let parent_parameters = vec![parent_regions, parent_types];
+    let parent_parameters = ty::KindIndexed { lt: parent_regions, ty: parent_types };
     let lifetimes: Vec<ty::GenericParameterDef> =
         regions.into_iter().map(|lt| ty::GenericParameterDef::Lifetime(lt)).collect();
     let types: Vec<ty::GenericParameterDef> =

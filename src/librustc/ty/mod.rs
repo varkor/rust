@@ -898,6 +898,58 @@ impl GenericParameterDef {
     }
 }
 
+#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
+pub enum KindIndex {
+    Lifetime,
+    Type,
+}
+
+#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
+pub struct KindIndexed<L, T> {
+    pub lt: L,
+    pub ty: T,
+}
+
+impl<T> KindIndexed<T, T> {
+    pub fn get(&self, idx: KindIndex) -> &T {
+        match idx {
+            KindIndex::Lifetime => &self.lt,
+            KindIndex::Type     => &self.ty,
+        }
+    }
+
+    pub fn iter(&self) -> KindIndexIterator<T> {
+        KindIndexIterator {
+            index: self,
+            next: Some(KindIndex::Lifetime),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct KindIndexIterator<'a, T: 'a> {
+    pub index: &'a KindIndexed<T, T>,
+    pub next: Option<KindIndex>,
+}
+
+impl<'a, T> Iterator for KindIndexIterator<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.next {
+            Some(KindIndex::Lifetime) => {
+                self.next = Some(KindIndex::Type);
+                Some(&self.index.lt)
+            }
+            Some(KindIndex::Type) => {
+                self.next = None;
+                Some(&self.index.ty)
+            },
+            None => None,
+        }
+    }
+}
+
 /// Information about the formal type/lifetime parameters associated
 /// with an item or method. Analogous to hir::Generics.
 ///
@@ -976,11 +1028,11 @@ impl<'a, 'gcx, 'tcx> Generics {
     }
 
     pub fn parent_lifetimes(&self) -> u32 {
-        self.parent_parameters[0]
+        *self.parent_parameters.get(KindIndex::Lifetime)
     }
 
     pub fn parent_types(&self) -> u32 {
-        self.parent_parameters[1]
+        *self.parent_parameters.get(KindIndex::Type)
     }
 
     pub fn region_param(&'tcx self,
