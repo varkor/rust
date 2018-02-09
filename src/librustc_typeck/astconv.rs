@@ -1138,7 +1138,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                             let item_def_id = tcx.hir.local_def_id(item_id);
                             let generics = tcx.generics_of(item_def_id);
                             let idx = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
-                            const_val = ConstVal::Param(ParamConst::new(idx, tcx.hir.name(node_id)))
+                            const_val = ConstVal::Param(ParamConst::new(idx, tcx.hir.name(node_id)));
                         }
                     }
                 }
@@ -1179,9 +1179,23 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         debug!("ast_const_to_const(id={:?}, ast_ty={:?})", ast_const.id, ast_const);
         let tcx = self.tcx();
         let def_id = tcx.hir.local_def_id(ast_const.id);
-        // TODO(varkor): do we want to handle specific cases, rather than just Unevaluated?
+
+        let mut const_val = ConstVal::Unevaluated(def_id, Substs::identity_for_item(tcx, def_id));
+        if let hir::Expr_::ExprPath(hir::QPath::Resolved(None, ref path)) = ast_const.node {
+            if let Def::ConstParam(def_id) = path.def {
+                self.prohibit_type_params(&path.segments);
+
+                let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
+                let item_id = tcx.hir.get_parent_node(node_id);
+                let item_def_id = tcx.hir.local_def_id(item_id);
+                let generics = tcx.generics_of(item_def_id);
+                let index = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
+                const_val = ConstVal::Param(ParamConst::new(index, tcx.hir.name(node_id)));
+            }
+        }
+
         tcx.mk_const(ty::Const {
-            val: ConstVal::Unevaluated(def_id, Substs::identity_for_item(tcx, def_id)),
+            val: const_val,
             ty,
         })
     }
