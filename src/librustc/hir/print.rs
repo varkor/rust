@@ -25,7 +25,7 @@ use syntax_pos::{self, BytePos, FileName};
 
 use hir;
 use hir::{PatKind, RegionTyParamBound, TraitTyParamBound, TraitBoundModifier, RangeEnd};
-use hir::PathParam;
+use hir::GenericArg;
 
 use std::cell::Cell;
 use std::io::{self, Write, Read};
@@ -1226,7 +1226,7 @@ impl<'a> State<'a> {
             if !parameters.parameters.is_empty() ||
                 !parameters.bindings.is_empty()
             {
-                self.print_path_parameters(&parameters, segment.infer_types, true)
+                self.print_generic_args(&parameters, segment.infer_types, true)
             } else {
                 Ok(())
             }
@@ -1595,7 +1595,7 @@ impl<'a> State<'a> {
                segment.name != keywords::DollarCrate.name() {
                self.print_name(segment.name)?;
                segment.with_parameters(|parameters| {
-                   self.print_path_parameters(parameters,
+                   self.print_generic_args(parameters,
                                               segment.infer_types,
                                               colons_before_params)
                })?;
@@ -1627,7 +1627,7 @@ impl<'a> State<'a> {
                        segment.name != keywords::DollarCrate.name() {
                         self.print_name(segment.name)?;
                         segment.with_parameters(|parameters| {
-                            self.print_path_parameters(parameters,
+                            self.print_generic_args(parameters,
                                                        segment.infer_types,
                                                        colons_before_params)
                         })?;
@@ -1639,7 +1639,7 @@ impl<'a> State<'a> {
                 let item_segment = path.segments.last().unwrap();
                 self.print_name(item_segment.name)?;
                 item_segment.with_parameters(|parameters| {
-                    self.print_path_parameters(parameters,
+                    self.print_generic_args(parameters,
                                                item_segment.infer_types,
                                                colons_before_params)
                 })
@@ -1651,7 +1651,7 @@ impl<'a> State<'a> {
                 self.s.word("::")?;
                 self.print_name(item_segment.name)?;
                 item_segment.with_parameters(|parameters| {
-                    self.print_path_parameters(parameters,
+                    self.print_generic_args(parameters,
                                                item_segment.infer_types,
                                                colons_before_params)
                 })
@@ -1659,19 +1659,19 @@ impl<'a> State<'a> {
         }
     }
 
-    fn print_path_parameters(&mut self,
-                             path_params: &hir::PathParameters,
+    fn print_generic_args(&mut self,
+                             generic_args: &hir::GenericArgs,
                              infer_types: bool,
                              colons_before_params: bool)
                              -> io::Result<()> {
-        if path_params.parenthesized {
+        if generic_args.parenthesized {
             self.s.word("(")?;
-            self.commasep(Inconsistent, path_params.inputs(), |s, ty| s.print_type(&ty))?;
+            self.commasep(Inconsistent, generic_args.inputs(), |s, ty| s.print_type(&ty))?;
             self.s.word(")")?;
 
             self.space_if_not_bol()?;
             self.word_space("->")?;
-            self.print_type(&path_params.bindings[0].ty)?;
+            self.print_type(&generic_args.bindings[0].ty)?;
         } else {
             let start = if colons_before_params { "::<" } else { "<" };
             let empty = Cell::new(true);
@@ -1684,8 +1684,8 @@ impl<'a> State<'a> {
                 }
             };
 
-            let elide_lifetimes = path_params.parameters.iter().all(|p| {
-                if let PathParam::Lifetime(lt) = p {
+            let elide_lifetimes = generic_args.parameters.iter().all(|p| {
+                if let GenericArg::Lifetime(lt) = p {
                     if !lt.is_elided() {
                         return false;
                     }
@@ -1693,20 +1693,20 @@ impl<'a> State<'a> {
                 true
             });
 
-            self.commasep(Inconsistent, &path_params.parameters, |s, p| {
+            self.commasep(Inconsistent, &generic_args.parameters, |s, p| {
                 match p {
-                    PathParam::Lifetime(lt) => {
+                    GenericArg::Lifetime(lt) => {
                         if !elide_lifetimes {
                             s.print_lifetime(lt)
                         } else {
                             Ok(())
                         }
                     }
-                    PathParam::Type(ty) => s.print_type(ty),
+                    GenericArg::Type(ty) => s.print_type(ty),
                 }
             })?;
 
-            if !path_params.parameters.is_empty() {
+            if !generic_args.parameters.is_empty() {
                 empty.set(false);
             }
 
@@ -1717,7 +1717,7 @@ impl<'a> State<'a> {
                 self.s.word("..")?;
             }
 
-            for binding in path_params.bindings.iter() {
+            for binding in generic_args.bindings.iter() {
                 start_or_comma(self)?;
                 self.print_name(binding.name)?;
                 self.s.space()?;

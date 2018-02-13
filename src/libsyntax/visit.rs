@@ -128,8 +128,8 @@ pub trait Visitor<'ast>: Sized {
     fn visit_path_segment(&mut self, path_span: Span, path_segment: &'ast PathSegment) {
         walk_path_segment(self, path_span, path_segment)
     }
-    fn visit_path_parameters(&mut self, path_span: Span, path_parameters: &'ast PathParameters) {
-        walk_path_parameters(self, path_span, path_parameters)
+    fn visit_generic_args(&mut self, path_span: Span, generic_args: &'ast GenericArgs) {
+        walk_generic_args(self, path_span, generic_args)
     }
     fn visit_assoc_type_binding(&mut self, type_binding: &'ast TypeBinding) {
         walk_assoc_type_binding(self, type_binding)
@@ -375,22 +375,22 @@ pub fn walk_path_segment<'a, V: Visitor<'a>>(visitor: &mut V,
                                              segment: &'a PathSegment) {
     visitor.visit_ident(segment.ident);
     if let Some(ref parameters) = segment.parameters {
-        visitor.visit_path_parameters(path_span, parameters);
+        visitor.visit_generic_args(path_span, parameters);
     }
 }
 
-pub fn walk_path_parameters<'a, V>(visitor: &mut V,
+pub fn walk_generic_args<'a, V>(visitor: &mut V,
                                    _path_span: Span,
-                                   path_parameters: &'a PathParameters)
+                                   generic_args: &'a GenericArgs)
     where V: Visitor<'a>,
 {
-    match *path_parameters {
-        PathParameters::AngleBracketed(ref data) => {
+    match *generic_args {
+        GenericArgs::AngleBracketed(ref data) => {
             walk_list!(visitor, visit_lifetime, data.lifetimes());
             walk_list!(visitor, visit_ty, data.types());
             walk_list!(visitor, visit_assoc_type_binding, &data.bindings);
         }
-        PathParameters::Parenthesized(ref data) => {
+        GenericArgs::Parenthesized(ref data) => {
             walk_list!(visitor, visit_ty, &data.inputs);
             walk_list!(visitor, visit_ty, &data.output);
         }

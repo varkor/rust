@@ -172,8 +172,8 @@ pub trait Folder : Sized {
         noop_fold_path(p, self)
     }
 
-    fn fold_path_parameters(&mut self, p: PathParameters) -> PathParameters {
-        noop_fold_path_parameters(p, self)
+    fn fold_generic_args(&mut self, p: GenericArgs) -> GenericArgs {
+        noop_fold_generic_args(p, self)
     }
 
     fn fold_angle_bracketed_parameter_data(&mut self, p: AngleBracketedParameterData)
@@ -473,20 +473,20 @@ pub fn noop_fold_path<T: Folder>(Path { segments, span }: Path, fld: &mut T) -> 
     Path {
         segments: segments.move_map(|PathSegment {ident, parameters}| PathSegment {
             ident: fld.fold_ident(ident),
-            parameters: parameters.map(|ps| ps.map(|ps| fld.fold_path_parameters(ps))),
+            parameters: parameters.map(|ps| ps.map(|ps| fld.fold_generic_args(ps))),
         }),
         span: fld.new_span(span)
     }
 }
 
-pub fn noop_fold_path_parameters<T: Folder>(path_parameters: PathParameters, fld: &mut T)
-                                            -> PathParameters
+pub fn noop_fold_generic_args<T: Folder>(generic_args: GenericArgs, fld: &mut T)
+                                            -> GenericArgs
 {
-    match path_parameters {
-        PathParameters::AngleBracketed(data) =>
-            PathParameters::AngleBracketed(fld.fold_angle_bracketed_parameter_data(data)),
-        PathParameters::Parenthesized(data) =>
-            PathParameters::Parenthesized(fld.fold_parenthesized_parameter_data(data)),
+    match generic_args {
+        GenericArgs::AngleBracketed(data) =>
+            GenericArgs::AngleBracketed(fld.fold_angle_bracketed_parameter_data(data)),
+        GenericArgs::Parenthesized(data) =>
+            GenericArgs::Parenthesized(fld.fold_parenthesized_parameter_data(data)),
     }
 }
 
@@ -1229,7 +1229,7 @@ pub fn noop_fold_expr<T: Folder>(Expr {id, node, span, attrs}: Expr, folder: &mu
                     PathSegment {
                         ident: folder.fold_ident(seg.ident),
                         parameters: seg.parameters.map(|ps| {
-                            ps.map(|ps| folder.fold_path_parameters(ps))
+                            ps.map(|ps| folder.fold_generic_args(ps))
                         }),
                     },
                     folder.fold_exprs(args))

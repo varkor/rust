@@ -1587,7 +1587,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
         &mut self,
         def: Def,
         depth: usize,
-        params: &'tcx hir::PathParameters,
+        params: &'tcx hir::GenericArgs,
     ) {
         if params.parenthesized {
             let was_in_fn_syntax = self.is_in_fn_syntax;
