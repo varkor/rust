@@ -1684,30 +1684,18 @@ impl<'a> State<'a> {
                 }
             };
 
-            let elide_lifetimes = generic_args.parameters.iter().all(|p| {
-                if let GenericArg::Lifetime(lt) = p {
-                    if !lt.is_elided() {
-                        return false;
+            let elide_lifetimes = generic_args.lifetimes().iter().all(|lt| lt.is_elided());
+            if !elide_lifetimes {
+                start_or_comma(self)?;
+                self.commasep(Inconsistent, &generic_args.parameters, |s, p| {
+                    match p {
+                        GenericArg::Lifetime(lt) => s.print_lifetime(lt),
+                        GenericArg::Type(ty) => s.print_type(ty),
                     }
-                }
-                true
-            });
-
-            self.commasep(Inconsistent, &generic_args.parameters, |s, p| {
-                match p {
-                    GenericArg::Lifetime(lt) => {
-                        if !elide_lifetimes {
-                            s.print_lifetime(lt)
-                        } else {
-                            Ok(())
-                        }
-                    }
-                    GenericArg::Type(ty) => s.print_type(ty),
-                }
-            })?;
-
-            if !generic_args.parameters.is_empty() {
-                empty.set(false);
+                })?;
+            } else if !generic_args.types().is_empty() {
+                start_or_comma(self)?;
+                self.commasep(Inconsistent, &generic_args.types(), |s, ty| s.print_type(&ty))?;
             }
 
             // FIXME(eddyb) This would leak into error messages, e.g.:
