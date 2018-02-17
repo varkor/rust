@@ -1684,7 +1684,7 @@ impl<'a> State<'a> {
                 }
             };
 
-            let elide_lifetimes = generic_args.lifetimes().iter().all(|lt| lt.is_elided());
+            let elide_lifetimes = generic_args.lifetimes().all(|lt| lt.is_elided());
             if !elide_lifetimes {
                 start_or_comma(self)?;
                 self.commasep(Inconsistent, &generic_args.parameters, |s, p| {
@@ -1693,9 +1693,11 @@ impl<'a> State<'a> {
                         GenericArg::Type(ty) => s.print_type(ty),
                     }
                 })?;
-            } else if !generic_args.types().is_empty() {
+            } else if generic_args.types().count() != 0 {
                 start_or_comma(self)?;
-                self.commasep(Inconsistent, &generic_args.types(), |s, ty| s.print_type(&ty))?;
+                self.commasep(Inconsistent,
+                              &generic_args.types().collect::<Vec<_>>(),
+                              |s, ty| s.print_type(&ty))?;
             }
 
             // FIXME(eddyb) This would leak into error messages, e.g.:

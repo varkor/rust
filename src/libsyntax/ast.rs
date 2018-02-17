@@ -187,24 +187,24 @@ pub struct AngleBracketedParameterData {
 }
 
 impl AngleBracketedParameterData {
-    pub fn lifetimes(&self) -> Vec<&Lifetime> {
+    pub fn lifetimes(&self) -> impl DoubleEndedIterator<Item = &Lifetime> {
         self.parameters.iter().filter_map(|p| {
             if let AngleBracketedParam::Lifetime(lt) = p {
                 Some(lt)
             } else {
                 None
             }
-        }).collect()
+        })
     }
 
-    pub fn types(&self) -> Vec<&P<Ty>> {
+    pub fn types(&self) -> impl DoubleEndedIterator<Item = &P<Ty>> {
         self.parameters.iter().filter_map(|p| {
             if let AngleBracketedParam::Type(ty) = p {
                 Some(ty)
             } else {
                 None
             }
-        }).collect()
+        })
     }
 }
 

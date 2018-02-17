@@ -1449,7 +1449,7 @@ impl<'a> LoweringContext<'a> {
                         assert!(!def_id.is_local());
                         let item_generics =
                             self.cstore.item_generics_cloned_untracked(def_id, self.sess);
-                        let n = item_generics.own_counts().lifetimes();
+                        let n = item_generics.own_counts().lifetimes;
                         self.type_def_lifetime_params.insert(def_id, n);
                         n
                     });
@@ -1595,7 +1595,7 @@ impl<'a> LoweringContext<'a> {
             self.lower_angle_bracketed_parameter_data(&Default::default(), param_mode, itctx)
         };
 
-        if !generic_args.parenthesized && generic_args.lifetimes().is_empty() {
+        if !generic_args.parenthesized && generic_args.lifetimes().count() == 0 {
             generic_args.parameters = (0..expected_lifetimes).map(|_| {
                 GenericArg::Lifetime(self.elided_lifetime(path_span))
             }).chain(generic_args.parameters.into_iter()).collect();
@@ -1620,7 +1620,7 @@ impl<'a> LoweringContext<'a> {
             bindings: bindings.iter().map(|b| self.lower_ty_binding(b, itctx)).collect(),
             parenthesized: false,
         },
-        types.is_empty() && param_mode == ParamMode::Optional)
+        data.types().count() == 0 && param_mode == ParamMode::Optional)
     }
 
     fn lower_parenthesized_parameter_data(

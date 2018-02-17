@@ -406,7 +406,7 @@ impl GenericArgs {
 
     pub fn inputs(&self) -> &[P<Ty>] {
         if self.parenthesized {
-            if let Some(ref ty) = self.types().get(0) {
+            if let Some(ref ty) = self.types().next() {
                 if let TyTup(ref tys) = ty.node {
                     return tys;
                 }
@@ -415,24 +415,24 @@ impl GenericArgs {
         bug!("GenericArgs::inputs: not a `Fn(T) -> U`");
     }
 
-    pub fn lifetimes(&self) -> Vec<&Lifetime> {
+    pub fn lifetimes(&self) -> impl DoubleEndedIterator<Item = &Lifetime> {
         self.parameters.iter().filter_map(|p| {
             if let GenericArg::Lifetime(lt) = p {
                 Some(lt)
             } else {
                 None
             }
-        }).collect()
+        })
     }
 
-    pub fn types(&self) -> Vec<&P<Ty>> {
+    pub fn types(&self) -> impl DoubleEndedIterator<Item = &P<Ty>> {
         self.parameters.iter().filter_map(|p| {
             if let GenericArg::Type(ty) = p {
                 Some(ty)
             } else {
                 None
             }
-        }).collect()
+        })
     }
 }
 
@@ -562,11 +562,11 @@ impl Generics {
         self.params.iter().any(|param| param.is_type_param())
     }
 
-    pub fn lifetimes<'a>(&'a self) -> impl Iterator<Item = &'a LifetimeDef> {
+    pub fn lifetimes<'a>(&'a self) -> impl DoubleEndedIterator<Item = &'a LifetimeDef> {
         self.params.lifetimes()
     }
 
-    pub fn ty_params<'a>(&'a self) -> impl Iterator<Item = &'a TyParam> {
+    pub fn ty_params<'a>(&'a self) -> impl DoubleEndedIterator<Item = &'a TyParam> {
         self.params.ty_params()
     }
 }

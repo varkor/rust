@@ -4907,7 +4907,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             (vec![], vec![], true, &[][..]),
             |(s, _)| s.parameters.as_ref().map_or(
                 (vec![], vec![], s.infer_types, &[][..]),
-                |p| (p.lifetimes(), p.types(),
+                |p| (p.lifetimes().collect(), p.types().collect(),
                      s.infer_types, &p.bindings[..])));
         let infer_lifetimes = lifetimes.len() == 0;
 

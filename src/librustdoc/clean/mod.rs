@@ -3345,12 +3345,12 @@ impl Clean<GenericArgs> for hir::GenericArgs {
             }
         } else {
             GenericArgs::AngleBracketed {
-                lifetimes: if self.lifetimes().iter().all(|lt| lt.is_elided()) {
+                lifetimes: if self.lifetimes().all(|lt| lt.is_elided()) {
                     vec![]
                 } else {
-                    self.lifetimes().iter().map(|lp| lp.clean(cx)).collect()
+                    self.lifetimes().map(|lp| lp.clean(cx)).collect()
                 },
-                types: self.types().iter().map(|tp| tp.clean(cx)).collect(),
+                types: self.types().map(|tp| tp.clean(cx)).collect(),
                 bindings: self.bindings.clean(cx),
             }
         }
