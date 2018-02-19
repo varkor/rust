@@ -4665,7 +4665,6 @@ impl<'a> Parser<'a> {
         self.expect_keyword(keywords::Const)?;
         let ident = self.parse_ident()?;
         self.expect(&token::Colon)?;
-        // TODO(varkor): doc: error message if type parameter is used instead of type
         let ty = self.parse_ty()?;
 
         let default = if self.eat(&token::Eq) {
@@ -4758,8 +4757,8 @@ impl<'a> Parser<'a> {
     }
 
     // TODO(yodaldevoid): ammend docs with const params
-    /// Parse a set of optional generic type parameter declarations. Where
-    /// clauses are not parsed here, and must be added later via
+    /// Parse a set of optional generic type/const parameter declarations.
+    /// Where clauses are not parsed here, and must be added later via
     /// `parse_where_clause()`.
     ///
     /// matches generics = ( ) | ( < > ) | ( < typaramseq ( , )? > ) | ( < lifetimes ( , )? > )

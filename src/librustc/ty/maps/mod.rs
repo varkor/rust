@@ -87,9 +87,6 @@ define_maps! { <'tcx>
     /// Records the type of every item.
     [] fn type_of: TypeOfItem(DefId) -> Ty<'tcx>,
 
-    /// Records the expression of every item.
-    [] fn const_of: ConstOfItem(DefId) -> &'tcx Const<'tcx>,
-
     /// Maps from the def-id of an item (trait/struct/enum/fn) to its
     /// associated generics and predicates.
     [] fn generics_of: GenericsOfItem(DefId) -> &'tcx ty::Generics<'tcx>,

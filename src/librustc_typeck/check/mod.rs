@@ -5134,12 +5134,13 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
 pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                        generics: &hir::Generics,
                                        ty: Ty<'tcx>) {
-    debug!("check_bounds_are_used(n_tps={}, ty={:?})",
-           generics.ty_params().count(),  ty);
+    debug!("check_bounds_are_used(n_tps={}, n_consts={}, ty={:?})",
+           generics.ty_params().count(), generics.const_params().count(), ty);
 
     // make a vector of booleans initially false, set to true when used
     if generics.ty_params().next().is_none() { return; }
     let mut tps_used = vec![false; generics.ty_params().count()];
+    let consts_used = vec![false; generics.const_params().count()];
 
     let lifetime_count = generics.lifetimes().count();
 
@@ -5164,7 +5165,8 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         }
     }
 
-    for (&used, param) in tps_used.iter().zip(generics.const_params()) {
+    // TODO(varkor): doc (this doesn't ever seem to be emitted)
+    for (&used, param) in consts_used.iter().zip(generics.const_params()) {
         if !used {
             struct_span_err!(tcx.sess, param.span, E0694,
                 "const parameter `{}` is unused",

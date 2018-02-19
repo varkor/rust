@@ -159,6 +159,8 @@ enum ResolutionError<'a> {
     BindingShadowsSomethingUnacceptable(&'a str, Name, &'a NameBinding<'a>),
     /// error E0128: type or const parameters with a default cannot use forward declared identifiers
     ForwardDeclaredParam,
+    /// error E0660: const parameter cannot depend on type parameter
+    ConstParamDependentOnTypeParam,
 }
 
 fn resolve_error<'sess, 'a>(resolver: &'sess Resolver,
@@ -354,6 +356,12 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
                                             forward declared identifiers");
             err.span_label(span, format!("defaulted type and const parameters cannot be forward \
                                           declared"));
+            err
+        }
+        ResolutionError::ConstParamDependentOnTypeParam => {
+            let mut err = struct_span_err!(resolver.session, span, E0660,
+                                           "const parameters cannot depend on type parameters");
+            err.span_label(span, format!("const parameter depends on type parameter"));
             err
         }
     }
@@ -797,11 +805,23 @@ impl<'a, 'tcx> Visitor<'tcx> for Resolver<'a> {
             .skip_while(|p| p.default.is_none())
             .map(|p| (Ident::with_empty_ctxt(p.ident.name), Def::Err)));
 
+        // We also ban access to type parameters for the types
+        // of const parameters.
+        let mut const_ty_param_ban_rib = Rib::new(TyParamAsConstParamTy);
+        const_ty_param_ban_rib.bindings.extend(generics.params.iter()
+            .filter_map(|p| if let GenericParam::Type(ref tp) = *p { Some(tp) } else { None })
+            .map(|p| (Ident::with_empty_ctxt(p.ident.name), Def::Err)));
+
         for param in &generics.params {
             match *param {
-                GenericParam::Lifetime(_) |
-                GenericParam::Const(_) => {
+                GenericParam::Lifetime(_) => {
                     self.visit_generic_param(param);
+                }
+                GenericParam::Const(ref _const_param) => {
+                    self.ribs[TypeNS].push(const_ty_param_ban_rib);
+                    // self.visit_ty(&const_param.ty);
+                    self.visit_generic_param(param);
+                    const_ty_param_ban_rib = self.ribs[TypeNS].pop().unwrap();
                 }
                 GenericParam::Type(ref ty_param) => {
                     for bound in &ty_param.bounds {
@@ -866,6 +886,9 @@ enum RibKind<'a> {
     // from the default of a type parameter because they're not declared
     // before said type parameter. Also see the `visit_generics` override.
     ForwardTyParamBanRibKind,
+
+    // We forbid the use of type parameters as the types of const parameters.
+    TyParamAsConstParamTy,
 }
 
 /// One local scope.
@@ -3238,6 +3261,15 @@ impl<'a> Resolver<'a> {
             return Def::Err;
         }
 
+        // An invalid use of a type parameter as the type of a const parameter.
+        if let TyParamAsConstParamTy = self.ribs[ns][rib_index].kind {
+            if record_used {
+                resolve_error(self, span, ResolutionError::ConstParamDependentOnTypeParam);
+            }
+            assert_eq!(def, Def::Err);
+            return Def::Err;
+        }
+
         match def {
             Def::Upvar(..) => {
                 span_bug!(span, "unexpected {:?} in bindings", def)
@@ -3246,7 +3278,7 @@ impl<'a> Resolver<'a> {
                 for rib in ribs {
                     match rib.kind {
                         NormalRibKind | ModuleRibKind(..) | MacroDefinition(..) |
-                        ForwardTyParamBanRibKind => {
+                        ForwardTyParamBanRibKind | TyParamAsConstParamTy => {
                             // Nothing to do. Continue.
                         }
                         ClosureRibKind(function_id) => {
@@ -3299,7 +3331,7 @@ impl<'a> Resolver<'a> {
                     match rib.kind {
                         NormalRibKind | TraitOrImplItemRibKind | ClosureRibKind(..) |
                         ModuleRibKind(..) | MacroDefinition(..) | ForwardTyParamBanRibKind |
-                        ConstantItemRibKind => {
+                        TyParamAsConstParamTy | ConstantItemRibKind => {
                             // Nothing to do. Continue.
                         }
                         ItemRibKind => {
