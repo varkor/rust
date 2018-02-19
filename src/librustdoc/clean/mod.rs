@@ -1270,7 +1270,7 @@ impl Clean<ConstParam> for hir::ConstParam {
             name: self.name.clean(cx),
             did: cx.tcx.hir.local_def_id(self.id),
             ty: self.ty.clean(cx),
-            default: None, // TODO(yodaldevoid)
+            default: self.default.clean(cx),
         }
     }
 }

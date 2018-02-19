@@ -83,15 +83,6 @@ impl<'a> Path<'a> {
         cx.ty_path(self.to_path(cx, span, self_ty, self_generics))
     }
 
-    /*pub fn to_expr(&self,
-                   _cx: &ExtCtxt,
-                   _span: Span,
-                   _self_ty: Ident,
-                   _self_generics: &Generics)
-                   -> P<ast::Expr> {
-        cx.expr_path(self.to_path(cx, span, self_ty, self_generics))
-    }*/
-
     pub fn to_path(&self,
                    cx: &ExtCtxt,
                    span: Span,
@@ -215,7 +206,7 @@ impl<'a> Ty<'a> {
                     })
                     .collect();
 
-                let self_const_params= self_generics.params
+                let self_const_params = self_generics.params
                     .iter()
                     .filter_map(|param| match *param {
                         GenericParam::Const(ref const_param) =>
@@ -282,7 +273,6 @@ impl Const {
         }
     }
 }
-
 
 fn mk_ty_param(cx: &ExtCtxt,
                span: Span,

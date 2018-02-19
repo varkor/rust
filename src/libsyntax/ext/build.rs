@@ -411,9 +411,13 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         self.ty_path(self.path_ident(span, ident))
     }
 
-    fn const_ident(&self, _span: Span, _ident: ast::Ident) -> P<ast::Expr> {
-        unimplemented!() // TODO(varkor)
-        // self.const_path(self.path_ident(span, ident))
+    fn const_ident(&self, span: Span, ident: ast::Ident) -> P<ast::Expr> {
+        P(ast::Expr {
+            id: ast::DUMMY_NODE_ID,
+            node: ast::ExprKind::Path(None, self.path_ident(span, ident)),
+            span,
+            attrs: ast::ThinVec::new(),
+        })
     }
 
     fn ty_rptr(&self,

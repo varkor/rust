@@ -1307,7 +1307,7 @@ impl<'tcx> TypeFoldable<'tcx> for ty::error::TypeError<'tcx> {
             ProjectionMismatched(x) => ProjectionMismatched(x),
             ProjectionBoundsLength(x) => ProjectionBoundsLength(x),
             Sorts(x) => Sorts(x.fold_with(folder)),
-            ConstError(ref _x) => unimplemented!(), // TODO(varkor)
+            ConstError(ref x) => ConstError(x.fold_with(folder)),
             TyParamDefaultMismatch(ref x) => TyParamDefaultMismatch(x.fold_with(folder)),
             ExistentialMismatch(x) => ExistentialMismatch(x.fold_with(folder)),
             OldStyleLUB(ref x) => OldStyleLUB(x.fold_with(folder)),
@@ -1328,11 +1328,11 @@ impl<'tcx> TypeFoldable<'tcx> for ty::error::TypeError<'tcx> {
                 b.visit_with(visitor)
             },
             Sorts(x) => x.visit_with(visitor),
+            ConstError(ref x) => x.visit_with(visitor),
             OldStyleLUB(ref x) => x.visit_with(visitor),
             TyParamDefaultMismatch(ref x) => x.visit_with(visitor),
             ExistentialMismatch(x) => x.visit_with(visitor),
             CyclicTy(t) => t.visit_with(visitor),
-            ConstError(_) |
             Mismatch |
             Mutability |
             TupleSize(_) |
@@ -1344,6 +1344,26 @@ impl<'tcx> TypeFoldable<'tcx> for ty::error::TypeError<'tcx> {
             VariadicMismatch(_) |
             ProjectionMismatched(_) |
             ProjectionBoundsLength(_) => false,
+        }
+    }
+}
+
+impl<'tcx> TypeFoldable<'tcx> for ty::error::ConstError<'tcx> {
+    fn super_fold_with<'gcx: 'tcx, F: TypeFolder<'gcx, 'tcx>>(&self, folder: &mut F) -> Self {
+        use ty::error::ConstError::*;
+
+        match *self {
+            Types(x) => Types(x.fold_with(folder)),
+            Mismatch(x) => Mismatch(x.fold_with(folder)),
+        }
+    }
+
+    fn super_visit_with<V: TypeVisitor<'tcx>>(&self, visitor: &mut V) -> bool {
+        use ty::error::ConstError::*;
+
+        match *self {
+            Types(x) => x.visit_with(visitor),
+            Mismatch(x) => x.visit_with(visitor),
         }
     }
 }
