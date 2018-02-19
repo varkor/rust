@@ -325,8 +325,10 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 self.const_infer_for_def(def, substs, span)
             } else if def.has_default {
                 // This is a default const parameter.
-                // tcx.at(span).const_of(def.def_id, def.ty)
-                unimplemented!() // TODO(varkor): default
+                tcx.mk_const(ty::Const {
+                    val: ConstVal::Unevaluated(def.def_id, tcx.intern_substs(substs)),
+                    ty: def.ty,
+                })
             } else {
                 // Return an error const.
                 tcx.mk_const(ty::Const {

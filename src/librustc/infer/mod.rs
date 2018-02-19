@@ -21,6 +21,7 @@ use hir::def_id::DefId;
 use middle::free_region::RegionRelations;
 use middle::region;
 use middle::lang_items;
+use middle::const_val::ConstVal;
 use mir::tcx::PlaceTy;
 use ty::subst::{Kind, Subst, Substs};
 use ty::{TyVid, ConstVid, IntVid, FloatVid};
@@ -1144,11 +1145,10 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     pub fn const_var_for_def(&self,
                              _span: Span,
                              def: &ty::ConstParameterDef<'tcx>,
-                             _substs: &[Kind<'tcx>])
+                             substs: &[Kind<'tcx>])
                               -> &'tcx ty::Const<'tcx> {
         let default = if def.has_default {
-            // self.tcx.at(span).const_of(def.def_id, def.ty)
-            unimplemented!() // TODO(varkor): default
+            Some(ConstVal::Unevaluated(def.def_id, self.tcx.intern_substs(substs)))
         } else {
             None
         };

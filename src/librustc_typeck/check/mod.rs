@@ -93,6 +93,7 @@ use rustc::infer::{self, InferCtxt, InferOk, RegionVariableOrigin};
 use rustc::infer::anon_types::AnonTypeDecl;
 use rustc::infer::type_variable::{TypeVariableOrigin};
 use rustc::middle::region;
+use rustc::middle::const_val::ConstVal;
 use rustc::ty::subst::{Kind, Subst, Substs};
 use rustc::traits::{self, FulfillmentContext, ObligationCause, ObligationCauseCode};
 use rustc::ty::{self, Ty, TyCtxt, Visibility, ToPredicate};
@@ -4868,8 +4869,10 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 self.to_const(ast_const, def.ty)
             } else if !infer_types && def.has_default {
                 // No const parameter provided, but a default exists.
-                // tcx.at(span).const_of(def.def_id, def.ty)
-                unimplemented!() // TODO(varkor): default
+                self.tcx.mk_const(ty::Const {
+                    val: ConstVal::Unevaluated(def.def_id, self.tcx.intern_substs(substs)),
+                    ty: def.ty,
+                })
             } else {
                 // No const parameters were provided, we can infer all.
                 self.const_var_for_def(span, def, substs)
