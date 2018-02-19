@@ -93,7 +93,7 @@ impl<'a> Path<'a> {
         let lt = mk_lifetimes(cx, span, &self.lifetime);
         let tys = self.ty_params.iter().map(|t| t.to_ty(cx, span, self_ty, self_generics))
                   .collect();
-        let cns = self.const_params.iter().map(|c| c.to_const(cx, span, self_ty, self_generics))
+        let cns = self.const_params.iter().map(|c| c.to_const(cx, span))
                   .collect();
         match self.kind {
             PathKind::Global => cx.path_all(span, true, idents, lt, tys, cns, Vec::new()),
@@ -124,8 +124,8 @@ pub enum Ty<'a> {
 /// A const expression. Supports literals and blocks.
 #[derive(Clone, Eq, PartialEq)]
 pub enum Const {
-    Literal,
-    Block,
+    Literal(P<ast::Lit>),
+    Block(P<ast::Block>),
 }
 
 pub fn borrowed_ptrty<'r>() -> PtrTy<'r> {
@@ -240,36 +240,12 @@ impl<'a> Ty<'a> {
 
 impl Const {
     pub fn to_const(&self,
-                    _cx: &ExtCtxt,
-                    _span: Span,
-                    _self_ty: Ident,
-                    _self_generics: &Generics)
+                    cx: &ExtCtxt,
+                    span: Span)
                     -> P<ast::Expr> {
-        // TODO(varkor)
         match *self {
-            Const::Literal => {
-                unimplemented!()
-            }
-            Const::Block => {
-                unimplemented!()
-            }
-        }
-    }
-
-    pub fn to_path(&self,
-                   _cx: &ExtCtxt,
-                   _span: Span,
-                   _self_ty: Ident,
-                   _self_generics: &Generics)
-                   -> ast::Path {
-        // TODO(varkor)
-        match *self {
-            Const::Literal => {
-                unimplemented!()
-            }
-            Const::Block => {
-                unimplemented!()
-            }
+            Const::Literal(ref l) => cx.const_(span, ast::ExprKind::Lit(l.clone())),
+            Const::Block(ref b) => cx.const_(span, ast::ExprKind::Block(b.clone())),
         }
     }
 }

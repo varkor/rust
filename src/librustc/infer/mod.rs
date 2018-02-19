@@ -1148,7 +1148,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                               -> &'tcx ty::Const<'tcx> {
         let default = if def.has_default {
             // self.tcx.at(span).const_of(def.def_id, def.ty)
-            unimplemented!() // TODO(varkor): handle default
+            unimplemented!() // TODO(varkor): default
         } else {
             None
         };

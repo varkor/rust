@@ -504,7 +504,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                             "array length could not be evaluated");
                         Err(ErrorReported)
                     }
-                    ConstVal::Param(_param_const) => unimplemented!(), // TODO(varkor)
+                    ConstVal::Param(_param_const) => unimplemented!(), // TODO(varkor): relate
                     _ => bug!("arrays should not have const {:?} as length", x)
                 }
             };

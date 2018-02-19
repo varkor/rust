@@ -1221,7 +1221,7 @@ fn const_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                      def_id: DefId,
                      _ty: Ty<'tcx>)
                      -> &'tcx Const<'tcx> {
-     // TODO(varkor): finish this off
+     // TODO(varkor): default implementation
     use rustc::hir::map::*;
 
     let node_id = tcx.hir.as_local_node_id(def_id).unwrap();

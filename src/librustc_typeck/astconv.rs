@@ -326,7 +326,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
             } else if def.has_default {
                 // This is a default const parameter.
                 // tcx.at(span).const_of(def.def_id, def.ty)
-                unimplemented!() // TODO(varkor)
+                unimplemented!() // TODO(varkor): default
             } else {
                 // Return an error const.
                 tcx.mk_const(ty::Const {

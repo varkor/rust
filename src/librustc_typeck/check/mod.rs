@@ -4869,7 +4869,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             } else if !infer_types && def.has_default {
                 // No const parameter provided, but a default exists.
                 // tcx.at(span).const_of(def.def_id, def.ty)
-                unimplemented!() // TODO(varkor)
+                unimplemented!() // TODO(varkor): default
             } else {
                 // No const parameters were provided, we can infer all.
                 self.const_var_for_def(span, def, substs)

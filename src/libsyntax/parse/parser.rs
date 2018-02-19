@@ -4665,7 +4665,7 @@ impl<'a> Parser<'a> {
         self.expect_keyword(keywords::Const)?;
         let ident = self.parse_ident()?;
         self.expect(&token::Colon)?;
-        // TODO(varkor): error message if type parameter is used instead of type
+        // TODO(varkor): doc: error message if type parameter is used instead of type
         let ty = self.parse_ty()?;
 
         let default = if self.eat(&token::Eq) {

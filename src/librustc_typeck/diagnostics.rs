@@ -4703,10 +4703,10 @@ E0692: r##"
 This error indicates that not enough const parameters were found in a type or
 trait.
 
-For example, TODO(varkor)
+For example, TODO(varkor): doc
 
 ```compile_fail,E0692
-// TODO(varkor)
+// TODO(varkor): doc
 ```
 "##,
 
@@ -4714,10 +4714,10 @@ E0693: r##"
 This error indicates that too many const parameters were found in a type or
 trait.
 
-For example, TODO(varkor)
+For example, TODO(varkor): doc
 
 ```compile_fail,E0693
-// TODO(varkor)
+// TODO(varkor): doc
 ```
 "##,
 
