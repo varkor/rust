@@ -16,20 +16,20 @@
 register_long_diagnostics! {
 
 E0128: r##"
-Type parameter defaults can only use parameters that occur before them.
-Erroneous code example:
+Type and const parameter defaults can only use parameters that occur before
+them. Erroneous code example:
 
 ```compile_fail,E0128
 struct Foo<T=U, U=()> {
     field1: T,
     filed2: U,
 }
-// error: type parameters with a default cannot use forward declared
+// error: type or const parameters with a default cannot use forward declared
 // identifiers
 ```
 
-Since type parameters are evaluated in-order, you may be able to fix this issue
-by doing:
+Since type and const parameters are evaluated in-order, you may be able to fix
+this issue by doing:
 
 ```
 struct Foo<U=(), T=U> {
@@ -39,7 +39,7 @@ struct Foo<U=(), T=U> {
 ```
 
 Please also verify that this wasn't because of a name-clash and rename the type
-parameter if so.
+or const parameter if so.
 "##,
 
 E0154: r##"
@@ -422,8 +422,8 @@ https://doc.rust-lang.org/reference.html#use-declarations
 "##,
 
 E0401: r##"
-Inner items do not inherit type parameters from the functions they are embedded
-in.
+Inner items do not inherit type or const parameters from the functions they
+are embedded in.
 
 Erroneous code example:
 
@@ -540,8 +540,8 @@ fn foo<T, T>(s: T, u: T) {} // error: the name `T` is already used for a type
                             //        or const parameter in this parameter list
 ```
 
-Please verify that none of the type parameters are misspelled, and rename any
-clashing parameters. Example:
+Please verify that none of the type or const parameters are misspelled, and
+rename any clashing parameters. Example:
 
 ```
 fn foo<T, Y>(s: T, u: Y) {} // ok!

@@ -2458,7 +2458,7 @@ fn baz<I>(x: &<I as Foo>::A) where I: Foo<A=Bar> {}
 "##,
 
 E0243: r##"
-This error indicates that not enough type parameters were found in a type or
+This error indicates that too few type parameters were found in a type or
 trait.
 
 For example, the `Foo` struct below is defined to be generic in `T`, but the
@@ -4700,13 +4700,16 @@ alignment.
 "##,
 
 E0692: r##"
-This error indicates that not enough const parameters were found in a type or
+This error indicates that too few const parameters were found in a type or
 trait.
 
-For example, TODO(varkor): doc
+For example, the `Foo` struct below is defined to be generic in `T`, but the
+type parameter is missing in the definition of `Bar`:
 
 ```compile_fail,E0692
-// TODO(varkor): doc
+struct Foo<T, const N: usize> { arr: [T; N] }
+
+struct Bar { x: Foo<i32> }
 ```
 "##,
 
@@ -4714,10 +4717,13 @@ E0693: r##"
 This error indicates that too many const parameters were found in a type or
 trait.
 
-For example, TODO(varkor): doc
+For example, the `Foo` struct below has no const parameters, but is supplied
+with two in the definition of `Bar`:
 
 ```compile_fail,E0693
-// TODO(varkor): doc
+struct Foo { x: bool }
+
+struct Bar<const S: i8, const T: usize> { x: Foo<S, T> }
 ```
 "##,
 

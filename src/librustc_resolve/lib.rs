@@ -121,8 +121,8 @@ impl Ord for BindingError {
 }
 
 enum ResolutionError<'a> {
-    /// error E0401: can't use type parameters from outer function
-    TypeParametersFromOuterFunction,
+    /// error E0401: can't use type or const parameters from outer function
+    ParametersFromOuterFunction,
     /// error E0403: the name is already used for a type or const parameter in this parameter list
     NameAlreadyUsedInParameterList(Name, &'a Span),
     /// error E0407: method is not a member of trait
@@ -157,8 +157,8 @@ enum ResolutionError<'a> {
     AttemptToUseNonConstantValueInConstant,
     /// error E0530: X bindings cannot shadow Ys
     BindingShadowsSomethingUnacceptable(&'a str, Name, &'a NameBinding<'a>),
-    /// error E0128: type parameters with a default cannot use forward declared identifiers
-    ForwardDeclaredTyParam,
+    /// error E0128: type or const parameters with a default cannot use forward declared identifiers
+    ForwardDeclaredParam,
 }
 
 fn resolve_error<'sess, 'a>(resolver: &'sess Resolver,
@@ -172,13 +172,14 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
                                    resolution_error: ResolutionError<'a>)
                                    -> DiagnosticBuilder<'sess> {
     match resolution_error {
-        ResolutionError::TypeParametersFromOuterFunction => {
+        ResolutionError::ParametersFromOuterFunction => {
             let mut err = struct_span_err!(resolver.session,
                                            span,
                                            E0401,
-                                           "can't use type parameters from outer function; \
-                                           try using a local type parameter instead");
-            err.span_label(span, "use of type variable from outer function");
+                                           "can't use type or const parameters from outer \
+                                            function; try using a local type or const parameter \
+                                            instead");
+            err.span_label(span, "use of type or const variable from outer function");
             err
         }
         ResolutionError::NameAlreadyUsedInParameterList(name, first_use_span) => {
@@ -347,11 +348,12 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
             err.span_label(binding.span, msg);
             err
         }
-        ResolutionError::ForwardDeclaredTyParam => {
+        ResolutionError::ForwardDeclaredParam => {
             let mut err = struct_span_err!(resolver.session, span, E0128,
-                                           "type parameters with a default cannot use \
+                                           "type and const parameters with a default cannot use \
                                             forward declared identifiers");
-            err.span_label(span, format!("defaulted type parameters cannot be forward declared"));
+            err.span_label(span, format!("defaulted type and const parameters cannot be forward \
+                                          declared"));
             err
         }
     }
@@ -3230,7 +3232,7 @@ impl<'a> Resolver<'a> {
         // An invalid forward use of a type parameter from a previous default.
         if let ForwardTyParamBanRibKind = self.ribs[ns][rib_index].kind {
             if record_used {
-                resolve_error(self, span, ResolutionError::ForwardDeclaredTyParam);
+                resolve_error(self, span, ResolutionError::ForwardDeclaredParam);
             }
             assert_eq!(def, Def::Err);
             return Def::Err;
@@ -3305,7 +3307,7 @@ impl<'a> Resolver<'a> {
                             // its scope.
                             if record_used {
                                 resolve_error(self, span,
-                                              ResolutionError::TypeParametersFromOuterFunction);
+                                              ResolutionError::ParametersFromOuterFunction);
                             }
                             return Def::Err;
                         }
