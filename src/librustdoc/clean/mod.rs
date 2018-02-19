@@ -1257,11 +1257,17 @@ impl Clean<TyParamBound> for hir::TyParamBound {
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Debug)]
+pub enum Expr {
+    Literal,
+    Block,
+}
+
+#[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Debug)]
 pub struct ConstParam {
     pub name: String,
     pub did: DefId,
     pub ty: Type,
-    pub default: Option<hir::Expr>,
+    pub default: Option<Expr>,
 }
 
 impl Clean<ConstParam> for hir::ConstParam {
@@ -1271,6 +1277,16 @@ impl Clean<ConstParam> for hir::ConstParam {
             did: cx.tcx.hir.local_def_id(self.id),
             ty: self.ty.clean(cx),
             default: self.default.clean(cx),
+        }
+    }
+}
+
+impl Clean<Expr> for hir::Expr {
+    fn clean(&self, _cx: &DocContext) -> Expr {
+        match self.node {
+            hir::Expr_::ExprLit(_) => Expr::Literal,
+            hir::Expr_::ExprBlock(_) => Expr::Block,
+            _ => panic!("only literal and block expressions are permitted as default const args")
         }
     }
 }

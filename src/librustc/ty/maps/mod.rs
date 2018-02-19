@@ -33,7 +33,7 @@ use session::{CompileResult, CrateDisambiguator};
 use session::config::OutputFilenames;
 use traits::Vtable;
 use traits::specialization_graph;
-use ty::{self, CrateInherentImpls, Ty, Const, TyCtxt};
+use ty::{self, CrateInherentImpls, Ty, TyCtxt};
 use ty::steal::Steal;
 use ty::subst::Substs;
 use util::nodemap::{DefIdSet, DefIdMap, ItemLocalSet};
