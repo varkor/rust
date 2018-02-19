@@ -21,6 +21,7 @@ use rustc_data_structures::accumulate_vec::AccumulateVec;
 use rustc_data_structures::indexed_vec::{IndexVec, Idx};
 
 use std::rc::Rc;
+use std::marker::PhantomData;
 
 ///////////////////////////////////////////////////////////////////////////
 // Atomic structs
@@ -653,21 +654,24 @@ impl<'a, 'tcx> Lift<'tcx> for ConstVal<'a> {
 impl<'a, 'tcx> Lift<'tcx> for const_val::ByteArray<'a> {
     type Lifted = const_val::ByteArray<'tcx>;
     fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
-        unimplemented!() // TODO(yodaldevoid)
+        None // TODO(yodaldevoid)
     }
 }
 
 impl<'a, 'tcx> Lift<'tcx> for ty::ConstVid<'a> {
     type Lifted = ty::ConstVid<'tcx>;
     fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
-        unimplemented!() // TODO(yodaldevoid)
+        Some(ty::ConstVid {
+            index: self.index,
+            phantom: PhantomData,
+        })
     }
 }
 
 impl<'a, 'tcx> Lift<'tcx> for const_val::ConstAggregate<'a> {
     type Lifted = const_val::ConstAggregate<'tcx>;
     fn lift_to_tcx<'b, 'gcx>(&self, _tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
-        unimplemented!() // TODO(yodaldevoid)
+        None // TODO(yodaldevoid)
     }
 }
 
