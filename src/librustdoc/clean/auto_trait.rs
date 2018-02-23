@@ -244,7 +244,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
         None
     }
 
-    fn generics_to_path_params(&self, generics: ty::Generics) -> hir::PathParameters {
+    fn generics_to_path_params(&self, generics: ty::Generics) -> hir::GenericArgs {
         let mut lifetimes = vec![];
         let mut types = vec![];
 
@@ -268,10 +268,10 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                 }
             }
         }
+        let args = lifetimes.iter().chain(types).collect();
 
-        hir::PathParameters {
-            lifetimes: HirVec::from_vec(lifetimes),
-            types: HirVec::from_vec(types),
+        hir::GenericArgs {
+            args: HirVec::from_vec(args),
             bindings: HirVec::new(),
             parenthesized: false,
         }
@@ -555,9 +555,9 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                             let mut new_path = path.clone();
                             let last_segment = new_path.segments.pop().unwrap();
 
-                            let (old_input, old_output) = match last_segment.params {
-                                PathParameters::AngleBracketed { types, .. } => (types, None),
-                                PathParameters::Parenthesized { inputs, output, .. } => {
+                            let (old_input, old_output) = match last_segment.args {
+                                GenericArgs::AngleBracketed { types, .. } => (types, None),
+                                GenericArgs::Parenthesized { inputs, output, .. } => {
                                     (inputs, output)
                                 }
                             };
@@ -569,14 +569,14 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                                 );
                             }
 
-                            let new_params = PathParameters::Parenthesized {
+                            let new_params = GenericArgs::Parenthesized {
                                 inputs: old_input,
                                 output,
                             };
 
                             new_path.segments.push(PathSegment {
                                 name: last_segment.name,
-                                params: new_params,
+                                args: new_params,
                             });
 
                             Type::ResolvedPath {
@@ -793,13 +793,13 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
 
                                     // FIXME: Remove this scope when NLL lands
                                     {
-                                        let params =
-                                            &mut new_trait_path.segments.last_mut().unwrap().params;
+                                        let args =
+                                            &mut new_trait_path.segments.last_mut().unwrap().args;
 
-                                        match params {
+                                        match args {
                                             // Convert somethiung like '<T as Iterator::Item> = u8'
                                             // to 'T: Iterator<Item=u8>'
-                                            &mut PathParameters::AngleBracketed {
+                                            &mut GenericArgs::AngleBracketed {
                                                 ref mut bindings,
                                                 ..
                                             } => {
@@ -808,7 +808,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                                                     ty: rhs,
                                                 });
                                             }
-                                            &mut PathParameters::Parenthesized { .. } => {
+                                            &mut GenericArgs::Parenthesized { .. } => {
                                                 existing_predicates.push(
                                                     WherePredicate::EqPredicate {
                                                         lhs: lhs.clone(),

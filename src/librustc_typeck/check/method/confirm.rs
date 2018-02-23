@@ -59,7 +59,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             "confirm(unadjusted_self_ty={:?}, pick={:?}, generic_args={:?})",
             unadjusted_self_ty,
             pick,
-            segment.parameters,
+            segment.args,
         );
 
         let mut confirm_cx = ConfirmContext::new(self, span, self_expr, call_expr);
@@ -321,7 +321,7 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
         // Create subst for early-bound lifetime parameters, combining
         // parameters from the type and those from the method.
         assert_eq!(method_generics.parent_count, parent_substs.len());
-        let provided = &segment.parameters;
+        let provided = &segment.args;
         let own_counts = method_generics.own_counts();
         Substs::for_item(self.tcx, pick.item.def_id, |param, _| {
             let i = param.index as usize;

@@ -1465,7 +1465,7 @@ fn external_path(cx: &DocContext, name: &str, trait_did: Option<DefId>, has_self
         def: Def::Err,
         segments: vec![PathSegment {
             name: name.to_string(),
-            params: external_generic_args(cx, trait_did, has_self, bindings, substs)
+            args: external_generic_args(cx, trait_did, has_self, bindings, substs)
         }],
     }
 }
@@ -2514,7 +2514,7 @@ impl Type {
         match *self {
             ResolvedPath { ref path, .. } => {
                 path.segments.last().and_then(|seg| {
-                    if let GenericArgs::AngleBracketed { ref types, .. } = seg.params {
+                    if let GenericArgs::AngleBracketed { ref types, .. } = seg.args {
                         Some(&**types)
                     } else {
                         None
@@ -2717,8 +2717,8 @@ impl Clean<Type> for hir::Ty {
                         for param in generics.params.iter() {
                             match param {
                                 hir::GenericParam::Lifetime(lt_param) => {
-                                    if let Some(lt) = provided_params.lifetimes
-                                        .get(indices.lifetimes).cloned() {
+                                    if let Some(lt) = provided_params.lifetimes()
+                                        .nth(indices.lifetimes).cloned() {
                                         if !lt.is_elided() {
                                             let lt_def_id =
                                                 cx.tcx.hir.local_def_id(lt_param.lifetime.id);
@@ -2730,8 +2730,8 @@ impl Clean<Type> for hir::Ty {
                                 hir::GenericParam::Type(ty_param) => {
                                     let ty_param_def =
                                         Def::TyParam(cx.tcx.hir.local_def_id(ty_param.id));
-                                    if let Some(ty) = provided_params.types
-                                        .get(indices.types).cloned() {
+                                    if let Some(ty) = provided_params.types()
+                                        .nth(indices.types).cloned() {
                                         ty_substs.insert(ty_param_def, ty.into_inner().clean(cx));
                                     } else if let Some(default) = ty_param.default.clone() {
                                         ty_substs.insert(ty_param_def,
@@ -3298,7 +3298,7 @@ impl Path {
             def: Def::Err,
             segments: vec![PathSegment {
                 name,
-                params: GenericArgs::AngleBracketed {
+                args: GenericArgs::AngleBracketed {
                     lifetimes: Vec::new(),
                     types: Vec::new(),
                     bindings: Vec::new(),
@@ -3322,7 +3322,7 @@ impl Clean<Path> for hir::Path {
     }
 }
 
-#[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eg, Debug, Hash)]
+#[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
 pub enum GenericArgs {
     AngleBracketed {
         lifetimes: Vec<Lifetime>,
@@ -3360,14 +3360,14 @@ impl Clean<GenericArgs> for hir::GenericArgs {
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
 pub struct PathSegment {
     pub name: String,
-    pub params: GenericArgs,
+    pub args: GenericArgs,
 }
 
 impl Clean<PathSegment> for hir::PathSegment {
     fn clean(&self, cx: &DocContext) -> PathSegment {
         PathSegment {
             name: self.name.clean(cx),
-            params: self.with_parameters(|parameters| parameters.clean(cx))
+            args: self.with_args(|args| args.clean(cx))
         }
     }
 }
@@ -3401,7 +3401,7 @@ fn strip_path(path: &Path) -> Path {
     let segments = path.segments.iter().map(|s| {
         PathSegment {
             name: s.name.clone(),
-            params: PathParameters::AngleBracketed {
+            args: GenericArgs::AngleBracketed {
                 lifetimes: Vec::new(),
                 types: Vec::new(),
                 bindings: Vec::new(),
@@ -4209,7 +4209,7 @@ where F: Fn(DefId) -> Def {
         def: def_ctor(def_id),
         segments: hir::HirVec::from_vec(apb.names.iter().map(|s| hir::PathSegment {
             name: ast::Name::intern(&s),
-            parameters: None,
+            args: None,
             infer_types: false,
         }).collect())
     }

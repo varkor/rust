@@ -230,9 +230,9 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
         // }
         // foo!(bar::baz<T>);
         use_tree.prefix.segments.iter().find(|segment| {
-            segment.parameters.is_some()
+            segment.args.is_some()
         }).map(|segment| {
-            self.err_handler().span_err(segment.parameters.as_ref().unwrap().span(),
+            self.err_handler().span_err(segment.args.as_ref().unwrap().span(),
                                         "generic arguments in import path");
         });
 
@@ -398,8 +398,8 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
     fn visit_vis(&mut self, vis: &'a Visibility) {
         match vis.node {
             VisibilityKind::Restricted { ref path, .. } => {
-                path.segments.iter().find(|segment| segment.parameters.is_some()).map(|segment| {
-                    self.err_handler().span_err(segment.parameters.as_ref().unwrap().span(),
+                path.segments.iter().find(|segment| segment.args.is_some()).map(|segment| {
+                    self.err_handler().span_err(segment.args.as_ref().unwrap().span(),
                                                 "generic arguments in visibility path");
                 });
             }
