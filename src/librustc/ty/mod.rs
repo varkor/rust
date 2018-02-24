@@ -786,7 +786,7 @@ impl GenericParameterDef {
 pub struct Generics {
     pub parent: Option<DefId>,
     pub parent_count: usize,
-    pub parameters: Vec<GenericParameterDef>,
+    pub params: Vec<GenericParameterDef>,
 
     /// Reverse map to each `TypeParameterDef`'s `index` field
     pub type_param_to_index: FxHashMap<DefId, u32>,
@@ -797,7 +797,7 @@ pub struct Generics {
 
 impl<'a, 'gcx, 'tcx> Generics {
     pub fn own_count(&self) -> usize {
-        self.parameters.len()
+        self.params.len()
     }
 
     pub fn count(&self) -> usize {
@@ -805,7 +805,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     }
 
     pub fn lifetimes(&self) -> Vec<&RegionParameterDef> {
-        self.parameters.iter().filter_map(|p| {
+        self.params.iter().filter_map(|p| {
             if let GenericParameterDef::Lifetime(lt) = p {
                 Some(lt)
             } else {
@@ -815,7 +815,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     }
 
     pub fn types(&self) -> Vec<&TypeParameterDef> {
-        self.parameters.iter().filter_map(|p| {
+        self.params.iter().filter_map(|p| {
             if let GenericParameterDef::Type(ty) = p {
                 Some(ty)
             } else {
@@ -843,7 +843,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     {
         if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
             // We're currently assuming that lifetimes precede other generic parameters.
-            match self.parameters[index as usize - self.has_self as usize] {
+            match self.params[index as usize - self.has_self as usize] {
                 ty::GenericParameterDef::Lifetime(ref lt) => lt,
                 _ => bug!("expected region parameter, but found another generic parameter")
             }
@@ -893,13 +893,13 @@ impl<'a, 'gcx, 'tcx> Generics {
 
             if let Some(_) = (idx as usize).checked_sub(type_param_offset) {
                 assert!(!is_separated_self, "found a Self after type_param_offset");
-                match self.parameters[idx as usize] {
+                match self.params[idx as usize] {
                     ty::GenericParameterDef::Type(ref ty) => ty,
                     _ => bug!("expected type parameter, but found another generic parameter")
                 }
             } else {
                 assert!(is_separated_self, "non-Self param before type_param_offset");
-                match self.parameters[type_param_offset] {
+                match self.params[type_param_offset] {
                     ty::GenericParameterDef::Type(ref ty) => ty,
                     _ => bug!("expected type parameter, but found another generic parameter")
                 }
