@@ -956,7 +956,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     }
 
     pub fn lifetimes(&self) -> impl DoubleEndedIterator<Item = &RegionParameterDef> {
-        self.parameters.iter().filter_map(|p| {
+        self.params.iter().filter_map(|p| {
             if let GenericParam::Lifetime(lt) = p {
                 Some(lt)
             } else {
@@ -966,7 +966,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     }
 
     pub fn types(&self) -> impl DoubleEndedIterator<Item = &TypeParameterDef> {
-        self.parameters.iter().filter_map(|p| {
+        self.params.iter().filter_map(|p| {
             if let GenericParam::Type(ty) = p {
                 Some(ty)
             } else {
