@@ -898,58 +898,6 @@ impl GenericParam {
     }
 }
 
-#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub enum KindIndex {
-    Lifetime,
-    Type,
-}
-
-#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub struct KindIndexed<L, T> {
-    pub lt: L,
-    pub ty: T,
-}
-
-impl<T> KindIndexed<T, T> {
-    pub fn get(&self, idx: KindIndex) -> &T {
-        match idx {
-            KindIndex::Lifetime => &self.lt,
-            KindIndex::Type     => &self.ty,
-        }
-    }
-
-    pub fn iter(&self) -> KindIndexIterator<T> {
-        KindIndexIterator {
-            index: self,
-            next: Some(KindIndex::Lifetime),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct KindIndexIterator<'a, T: 'a> {
-    pub index: &'a KindIndexed<T, T>,
-    pub next: Option<KindIndex>,
-}
-
-impl<'a, T> Iterator for KindIndexIterator<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.next {
-            Some(KindIndex::Lifetime) => {
-                self.next = Some(KindIndex::Type);
-                Some(&self.index.lt)
-            }
-            Some(KindIndex::Type) => {
-                self.next = None;
-                Some(&self.index.ty)
-            },
-            None => None,
-        }
-    }
-}
-
 /// Information about the formal type/lifetime parameters associated
 /// with an item or method. Analogous to hir::Generics.
 ///
@@ -1027,12 +975,16 @@ impl<'a, 'gcx, 'tcx> Generics {
         })
     }
 
-    pub fn parent_lifetimes(&self) -> u32 {
-        *self.parent_params.get(KindIndex::Lifetime)
-    }
-
-    pub fn parent_types(&self) -> u32 {
-        *self.parent_params.get(KindIndex::Type)
+    pub fn has_type_parameters(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> bool {
+        if self.types().count() != 0 {
+            return true;
+        }
+        if let Some(parent_def_id) = self.parent {
+            let parent = tcx.generics_of(parent_def_id);
+            parent.has_type_parameters(tcx)
+        } else {
+            false
+        }
     }
 
     pub fn region_param(&'tcx self,
