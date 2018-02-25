@@ -218,7 +218,6 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
     fn generics_to_path_params(&self, generics: ty::Generics) -> hir::PathParameters {
         let lifetimes = HirVec::from_vec(
             generics.lifetimes()
-                    .iter()
                     .map(|p| {
                         let name = if p.name == "" {
                             hir::LifetimeName::Static
@@ -404,7 +403,6 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
 
             let names_map: FxHashMap<String, Lifetime> = generics
                 .lifetimes()
-                .iter()
                 .map(|l| (l.name.to_string(), l.clean(self.cx)))
                 .collect();
 

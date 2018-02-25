@@ -1589,7 +1589,6 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     .or_insert_with(|| {
                         tcx.generics_of(def_id)
                             .types()
-                            .iter()
                             .map(|def| def.object_lifetime_default)
                             .collect()
                     })
