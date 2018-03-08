@@ -217,30 +217,28 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
 
     fn generics_to_path_params(&self, generics: ty::Generics) -> hir::PathParameters {
         let lifetimes = HirVec::from_vec(
-            generics
-                .regions
-                .iter()
-                .map(|p| {
-                    let name = if p.name == "" {
-                        hir::LifetimeName::Static
-                    } else {
-                        hir::LifetimeName::Name(Symbol::intern(&p.name))
-                    };
+            generics.lifetimes()
+                    .iter()
+                    .map(|p| {
+                        let name = if p.name == "" {
+                            hir::LifetimeName::Static
+                        } else {
+                            hir::LifetimeName::Name(Symbol::intern(&p.name))
+                        };
 
-                    hir::Lifetime {
-                        id: ast::DUMMY_NODE_ID,
-                        span: DUMMY_SP,
-                        name,
-                    }
-                })
-                .collect(),
+                        hir::Lifetime {
+                            id: ast::DUMMY_NODE_ID,
+                            span: DUMMY_SP,
+                            name,
+                        }
+                    })
+                    .collect(),
         );
         let types = HirVec::from_vec(
-            generics
-                .types
-                .iter()
-                .map(|p| P(self.ty_param_to_ty(p.clone())))
-                .collect(),
+            generics.types()
+                    .into_iter()
+                    .map(|p| P(self.ty_param_to_ty(p.clone())))
+                    .collect(),
         );
 
         hir::PathParameters {
@@ -405,7 +403,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
             });
 
             let names_map: FxHashMap<String, Lifetime> = generics
-                .regions
+                .lifetimes()
                 .iter()
                 .map(|l| (l.name.to_string(), l.clean(self.cx)))
                 .collect();

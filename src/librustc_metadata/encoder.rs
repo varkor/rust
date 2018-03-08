@@ -912,7 +912,7 @@ impl<'a, 'b: 'a, 'tcx: 'b> IsolatedEncoder<'a, 'b, 'tcx> {
             (Some(body), true)
         } else if let hir::ImplItemKind::Method(ref sig, body) = ast_item.node {
             let generics = self.tcx.generics_of(def_id);
-            let types = generics.parent_types as usize + generics.types.len();
+            let types = generics.parent_types() as usize + generics.types().len();
             let needs_inline = (types > 0 || tcx.trans_fn_attrs(def_id).requests_inline()) &&
                 !self.metadata_output_only();
             let is_const_fn = sig.constness == hir::Constness::Const;
