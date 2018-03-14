@@ -632,6 +632,7 @@ pub fn walk_path_parameters<'v, V: Visitor<'v>>(visitor: &mut V,
                                                 path_parameters: &'v PathParameters) {
     walk_list!(visitor, visit_lifetime, &path_parameters.lifetimes);
     walk_list!(visitor, visit_ty, &path_parameters.types);
+    walk_list!(visitor, visit_expr, &path_parameters.consts);
     walk_list!(visitor, visit_assoc_type_binding, &path_parameters.bindings);
 }
 

@@ -385,6 +385,7 @@ pub fn walk_path_parameters<'a, V>(visitor: &mut V,
     match *path_parameters {
         PathParameters::AngleBracketed(ref data) => {
             walk_list!(visitor, visit_ty, &data.types);
+            walk_list!(visitor, visit_expr, &data.consts);
             walk_list!(visitor, visit_lifetime, &data.lifetimes);
             walk_list!(visitor, visit_assoc_type_binding, &data.bindings);
         }
