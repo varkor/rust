@@ -534,7 +534,7 @@ impl<'a> PathSource<'a> {
                 Def::Struct(..) | Def::Union(..) | Def::Enum(..) |
                 Def::Trait(..) | Def::TyAlias(..) | Def::AssociatedTy(..) |
                 Def::PrimTy(..) | Def::TyParam(..) | Def::SelfTy(..) |
-                Def::Existential(..) |
+                Def::Existential(..) | Def::ConstParam(..) |
                 Def::TyForeign(..) => true,
                 _ => false,
             },
