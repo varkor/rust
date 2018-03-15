@@ -397,7 +397,7 @@ fn check_expr<'a, 'tcx>(v: &mut CheckCrateVisitor<'a, 'tcx>, e: &hir::Expr, node
 
                 // References to a static that are themselves within a static
                 // are inherently promotable with the exception
-                //  of "#[thread_loca]" statics, which may not
+                //  of "#[thread_local]" statics, which may not
                 // outlive the current function
                 Def::Static(did, _) => {
 
@@ -426,8 +426,7 @@ fn check_expr<'a, 'tcx>(v: &mut CheckCrateVisitor<'a, 'tcx>, e: &hir::Expr, node
                 }
 
                 Def::Const(did) |
-                Def::AssociatedConst(did) |
-                Def::ConstParam(did) => {
+                Def::AssociatedConst(did)  => {
                     let promotable = if v.tcx.trait_of_item(did).is_some() {
                         // Don't peek inside trait associated constants.
                         false
