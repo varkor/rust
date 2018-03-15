@@ -363,6 +363,12 @@ impl<'tcx> Relate<'tcx> for Ty<'tcx> {
     }
 }
 
+/// Holds a evluated constant or the index of a ConstParam
+enum ConstEval {
+    Value(u64),
+    Param(u32),
+}
+
 /// The main "type relation" routine. Note that this does not handle
 /// inference artifacts, so you should filter those out before calling
 /// it.
@@ -483,9 +489,9 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
             let t = relation.relate(&a_t, &b_t)?;
             assert_eq!(sz_a.ty, tcx.types.usize);
             assert_eq!(sz_b.ty, tcx.types.usize);
-            let to_u64 = |x: &'tcx Const<'tcx>| -> Result<u64, ErrorReported> {
+            let to_value_or_param = |x: &'tcx Const<'tcx>| -> Result<ConstEval, ErrorReported> {
                 match x.val {
-                    ConstVal::Integral(x) => Ok(x.to_u64().unwrap()),
+                    ConstVal::Integral(x) => Ok(ConstEval::Value(x.to_u64().unwrap())),
                     ConstVal::Unevaluated(def_id, substs) => {
                         // FIXME(eddyb) get the right param_env.
                         let param_env = ty::ParamEnv::empty(Reveal::UserFacing);
@@ -493,7 +499,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                             Some(substs) => {
                                 match tcx.const_eval(param_env.and((def_id, substs))) {
                                     Ok(&Const { val: ConstVal::Integral(x), .. }) => {
-                                        return Ok(x.to_u64().unwrap());
+                                        return Ok(ConstEval::Value(x.to_u64().unwrap()));
                                     }
                                     _ => {}
                                 }
@@ -504,17 +510,38 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                             "array length could not be evaluated");
                         Err(ErrorReported)
                     }
-                    ConstVal::Param(_param_const) => unimplemented!(), // TODO(varkor): relate
+                    ConstVal::Param(param_const) => {
+                        // We either need to be able to know the value of the
+                        // const param right here, which might not be possible,
+                        // or we need to assume it will work out/be caught later
+                        // on. Lets just go with the second option.
+                        Ok(ConstEval::Param(param_const.idx))
+                    }
                     _ => bug!("arrays should not have const {:?} as length", x)
                 }
             };
-            match (to_u64(sz_a), to_u64(sz_b)) {
-                (Ok(sz_a_u64), Ok(sz_b_u64)) => {
+            match (to_value_or_param(sz_a), to_value_or_param(sz_b)) {
+                (Ok(ConstEval::Value(sz_a_u64)), Ok(ConstEval::Value(sz_b_u64))) => {
                     if sz_a_u64 == sz_b_u64 {
                         Ok(tcx.mk_ty(ty::TyArray(t, sz_a)))
                     } else {
                         Err(TypeError::FixedArraySize(
                             expected_found(relation, &sz_a_u64, &sz_b_u64)))
+                    }
+                }
+                (Ok(ConstEval::Value(_)), Ok(ConstEval::Param(_))) => {
+                    Ok(tcx.mk_ty(ty::TyArray(t, sz_a)))
+                }
+                (Ok(ConstEval::Param(_)), Ok(ConstEval::Value(_))) => {
+                    Ok(tcx.mk_ty(ty::TyArray(t, sz_b)))
+                }
+                (Ok(ConstEval::Param(a_idx)), Ok(ConstEval::Param(b_idx))) => {
+                    if a_idx == b_idx {
+                        Ok(tcx.mk_ty(ty::TyArray(t, sz_a)))
+                    } else {
+                        // TODO(yodaldevoid): fix this error reporting
+                        Err(TypeError::FixedArraySize(
+                            expected_found(relation, &(a_idx as u64), &(b_idx as u64))))
                     }
                 }
                 // We reported an error or will ICE, so we can return TyError.
