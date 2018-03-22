@@ -363,6 +363,17 @@ pub fn from_digit(num: u32, radix: u32) -> Option<char> {
     }
 }
 
+fn is_combining_char(c: char) -> bool {
+    match c as u32 {
+        0x0300..=0x036f |
+        0x1ab0..=0x1aff |
+        0x1dc0..=0x1dff |
+        0x20d0..=0x20ff |
+        0xfe20..=0xfe2f => true,
+        _ => false
+    }
+}
+
 // NB: the stabilization and documentation for this trait is in
 // unicode/char.rs, not here
 #[allow(missing_docs)] // docs in libunicode/u_char.rs
@@ -451,8 +462,8 @@ impl CharExt for char {
             '\r' => EscapeDefaultState::Backslash('r'),
             '\n' => EscapeDefaultState::Backslash('n'),
             '\\' | '\'' | '"' => EscapeDefaultState::Backslash(self),
-            c if is_printable(c) => EscapeDefaultState::Char(c),
-            c => EscapeDefaultState::Unicode(c.escape_unicode()),
+            _ if is_printable(self) && !is_combining_char(self) => EscapeDefaultState::Char(self),
+            _ => EscapeDefaultState::Unicode(self.escape_unicode()),
         };
         EscapeDebug(EscapeDefault { state: init_state })
     }

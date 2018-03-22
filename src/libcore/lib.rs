@@ -76,6 +76,7 @@
 #![feature(custom_attribute)]
 #![feature(doc_cfg)]
 #![feature(doc_spotlight)]
+#![cfg_attr(stage0, feature(dotdoteq_in_patterns))]
 #![feature(fn_must_use)]
 #![feature(fundamental)]
 #![feature(i128_type)]
