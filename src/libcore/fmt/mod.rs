@@ -1778,8 +1778,14 @@ impl Display for str {
 impl Debug for char {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write_char('\'')?;
-        for c in self.escape_debug() {
-            f.write_char(c)?
+        if self.is_combining() {
+            for c in self.escape_unicode() {
+                f.write_char(c)?
+            }
+        } else {
+            for c in self.escape_debug() {
+                f.write_char(c)?
+            }
         }
         f.write_char('\'')
     }

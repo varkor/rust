@@ -20,6 +20,7 @@ use convert::TryFrom;
 use fmt::{self, Write};
 use slice;
 use str::{from_utf8_unchecked_mut, FromStr};
+use tables::general_category;
 use iter::FusedIterator;
 use mem::transmute;
 
@@ -363,20 +364,9 @@ pub fn from_digit(num: u32, radix: u32) -> Option<char> {
     }
 }
 
-fn is_combining_char(c: char) -> bool {
-    match c as u32 {
-        0x0300..=0x036f |
-        0x1ab0..=0x1aff |
-        0x1dc0..=0x1dff |
-        0x20d0..=0x20ff |
-        0xfe20..=0xfe2f => true,
-        _ => false
-    }
-}
-
 // NB: the stabilization and documentation for this trait is in
-// unicode/char.rs, not here
-#[allow(missing_docs)] // docs in libunicode/u_char.rs
+// libstd_unicode/char.rs, not here
+#[allow(missing_docs)] // docs in libstd_unicode/char.rs
 #[doc(hidden)]
 #[unstable(feature = "core_char_ext",
            reason = "the stable interface is `impl char` in later crate",
@@ -400,6 +390,10 @@ pub trait CharExt {
     fn encode_utf8(self, dst: &mut [u8]) -> &mut str;
     #[stable(feature = "unicode_encode_char", since = "1.15.0")]
     fn encode_utf16(self, dst: &mut [u16]) -> &mut [u16];
+    #[unstable(feature = "rustc_private",
+               reason = "mainly needed for compiler internals",
+               issue = "27812")]
+    fn is_combining(self) -> bool;
 }
 
 #[stable(feature = "core", since = "1.6.0")]
@@ -462,7 +456,7 @@ impl CharExt for char {
             '\r' => EscapeDefaultState::Backslash('r'),
             '\n' => EscapeDefaultState::Backslash('n'),
             '\\' | '\'' | '"' => EscapeDefaultState::Backslash(self),
-            _ if is_printable(self) && !is_combining_char(self) => EscapeDefaultState::Char(self),
+            _ if is_printable(self) => EscapeDefaultState::Char(self),
             _ => EscapeDefaultState::Unicode(self.escape_unicode()),
         };
         EscapeDebug(EscapeDefault { state: init_state })
@@ -542,6 +536,11 @@ impl CharExt for char {
                     dst.len())
             }
         }
+    }
+
+    #[inline]
+    fn is_combining(self) -> bool {
+        general_category::Mn(self)
     }
 }
 
