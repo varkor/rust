@@ -149,7 +149,7 @@ impl<'b, 'a, 'tcx:'b> ConstPropagator<'b, 'a, 'tcx> {
             // evaluate the promoted and replace the constant with the evaluated result
             Literal::Promoted { index } => {
                 let generics = self.tcx.generics_of(self.source.def_id);
-                if generics.has_type_parameters(self.tcx) {
+                if generics.requires_monomorphization(self.tcx) {
                     // FIXME: can't handle code with generics
                     return None;
                 }
@@ -253,7 +253,7 @@ impl<'b, 'a, 'tcx:'b> ConstPropagator<'b, 'a, 'tcx> {
                     self.source.def_id
                 };
                 let generics = self.tcx.generics_of(def_id);
-                if generics.has_type_parameters(self.tcx) {
+                if generics.requires_monomorphization(self.tcx) {
                     // FIXME: can't handle code with generics
                     return None;
                 }
@@ -281,7 +281,7 @@ impl<'b, 'a, 'tcx:'b> ConstPropagator<'b, 'a, 'tcx> {
                     self.source.def_id
                 };
                 let generics = self.tcx.generics_of(def_id);
-                if generics.has_type_parameters(self.tcx) {
+                if generics.requires_monomorphization(self.tcx) {
                     // FIXME: can't handle code with generics
                     return None;
                 }
