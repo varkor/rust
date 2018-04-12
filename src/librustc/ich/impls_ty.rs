@@ -729,7 +729,7 @@ impl<'a> HashStable<StableHashingContext<'a>> for ty::Generics {
     }
 }
 
-impl_stable_hash_for!(enum ty::GenericParam {
+impl_stable_hash_for!(enum ty::GenericParamDef {
     Lifetime(lt),
     Type(ty)
 });
