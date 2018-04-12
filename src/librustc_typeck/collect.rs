@@ -180,7 +180,7 @@ impl<'a, 'tcx> AstConv<'tcx, 'tcx> for ItemCtxt<'a, 'tcx> {
         self.tcx.at(span).type_param_predicates((self.item_def_id, def_id))
     }
 
-    fn re_infer(&self, _span: Span, _def: Option<&ty::RegionParameterDef>)
+    fn re_infer(&self, _span: Span, _def: Option<&ty::RegionParamDef>)
                 -> Option<ty::Region<'tcx>> {
         None
     }
@@ -839,7 +839,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                     // the node id for the Self type parameter.
                     let param_id = item.id;
 
-                    opt_self = Some(ty::TypeParameterDef {
+                    opt_self = Some(ty::TypeParamDef {
                         index: 0,
                         name: keywords::SelfType.name().as_str(),
                         def_id: tcx.hir.local_def_id(param_id),
@@ -885,7 +885,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
     let early_lifetimes = early_bound_lifetimes_from_generics(tcx, ast_generics);
     let regions = early_lifetimes.enumerate().map(|(i, l)| {
-        ty::RegionParameterDef {
+        ty::RegionParamDef {
             name: l.lifetime.name.name().as_str(),
             index: own_start + i as u32,
             def_id: tcx.hir.local_def_id(l.lifetime.id),
@@ -914,7 +914,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             }
         }
 
-        ty::TypeParameterDef {
+        ty::TypeParamDef {
             index: type_start + i as u32,
             name: p.name.as_str(),
             def_id: tcx.hir.local_def_id(p.id),
@@ -933,7 +933,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     // and we don't do that for closures.
     if let NodeExpr(&hir::Expr { node: hir::ExprClosure(..), .. }) = node {
         // add a dummy parameter for the closure kind
-        types.push(ty::TypeParameterDef {
+        types.push(ty::TypeParamDef {
             index: type_start,
             name: Symbol::intern("<closure_kind>").as_str(),
             def_id,
@@ -944,7 +944,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         });
 
         // add a dummy parameter for the closure signature
-        types.push(ty::TypeParameterDef {
+        types.push(ty::TypeParamDef {
             index: type_start + 1,
             name: Symbol::intern("<closure_signature>").as_str(),
             def_id,
@@ -955,7 +955,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         });
 
         tcx.with_freevars(node_id, |fv| {
-            types.extend(fv.iter().zip(2..).map(|(_, i)| ty::TypeParameterDef {
+            types.extend(fv.iter().zip(2..).map(|(_, i)| ty::TypeParamDef {
                 index: type_start + i,
                 name: Symbol::intern("<upvar>").as_str(),
                 def_id,
