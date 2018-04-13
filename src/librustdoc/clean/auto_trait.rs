@@ -402,7 +402,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
             });
 
             let names_map: FxHashMap<String, Lifetime> = generics
-                .lifetimes()
+                .lifetimes_depr()
                 .map(|l| (l.name.to_string(), l.clean(self.cx)))
                 .collect();
 
