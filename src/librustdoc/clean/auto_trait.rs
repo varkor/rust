@@ -402,8 +402,15 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
             });
 
             let names_map: FxHashMap<String, Lifetime> = generics
-                .lifetimes_depr()
-                .map(|l| (l.name.to_string(), l.clean(self.cx)))
+                .params
+                .iter()
+                .filter_map(|param| {
+                    if let ty::GenericParamDef::Lifetime(lt) = param {
+                        Some((lt.name.to_string(), lt.clean(self.cx)))
+                    } else {
+                        None
+                    }
+                })
                 .collect();
 
             let body_ids: FxHashSet<_> = infcx
