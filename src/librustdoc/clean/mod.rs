@@ -2681,7 +2681,7 @@ impl Clean<Type> for hir::Ty {
                         let mut indices = FxHashMap();
                         for param in generics.params.iter() {
                             match param {
-                                GenericParamDef::Type(ty_param) => {
+                                hir::GenericParam::Type(ty_param) => {
                                     let i = indices.entry(Kind::Type).or_insert(0);
                                     let ty_param_def =
                                         Def::TyParam(cx.tcx.hir.local_def_id(ty_param.id));
@@ -2693,7 +2693,7 @@ impl Clean<Type> for hir::Ty {
                                     }
                                     *i += 1;
                                 }
-                                GenericParamDef::Lifetime(lt_param) => {
+                                hir::GenericParam::Lifetime(lt_param) => {
                                     let i = indices.entry(Kind::Type).or_insert(0);
                                     if let Some(lt) = provided_params.lifetimes.get(*i).cloned() {
                                         if !lt.is_elided() {
