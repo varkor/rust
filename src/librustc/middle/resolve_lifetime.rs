@@ -20,7 +20,7 @@ use hir::def::Def;
 use hir::def_id::{CrateNum, DefId, LocalDefId, LOCAL_CRATE};
 use hir::ItemLocalId;
 use hir::LifetimeName;
-use ty::{self, TyCtxt, GenericParamDef};
+use ty::{self, TyCtxt, GenericParamDefKind};
 
 use std::cell::Cell;
 use std::mem::replace;
@@ -1591,9 +1591,11 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                             .params
                             .iter()
                             .filter_map(|param| {
-                                match *param {
-                                    GenericParamDef::Type(ty) => Some(ty.object_lifetime_default),
-                                    GenericParamDef::Lifetime(_) => None,
+                                match param.kind {
+                                    GenericParamDefKind::Type(ty) => {
+                                        Some(ty.object_lifetime_default)
+                                    }
+                                    GenericParamDefKind::Lifetime(_) => None,
                                 }
                             })
                             .collect()
