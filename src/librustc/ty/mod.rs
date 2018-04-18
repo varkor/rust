@@ -797,7 +797,7 @@ pub struct Generics {
     pub params: Vec<GenericParamDef>,
 
     /// Reverse map to each `TypeParamDef`'s `index` field
-    pub type_param_to_index: FxHashMap<DefId, u32>,
+    pub param_def_id_to_index: FxHashMap<DefId, u32>,
 
     pub has_self: bool,
     pub has_late_bound_regions: Option<Span>,
