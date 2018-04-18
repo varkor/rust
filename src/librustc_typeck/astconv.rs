@@ -119,8 +119,13 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                 tcx.mk_region(ty::ReLateBound(debruijn, ty::BrAnon(index)))
             }
 
-            Some(rl::Region::EarlyBound(index, id, _)) => {
+            Some(rl::Region::EarlyBound(id, _)) => {
                 let name = lifetime_name(id);
+                let node_id = tcx.hir.as_local_node_id(id).unwrap();
+                let item_id = tcx.hir.get_parent_node(node_id);
+                let item_def_id = tcx.hir.local_def_id(item_id);
+                let generics = tcx.generics_of(item_def_id);
+                let index = generics.param_def_id_to_index[&tcx.hir.local_def_id(node_id)];
                 tcx.mk_region(ty::ReEarlyBound(ty::EarlyBoundRegion {
                     def_id: id,
                     index,

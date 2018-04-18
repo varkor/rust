@@ -787,7 +787,7 @@ impl_stable_hash_for!(enum ::middle::resolve_lifetime::LifetimeDefOrigin {
 
 impl_stable_hash_for!(enum ::middle::resolve_lifetime::Region {
     Static,
-    EarlyBound(index, decl, is_in_band),
+    EarlyBound(decl, is_in_band),
     LateBound(db_index, decl, is_in_band),
     LateBoundAnon(db_index, anon_index),
     Free(call_site_scope_data, decl)

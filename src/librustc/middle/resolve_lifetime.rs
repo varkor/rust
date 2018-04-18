@@ -70,7 +70,6 @@ pub enum LifetimeUseSet<'tcx> {
 pub enum Region {
     Static,
     EarlyBound(
-        /* index */ u32,
         /* lifetime decl */ DefId,
         LifetimeDefOrigin,
     ),
@@ -86,15 +85,12 @@ pub enum Region {
 impl Region {
     fn early(
         hir_map: &Map,
-        index: &mut u32,
         def: &hir::LifetimeDef,
     ) -> (hir::LifetimeName, Region) {
-        let i = *index;
-        *index += 1;
         let def_id = hir_map.local_def_id(def.lifetime.id);
         let origin = LifetimeDefOrigin::from_is_in_band(def.in_band);
-        debug!("Region::early: index={} def_id={:?}", i, def_id);
-        (def.lifetime.name, Region::EarlyBound(i, def_id, origin))
+        debug!("Region::early: def_id={:?}", def_id);
+        (def.lifetime.name, Region::EarlyBound(def_id, origin))
     }
 
     fn late(hir_map: &Map, def: &hir::LifetimeDef) -> (hir::LifetimeName, Region) {
@@ -114,8 +110,7 @@ impl Region {
     fn id(&self) -> Option<DefId> {
         match *self {
             Region::Static | Region::LateBoundAnon(..) => None,
-
-            Region::EarlyBound(_, id, _) | Region::LateBound(_, id, _) | Region::Free(_, id) => {
+            Region::EarlyBound(id, _) | Region::LateBound(_, id, _) | Region::Free(_, id) => {
                 Some(id)
             }
         }
@@ -152,11 +147,17 @@ impl Region {
         }
     }
 
-    fn subst(self, params: &[hir::Lifetime], map: &NamedRegionMap) -> Option<Region> {
-        if let Region::EarlyBound(index, _, _) = self {
-            params
-                .get(index as usize)
-                .and_then(|lifetime| map.defs.get(&lifetime.id).cloned())
+    fn subst<'a, 'tcx>(self,
+                       tcx: TyCtxt<'a, 'tcx, 'tcx>,
+                       params: &[hir::Lifetime],
+                       map: &NamedRegionMap) -> Option<Region> {
+        if let Region::EarlyBound(id, _) = self {
+            let node_id = tcx.hir.as_local_node_id(id).unwrap();
+            let item_id = tcx.hir.get_parent_node(node_id);
+            let item_def_id = tcx.hir.local_def_id(item_id);
+            let generics = tcx.generics_of(item_def_id);
+            let index = generics.param_def_id_to_index[&tcx.hir.local_def_id(node_id)];
+            params.get(index as usize).and_then(|lifetime| map.defs.get(&lifetime.id).cloned())
         } else {
             Some(self)
         }
@@ -505,7 +506,10 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                 };
                 let lifetimes = generics
                     .lifetimes()
-                    .map(|def| Region::early(&self.tcx.hir, &mut index, def))
+                    .map(|def| {
+                        index += 1;
+                        Region::early(&self.tcx.hir, def)
+                    })
                     .collect();
                 let next_early_index = index + generics.ty_params().count() as u32;
                 let scope = Scope::Binder {
@@ -651,7 +655,8 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                 let mut elision = None;
                 let mut lifetimes = FxHashMap();
                 for lt_def in generics.lifetimes() {
-                    let (lt_name, region) = Region::early(&self.tcx.hir, &mut index, &lt_def);
+                    index += 1;
+                    let (lt_name, region) = Region::early(&self.tcx.hir, &lt_def);
                     if let hir::LifetimeName::Underscore = lt_name {
                         // Pick the elided lifetime "definition" if one exists and use it to make
                         // an elision scope.
@@ -719,7 +724,10 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                 debug!("visit_ty: index = {}", index);
                 let lifetimes = generics
                     .lifetimes()
-                    .map(|lt_def| Region::early(&self.tcx.hir, &mut index, lt_def))
+                    .map(|lt_def| {
+                        index += 1;
+                        Region::early(&self.tcx.hir, lt_def)
+                    })
                     .collect();
 
                 let next_early_index = index + generics.ty_params().count() as u32;
@@ -765,7 +773,10 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                 debug!("visit_ty: index = {}", index);
                 let lifetimes = generics
                     .lifetimes()
-                    .map(|lt_def| Region::early(&self.tcx.hir, &mut index, lt_def))
+                    .map(|lt_def| {
+                        index += 1;
+                        Region::early(&self.tcx.hir, lt_def)
+                    })
                     .collect();
 
                 let next_early_index = index + generics.ty_params().count() as u32;
@@ -1147,14 +1158,10 @@ fn compute_object_lifetime_defaults(
                         .map(|set| match *set {
                             Set1::Empty => "BaseDefault".to_string(),
                             Set1::One(Region::Static) => "'static".to_string(),
-                            Set1::One(Region::EarlyBound(i, _, _)) => generics
-                                .lifetimes()
-                                .nth(i as usize)
-                                .unwrap()
-                                .lifetime
-                                .name
-                                .name()
-                                .to_string(),
+                            Set1::One(Region::EarlyBound(id, _)) => {
+                                let node_id = tcx.hir.as_local_node_id(id).unwrap();
+                                tcx.hir.name(node_id).as_str().to_string()
+                            }
                             Set1::One(_) => bug!(),
                             Set1::Many => "Ambiguous".to_string(),
                         })
@@ -1225,12 +1232,11 @@ fn object_lifetime_defaults_for_item(
                     } else {
                         generics
                             .lifetimes()
-                            .enumerate()
-                            .find(|&(_, def)| def.lifetime.name == name)
-                            .map_or(Set1::Many, |(i, def)| {
+                            .find(|&def| def.lifetime.name == name)
+                            .map_or(Set1::Many, |def| {
                                 let def_id = tcx.hir.local_def_id(def.lifetime.id);
                                 let origin = LifetimeDefOrigin::from_is_in_band(def.in_band);
-                                Set1::One(Region::EarlyBound(i as u32, def_id, origin))
+                                Set1::One(Region::EarlyBound(def_id, origin))
                             })
                     }
                 }
@@ -1359,7 +1365,8 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                 if self.map.late_bound.contains(&def.lifetime.id) {
                     Region::late(&self.tcx.hir, def)
                 } else {
-                    Region::early(&self.tcx.hir, &mut index, def)
+                    index += 1;
+                    Region::early(&self.tcx.hir, def)
                 }
             })
             .collect();
@@ -1483,7 +1490,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             // Check for fn-syntax conflicts with in-band lifetime definitions
             if self.is_in_fn_syntax {
                 match def {
-                    Region::EarlyBound(_, _, LifetimeDefOrigin::InBand)
+                    Region::EarlyBound(_, LifetimeDefOrigin::InBand)
                     | Region::LateBound(_, _, LifetimeDefOrigin::InBand) => {
                         struct_span_err!(
                             self.tcx.sess,
@@ -1496,7 +1503,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     }
 
                     Region::Static
-                    | Region::EarlyBound(_, _, LifetimeDefOrigin::Explicit)
+                    | Region::EarlyBound(_, LifetimeDefOrigin::Explicit)
                     | Region::LateBound(_, _, LifetimeDefOrigin::Explicit)
                     | Region::LateBoundAnon(..)
                     | Region::Free(..) => {}
@@ -1580,10 +1587,10 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             };
 
             let map = &self.map;
+            let tcx = self.tcx;
             let unsubst = if let Some(id) = self.tcx.hir.as_local_node_id(def_id) {
                 &map.object_lifetime_defaults[&id]
             } else {
-                let tcx = self.tcx;
                 self.xcrate_object_lifetime_defaults
                     .entry(def_id)
                     .or_insert_with(|| {
@@ -1607,7 +1614,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     } else {
                         Some(Region::Static)
                     },
-                    Set1::One(r) => r.subst(&params.lifetimes, map),
+                    Set1::One(r) => r.subst(tcx, &params.lifetimes, map),
                     Set1::Many => None,
                 })
                 .collect()
@@ -2231,7 +2238,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
 
             Region::Free(_, def_id)
             | Region::LateBound(_, def_id, _)
-            | Region::EarlyBound(_, def_id, _) => {
+            | Region::EarlyBound(def_id, _) => {
                 // A lifetime declared by the user.
                 if !self.lifetime_uses.contains_key(&def_id) {
                     self.lifetime_uses
