@@ -37,6 +37,7 @@ use mir::interpret::{Value, PrimVal};
 use ty::subst::{Kind, Substs, Subst};
 use ty::ReprOptions;
 use ty::Instance;
+use ty::GenericParamDefKind;
 use traits;
 use traits::{Clause, Clauses, Goal, Goals};
 use ty::{self, Ty, TypeAndMut};
@@ -2337,9 +2338,14 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         let generics = self.generics_of(def_id);
         let mut substs = vec![Kind::from(ty)];
         // Add defaults for other generic params if there are some.
-        for def in generics.types.iter().skip(1) {
-            assert!(def.has_default);
-            let ty = self.type_of(def.def_id).subst(self, &substs);
+        for (def_id, has_default) in generics.params.iter().filter_map(|param| {
+            match param.kind {
+                GenericParamDefKind::Type(ty) => Some((param.def_id, ty.has_default)),
+                GenericParamDefKind::Lifetime(_) => None
+            }
+        }).skip(1) {
+            assert!(has_default);
+            let ty = self.type_of(def_id).subst(self, &substs);
             substs.push(ty.into());
         }
         let substs = self.mk_substs(substs.into_iter());
