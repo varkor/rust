@@ -34,7 +34,7 @@ use middle::resolve_lifetime::{self, ObjectLifetimeDefault};
 use middle::stability;
 use mir::{self, Mir, interpret};
 use mir::interpret::{Value, PrimVal};
-use ty::subst::{Kind, UnpackedKind, Substs, Subst};
+use ty::subst::{Kind, Substs, Subst};
 use ty::ReprOptions;
 use ty::Instance;
 use traits;
@@ -2340,10 +2340,10 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                 GenericParamDefKind::Lifetime => bug!(),
                 GenericParamDefKind::Type(ty_param) => {
                     if param.index == 0 {
-                        UnpackedKind::Type(ty)
+                        ty.into()
                     } else {
                         assert!(ty_param.has_default);
-                        UnpackedKind::Type(self.type_of(param.def_id).subst(self, substs))
+                        self.type_of(param.def_id).subst(self, substs).into()
                     }
                 }
             }
