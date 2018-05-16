@@ -1222,11 +1222,11 @@ impl<'a> State<'a> {
         self.s.word(".")?;
         self.print_name(segment.name)?;
 
-        segment.with_args(|args| {
-            if !args.args.is_empty() ||
-                !args.bindings.is_empty()
+        segment.with_generic_args(|generic_args| {
+            if !generic_args.args.is_empty() ||
+                !generic_args.bindings.is_empty()
             {
-                self.print_generic_args(&args, segment.infer_types, true)
+                self.print_generic_args(&generic_args, segment.infer_types, true)
             } else {
                 Ok(())
             }
@@ -1594,10 +1594,10 @@ impl<'a> State<'a> {
             if segment.name != keywords::CrateRoot.name() &&
                segment.name != keywords::DollarCrate.name() {
                self.print_name(segment.name)?;
-               segment.with_args(|parameters| {
-                   self.print_generic_args(parameters,
-                                              segment.infer_types,
-                                              colons_before_params)
+               segment.with_generic_args(|generic_args| {
+                   self.print_generic_args(generic_args,
+                                           segment.infer_types,
+                                           colons_before_params)
                })?;
             }
         }
@@ -1626,10 +1626,10 @@ impl<'a> State<'a> {
                     if segment.name != keywords::CrateRoot.name() &&
                        segment.name != keywords::DollarCrate.name() {
                         self.print_name(segment.name)?;
-                        segment.with_args(|parameters| {
-                            self.print_generic_args(parameters,
-                                                       segment.infer_types,
-                                                       colons_before_params)
+                        segment.with_generic_args(|generic_args| {
+                            self.print_generic_args(generic_args,
+                                                    segment.infer_types,
+                                                    colons_before_params)
                         })?;
                     }
                 }
@@ -1638,10 +1638,10 @@ impl<'a> State<'a> {
                 self.s.word("::")?;
                 let item_segment = path.segments.last().unwrap();
                 self.print_name(item_segment.name)?;
-                item_segment.with_args(|parameters| {
-                    self.print_generic_args(parameters,
-                                               item_segment.infer_types,
-                                               colons_before_params)
+                item_segment.with_generic_args(|generic_args| {
+                    self.print_generic_args(generic_args,
+                                            item_segment.infer_types,
+                                            colons_before_params)
                 })
             }
             hir::QPath::TypeRelative(ref qself, ref item_segment) => {
@@ -1650,10 +1650,10 @@ impl<'a> State<'a> {
                 self.s.word(">")?;
                 self.s.word("::")?;
                 self.print_name(item_segment.name)?;
-                item_segment.with_args(|parameters| {
-                    self.print_generic_args(parameters,
-                                               item_segment.infer_types,
-                                               colons_before_params)
+                item_segment.with_generic_args(|generic_args| {
+                    self.print_generic_args(generic_args,
+                                            item_segment.infer_types,
+                                            colons_before_params)
                 })
             }
         }
@@ -1687,11 +1687,11 @@ impl<'a> State<'a> {
             let elide_lifetimes = generic_args.lifetimes().all(|lt| lt.is_elided());
             if !elide_lifetimes {
                 start_or_comma(self)?;
-                self.commasep(Inconsistent, &generic_args.args, |s, p| {
-                    match p {
+                self.commasep(Inconsistent, &generic_args.args, |s, generic_arg| {
+                    match generic_arg {
                         GenericArg::Lifetime(lt) => s.print_lifetime(lt),
                         GenericArg::Type(ty) => s.print_type(ty),
-                    }
+                }
                 })?;
             } else if generic_args.types().count() != 0 {
                 start_or_comma(self)?;
