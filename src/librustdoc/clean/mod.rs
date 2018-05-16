@@ -2709,7 +2709,7 @@ impl Clean<Type> for hir::Ty {
                     let provided_params = &path.segments.last().unwrap();
                     let mut ty_substs = FxHashMap();
                     let mut lt_substs = FxHashMap();
-                    provided_params.with_parameters(|provided_params| {
+                    provided_params.with_args(|provided_params| {
                         let mut indices = GenericParamCount {
                             lifetimes: 0,
                             types: 0

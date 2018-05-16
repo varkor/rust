@@ -1596,13 +1596,16 @@ impl<'a> LoweringContext<'a> {
         };
 
         if !generic_args.parenthesized && generic_args.lifetimes().count() == 0 {
-            generic_args.args = (0..expected_lifetimes).map(|_| {
-                GenericArg::Lifetime(self.elided_lifetime(path_span))
-            }).chain(generic_args.args.into_iter()).collect();
+            generic_args.args =
+                self.elided_path_lifetimes(path_span, expected_lifetimes)
+                    .into_iter()
+                    .map(|lt| GenericArg::Lifetime(lt))
+                    .chain(generic_args.args.into_iter())
+                    .collect();
         }
 
         hir::PathSegment::new(
-            self.lower_ident(segment.identifier),
+            self.lower_ident(segment.ident),
             generic_args,
             infer_types
         )

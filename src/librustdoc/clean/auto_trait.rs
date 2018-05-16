@@ -245,8 +245,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
     }
 
     fn generics_to_path_params(&self, generics: ty::Generics) -> hir::GenericArgs {
-        let mut lifetimes = vec![];
-        let mut types = vec![];
+        let mut args = vec![];
 
         for param in generics.params.iter() {
             match param.kind {
@@ -257,18 +256,17 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                         hir::LifetimeName::Name(param.name.as_symbol())
                     };
 
-                    lifetimes.push(hir::Lifetime {
+                    args.push(hir::GenericArg::Lifetime(hir::Lifetime {
                         id: ast::DUMMY_NODE_ID,
                         span: DUMMY_SP,
                         name,
-                    });
+                    }));
                 }
                 ty::GenericParamDefKind::Type {..} => {
-                    types.push(P(self.ty_param_to_ty(param.clone())));
+                    args.push(hir::GenericArg::Type(P(self.ty_param_to_ty(param.clone()))));
                 }
             }
         }
-        let args = lifetimes.iter().chain(types).collect();
 
         hir::GenericArgs {
             args: HirVec::from_vec(args),

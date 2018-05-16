@@ -42,7 +42,7 @@ pub fn expand_option_env<'cx>(cx: &'cx mut ExtCtxt,
                                      vec![GenericArg::Type(cx.ty_rptr(sp,
                                                      cx.ty_ident(sp, Ident::from_str("str")),
                                                      Some(lt),
-                                                     ast::Mutability::Immutable)],
+                                                     ast::Mutability::Immutable))],
                                      Vec::new()))
         }
         Ok(s) => {

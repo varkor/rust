@@ -28,7 +28,6 @@ use rustc_data_structures::sync::Lrc;
 use session::Session;
 use std::cell::Cell;
 use std::mem::replace;
-use std::slice;
 use syntax::ast;
 use syntax::attr;
 use syntax::ptr::P;
@@ -589,7 +588,7 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                         // resolved the same as the `'_` in `&'_ Foo`.
                         //
                         // cc #48468
-                        self.resolve_elided_lifetimes(slice::from_ref(lifetime), false)
+                        self.resolve_elided_lifetimes(vec![lifetime], false)
                     }
                     LifetimeName::Fresh(_) | LifetimeName::Static | LifetimeName::Name(_) => {
                         // If the user wrote an explicit name, use that.

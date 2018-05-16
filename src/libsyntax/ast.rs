@@ -140,7 +140,7 @@ pub struct PathSegment {
 
 impl PathSegment {
     pub fn from_ident(ident: Ident) -> Self {
-        PathSegment { ident, parameters: None }
+        PathSegment { ident, args: None }
     }
     pub fn crate_root(span: Span) -> Self {
         PathSegment::from_ident(Ident::new(keywords::CrateRoot.name(), span))

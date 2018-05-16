@@ -883,21 +883,6 @@ pub struct GenericParamCount {
     pub types: usize,
 }
 
-#[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub enum GenericParam {
-    Lifetime(RegionParameterDef),
-    Type(TypeParameterDef),
-}
-
-impl GenericParam {
-    pub fn index(&self) -> u32 {
-        match self {
-            GenericParam::Lifetime(lt) => lt.index,
-            GenericParam::Type(ty)     => ty.index,
-        }
-    }
-}
-
 /// Information about the formal type/lifetime parameters associated
 /// with an item or method. Analogous to hir::Generics.
 ///
@@ -950,38 +935,6 @@ impl<'a, 'gcx, 'tcx> Generics {
         if let Some(parent_def_id) = self.parent {
             let parent = tcx.generics_of(parent_def_id);
             parent.requires_monomorphization(tcx)
-        } else {
-            false
-        }
-    }
-
-    pub fn lifetimes(&self) -> impl DoubleEndedIterator<Item = &RegionParameterDef> {
-        self.params.iter().filter_map(|p| {
-            if let GenericParam::Lifetime(lt) = p {
-                Some(lt)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn types(&self) -> impl DoubleEndedIterator<Item = &TypeParameterDef> {
-        self.params.iter().filter_map(|p| {
-            if let GenericParam::Type(ty) = p {
-                Some(ty)
-            } else {
-                None
-            }
-        })
-    }
-
-    pub fn has_type_parameters(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> bool {
-        if self.types().count() != 0 {
-            return true;
-        }
-        if let Some(parent_def_id) = self.parent {
-            let parent = tcx.generics_of(parent_def_id);
-            parent.has_type_parameters(tcx)
         } else {
             false
         }

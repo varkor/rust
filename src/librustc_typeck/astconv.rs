@@ -214,8 +214,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
         // region with the current anon region binding (in other words,
         // whatever & would get replaced with).
         let decl_generics = tcx.generics_of(def_id);
-        let ty_provided = args.types().len();
-        let lt_provided = args.lifetimes().len();
+        let ty_provided = args.types().count();
+        let lt_provided = args.lifetimes().count();
 
         let mut lt_accepted = 0;
         let mut ty_params = ParamRange { required: 0, accepted: 0 };
@@ -269,7 +269,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
             match param.kind {
                 GenericParamDefKind::Lifetime => {
                     let i = param.index as usize - own_self;
-                    if let Some(lifetime) = args.lifetimes().get(i) {
+                    if let Some(lifetime) = args.lifetimes().nth(i) {
                         self.ast_region_to_region(lifetime, Some(param)).into()
                     } else {
                         tcx.types.re_static.into()
@@ -286,7 +286,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
                     let i = i - (lt_accepted + own_self);
                     if i < ty_provided {
                         // A provided type parameter.
-                        self.ast_ty_to_ty(&args.types()[i]).into()
+                        self.ast_ty_to_ty(&args.types().nth(i).unwrap()).into()
                     } else if infer_types {
                         // No type parameters were provided, we can infer all.
                         if !default_needs_object_self(param) {
