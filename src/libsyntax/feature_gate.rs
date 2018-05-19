@@ -469,6 +469,9 @@ declare_features! (
 
     // 'a: { break 'a; }
     (active, label_break_value, "1.28.0", Some(48594), None),
+
+    // Integer match exhaustiveness checking
+    (active, exhaustive_integer_patterns, "1.28.0", Some(50907), None),
 );
 
 declare_features! (
