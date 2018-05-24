@@ -12,8 +12,6 @@ use self::Constructor::*;
 use self::Usefulness::*;
 use self::WitnessPreference::*;
 
-use interpret;
-
 use rustc::middle::const_val::ConstVal;
 
 use rustc_data_structures::fx::FxHashMap;
@@ -683,19 +681,14 @@ impl<'tcx> IntRange<'tcx> {
             ty::TyInt(_) => {
                 // FIXME(49937): refactor these bit manipulations into interpret.
                 let bits = tcx.layout_of(ty::ParamEnv::reveal_all().and(ty))
-                                 .unwrap().size.bits() as u128;
+                              .unwrap().size.bits() as u128;
                 let min = 1u128 << (bits - 1);
                 let mask = !0u128 >> (128 - bits);
                 if encode {
                     let offset = |x: u128| x.wrapping_sub(min) & mask;
                     (offset(lo), offset(hi))
                 } else {
-                    let offset = |x: u128| {
-                        // FIXME: this shouldn't be necessary once `print_miri_value`
-                        // sign-extends `TyInt`.
-                        interpret::sign_extend(tcx, x.wrapping_add(min) & mask, ty)
-                                  .expect("layout error for TyInt")
-                    };
+                    let offset = |x: u128| x.wrapping_add(min) & mask;
                     (offset(lo), offset(hi))
                 }
             }

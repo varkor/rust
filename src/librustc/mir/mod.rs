@@ -28,6 +28,7 @@ use mir::interpret::{Value, PrimVal, EvalErrorKind};
 use ty::subst::{Subst, Substs};
 use ty::{self, AdtDef, CanonicalTy, ClosureSubsts, GeneratorSubsts, Region, Ty, TyCtxt};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
+use ty::layout::{Integer, IntegerExt};
 use util::ppaux;
 use std::slice;
 use hir::{self, InlineAsm};
@@ -38,6 +39,7 @@ use std::{iter, mem, option, u32};
 use std::ops::{Index, IndexMut};
 use std::vec::IntoIter;
 use syntax::ast::{self, Name};
+use syntax::attr::SignedInt;
 use syntax::symbol::InternedString;
 use syntax_pos::{Span, DUMMY_SP};
 use rustc_apfloat::ieee::{Single, Double};
@@ -1890,7 +1892,7 @@ pub fn fmt_const_val<W: Write>(fmt: &mut W, const_val: &ty::Const) -> fmt::Resul
     }
 }
 
-pub fn print_miri_value<W: Write>(value: Value, ty: Ty, f: &mut W) -> fmt::Result {
+pub fn print_miri_value<'tcx, W: Write>(value: Value, ty: Ty<'tcx>, f: &mut W) -> fmt::Result {
     use ty::TypeVariants::*;
     match (value, &ty.sty) {
         (Value::ByVal(PrimVal::Bytes(0)), &TyBool) => write!(f, "false"),
@@ -1900,8 +1902,14 @@ pub fn print_miri_value<W: Write>(value: Value, ty: Ty, f: &mut W) -> fmt::Resul
         (Value::ByVal(PrimVal::Bytes(bits)), &TyFloat(ast::FloatTy::F64)) =>
             write!(f, "{}f64", Double::from_bits(bits)),
         (Value::ByVal(PrimVal::Bytes(n)), &TyUint(ui)) => write!(f, "{:?}{}", n, ui),
-        // FIXME: this should be sign extending n.
-        (Value::ByVal(PrimVal::Bytes(n)), &TyInt(i)) => write!(f, "{:?}{}", n as i128, i),
+        (Value::ByVal(PrimVal::Bytes(n)), &TyInt(i)) => {
+            let bits = ty::tls::with(|tcx| {
+                Integer::from_attr(tcx, SignedInt(i)).size().bits()
+            });
+            let shift = 128 - bits as u128;
+            // FIXME(49937): refactor these bit manipulations into interpret.
+            write!(f, "{:?}{}", ((n << shift) as i128) >> shift, i)
+        }
         (Value::ByVal(PrimVal::Bytes(n)), &TyChar) =>
             write!(f, "{:?}", ::std::char::from_u32(n as u32).unwrap()),
         (Value::ByVal(PrimVal::Undef), &TyFnDef(did, _)) =>
