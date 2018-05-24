@@ -1900,6 +1900,7 @@ pub fn print_miri_value<W: Write>(value: Value, ty: Ty, f: &mut W) -> fmt::Resul
         (Value::ByVal(PrimVal::Bytes(bits)), &TyFloat(ast::FloatTy::F64)) =>
             write!(f, "{}f64", Double::from_bits(bits)),
         (Value::ByVal(PrimVal::Bytes(n)), &TyUint(ui)) => write!(f, "{:?}{}", n, ui),
+        // FIXME: this should be sign extending n.
         (Value::ByVal(PrimVal::Bytes(n)), &TyInt(i)) => write!(f, "{:?}{}", n as i128, i),
         (Value::ByVal(PrimVal::Bytes(n)), &TyChar) =>
             write!(f, "{:?}", ::std::char::from_u32(n as u32).unwrap()),
