@@ -21,8 +21,8 @@ use ast::EnumDef;
 use ast::{Expr, ExprKind, RangeLimits};
 use ast::{Field, FnDecl};
 use ast::{ForeignItem, ForeignItemKind, FunctionRetTy};
-use ast::GenericParam;
-use ast::GenericArg;
+use ast::GenericParamAST;
+use ast::GenericArgAST;
 use ast::{Ident, ImplItem, IsAuto, Item, ItemKind};
 use ast::{Label, Lifetime, LifetimeDef, Lit, LitKind, UintTy};
 use ast::Local;
@@ -1321,7 +1321,7 @@ impl<'a> Parser<'a> {
     }
 
     /// parse a TyKind::BareFn type:
-    pub fn parse_ty_bare_fn(&mut self, generic_params: Vec<GenericParam>)
+    pub fn parse_ty_bare_fn(&mut self, generic_params: Vec<GenericParamAST>)
                             -> PResult<'a, TyKind> {
         /*
 
@@ -1641,7 +1641,7 @@ impl<'a> Parser<'a> {
         Ok(P(ty))
     }
 
-    fn parse_remaining_bounds(&mut self, generic_params: Vec<GenericParam>, path: ast::Path,
+    fn parse_remaining_bounds(&mut self, generic_params: Vec<GenericParamAST>, path: ast::Path,
                               lo: Span, parse_plus: bool) -> PResult<'a, TyKind> {
         let poly_trait_ref = PolyTraitRef::new(generic_params, path, lo.to(self.prev_span));
         let mut bounds = vec![TraitTyParamBound(poly_trait_ref, TraitBoundModifier::None)];
@@ -4887,7 +4887,7 @@ impl<'a> Parser<'a> {
 
     /// Parses (possibly empty) list of lifetime and type parameters, possibly including
     /// trailing comma and erroneous trailing attributes.
-    pub fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
+    pub fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParamAST>> {
         let mut params = Vec::new();
         let mut seen_ty_param = false;
         loop {
@@ -4900,7 +4900,7 @@ impl<'a> Parser<'a> {
                 } else {
                     Vec::new()
                 };
-                params.push(ast::GenericParam::Lifetime(LifetimeDef {
+                params.push(ast::GenericParamAST::Lifetime(LifetimeDef {
                     attrs: attrs.into(),
                     lifetime,
                     bounds,
@@ -4911,7 +4911,7 @@ impl<'a> Parser<'a> {
                 }
             } else if self.check_ident() {
                 // Parse type parameter.
-                params.push(ast::GenericParam::Type(self.parse_ty_param(attrs)?));
+                params.push(ast::GenericParamAST::Type(self.parse_ty_param(attrs)?));
                 seen_ty_param = true;
             } else {
                 // Check for trailing attributes and stop parsing.
@@ -4961,7 +4961,7 @@ impl<'a> Parser<'a> {
     /// Parses (possibly empty) list of lifetime and type arguments and associated type bindings,
     /// possibly including trailing comma.
     fn parse_generic_args(&mut self)
-                          -> PResult<'a, (Vec<GenericArg>, Vec<TypeBinding>)> {
+                          -> PResult<'a, (Vec<GenericArgAST>, Vec<TypeBinding>)> {
         let mut args = Vec::new();
         let mut bindings = Vec::new();
         let mut seen_type = false;
@@ -4969,7 +4969,7 @@ impl<'a> Parser<'a> {
         loop {
             if self.check_lifetime() && self.look_ahead(1, |t| t != &token::BinOp(token::Plus)) {
                 // Parse lifetime argument.
-                args.push(GenericArg::Lifetime(self.expect_lifetime()));
+                args.push(GenericArgAST::Lifetime(self.expect_lifetime()));
                 if seen_type || seen_binding {
                     self.span_err(self.prev_span,
                         "lifetime parameters must be declared prior to type parameters");
@@ -4994,7 +4994,7 @@ impl<'a> Parser<'a> {
                     self.span_err(ty_param.span,
                         "type parameters must be declared prior to associated type bindings");
                 }
-                args.push(GenericArg::Type(ty_param));
+                args.push(GenericArgAST::Type(ty_param));
                 seen_type = true;
             } else {
                 break
@@ -5714,7 +5714,7 @@ impl<'a> Parser<'a> {
         Ok((keywords::Invalid.ident(), item_kind, Some(attrs)))
     }
 
-    fn parse_late_bound_lifetime_defs(&mut self) -> PResult<'a, Vec<GenericParam>> {
+    fn parse_late_bound_lifetime_defs(&mut self) -> PResult<'a, Vec<GenericParamAST>> {
         if self.eat_keyword(keywords::For) {
             self.expect_lt()?;
             let params = self.parse_generic_params()?;
