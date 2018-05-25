@@ -12,7 +12,6 @@ use rustc::hir::def_id::DefId;
 use rustc::middle::lang_items::DropInPlaceFnLangItem;
 use rustc::traits;
 use rustc::ty::adjustment::CustomCoerceUnsized;
-use rustc::ty::subst::Kind;
 use rustc::ty::{self, Ty, TyCtxt};
 
 pub use rustc::ty::Instance;

@@ -968,24 +968,33 @@ impl<'o, 'gcx: 'tcx, 'tcx> AstConv<'gcx, 'tcx>+'o {
     pub fn prohibit_type_params(&self, segments: &[hir::PathSegment]) {
         for segment in segments {
             segment.with_generic_args(|generic_args| {
-                for p in &generic_args.args {
-                    let (mut span_err, span, kind) = match p {
+                let mut err_for_lifetime = false;
+                let mut err_for_type = false;
+                for arg in &generic_args.args {
+                    let (mut span_err, span, kind) = match arg {
                         hir::GenericArg::Lifetime(lt) => {
+                            if err_for_lifetime { continue }
+                            err_for_lifetime = true;
                             (struct_span_err!(self.tcx().sess, lt.span, E0110,
-                                              "lifetime parameters are not allowed on this type"),
+                                            "lifetime parameters are not allowed on \
+                                                this type"),
                              lt.span,
                              "lifetime")
                         }
                         hir::GenericArg::Type(ty) => {
+                            if err_for_type { continue }
+                            err_for_type = true;
                             (struct_span_err!(self.tcx().sess, ty.span, E0109,
-                                              "type parameters are not allowed on this type"),
+                                            "type parameters are not allowed on this type"),
                              ty.span,
                              "type")
                         }
                     };
                     span_err.span_label(span, format!("{} parameter not allowed", kind))
                             .emit();
-                    break;
+                    if err_for_lifetime && err_for_type {
+                        break;
+                    }
                 }
                 for binding in &generic_args.bindings {
                     self.prohibit_projection(binding.span);
