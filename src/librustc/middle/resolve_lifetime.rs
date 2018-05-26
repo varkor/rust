@@ -2198,19 +2198,15 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
     fn check_lifetime_params(&mut self,
                              old_scope: ScopeRef,
                              params: &'tcx [hir::GenericParam]) {
-        let lifetimes: Vec<_> = params.iter().filter(|param| {
+        let lifetimes: Vec<_> = params.iter().filter_map(|param| {
             match param.kind {
-                GenericParamKind::Lifetime { .. } => true,
-                _ => false,
+                GenericParamKind::Lifetime { name, .. } => Some((param, name)),
+                _ => None,
             }
         }).collect();
-        for (i, lifetime_i) in lifetimes.iter().enumerate() {
-            for lifetime in &lifetimes {
-                let name = match lifetime.kind {
-                    GenericParamKind::Lifetime { name, .. } => name,
-                    _ => bug!(),
-                };
-                match name {
+        for (i, (lifetime_i, lifetime_i_name)) in lifetimes.iter().enumerate() {
+            for (lifetime, lifetime_name) in &lifetimes {
+                match lifetime_name {
                     hir::LifetimeName::Static | hir::LifetimeName::Underscore => {
                         let mut err = struct_span_err!(
                             self.tcx.sess,
@@ -2232,8 +2228,8 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             }
 
             // It is a hard error to shadow a lifetime within the same scope.
-            for lifetime_j in lifetimes.iter().skip(i + 1) {
-                if lifetime_i.name() == lifetime_j.name() {
+            for (lifetime_j, lifetime_j_name) in lifetimes.iter().skip(i + 1) {
+                if lifetime_i_name == lifetime_j_name {
                     struct_span_err!(
                         self.tcx.sess,
                         lifetime_j.span,
