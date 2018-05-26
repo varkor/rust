@@ -219,7 +219,7 @@ impl DefKey {
             DefPathData::Module(name) |
             DefPathData::MacroDef(name) |
             DefPathData::TypeParam(name) |
-            DefPathData::LifetimeDef(name) |
+            DefPathData::LifetimeParam(name) |
             DefPathData::EnumVariant(name) |
             DefPathData::Field(name) |
             DefPathData::GlobalMetaData(name) => {
@@ -381,7 +381,7 @@ pub enum DefPathData {
     /// A type parameter (generic parameter)
     TypeParam(InternedString),
     /// A lifetime definition
-    LifetimeDef(InternedString),
+    LifetimeParam(InternedString),
     /// A variant of a enum
     EnumVariant(InternedString),
     /// A struct field
@@ -644,7 +644,7 @@ impl DefPathData {
             Module(name) |
             MacroDef(name) |
             TypeParam(name) |
-            LifetimeDef(name) |
+            LifetimeParam(name) |
             EnumVariant(name) |
             Field(name) |
             GlobalMetaData(name) => Some(name),
@@ -670,7 +670,7 @@ impl DefPathData {
             Module(name) |
             MacroDef(name) |
             TypeParam(name) |
-            LifetimeDef(name) |
+            LifetimeParam(name) |
             EnumVariant(name) |
             Field(name) |
             GlobalMetaData(name) => {
