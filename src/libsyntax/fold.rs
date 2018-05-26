@@ -216,10 +216,6 @@ pub trait Folder : Sized {
         noop_fold_lifetime(l, self)
     }
 
-    fn fold_lifetime_def(&mut self, l: LifetimeDef) -> LifetimeDef {
-        noop_fold_lifetime_def(l, self)
-    }
-
     fn fold_attribute(&mut self, at: Attribute) -> Option<Attribute> {
         noop_fold_attribute(at, self)
     }
@@ -246,14 +242,6 @@ pub trait Folder : Sized {
 
     fn fold_lifetimes(&mut self, lts: Vec<Lifetime>) -> Vec<Lifetime> {
         noop_fold_lifetimes(lts, self)
-    }
-
-    fn fold_lifetime_defs(&mut self, lts: Vec<LifetimeDef>) -> Vec<LifetimeDef> {
-        noop_fold_lifetime_defs(lts, self)
-    }
-
-    fn fold_ty_param(&mut self, tp: TyParam) -> TyParam {
-        noop_fold_ty_param(tp, self)
     }
 
     fn fold_generic_param(&mut self, param: GenericParamAST) -> GenericParamAST {
@@ -695,25 +683,36 @@ pub fn noop_fold_ty_param_bound<T>(tpb: TyParamBound, fld: &mut T)
     }
 }
 
-pub fn noop_fold_ty_param<T: Folder>(tp: TyParam, fld: &mut T) -> TyParam {
-    let TyParam {attrs, id, ident, bounds, default} = tp;
-    let attrs: Vec<_> = attrs.into();
-    TyParam {
-        attrs: attrs.into_iter()
-            .flat_map(|x| fld.fold_attribute(x).into_iter())
-            .collect::<Vec<_>>()
-            .into(),
-        id: fld.new_id(id),
-        ident: fld.fold_ident(ident),
-        bounds: fld.fold_bounds(bounds),
-        default: default.map(|x| fld.fold_ty(x)),
-    }
-}
-
 pub fn noop_fold_generic_param<T: Folder>(param: GenericParamAST, fld: &mut T) -> GenericParamAST {
-    match param {
-        GenericParamAST::Lifetime(l) => GenericParamAST::Lifetime(fld.fold_lifetime_def(l)),
-        GenericParamAST::Type(t) => GenericParamAST::Type(fld.fold_ty_param(t)),
+    let attrs: Vec<_> = param.attrs.into();
+    let attrs = attrs.into_iter()
+        .flat_map(|x| fld.fold_attribute(x).into_iter())
+        .collect::<Vec<_>>()
+        .into();
+    match param.kind {
+        GenericParamKindAST::Lifetime { bounds, lifetime } => {
+            let lifetime = fld.fold_lifetime(lifetime);
+            GenericParamAST {
+                ident: lifetime.ident,
+                id: lifetime.id,
+                attrs,
+                kind: GenericParamKindAST::Lifetime {
+                    bounds: fld.fold_lifetimes(bounds),
+                    lifetime,
+                }
+            }
+        }
+        GenericParamKindAST::Type { bounds, default } => {
+            GenericParamAST {
+                ident: fld.fold_ident(param.ident),
+                id: fld.new_id(param.id),
+                attrs,
+                kind: GenericParamKindAST::Type {
+                    bounds: fld.fold_bounds(bounds),
+                    default: default.map(|x| fld.fold_ty(x)),
+                }
+            }
+        }
     }
 }
 
@@ -737,26 +736,8 @@ pub fn noop_fold_lifetime<T: Folder>(l: Lifetime, fld: &mut T) -> Lifetime {
     }
 }
 
-pub fn noop_fold_lifetime_def<T: Folder>(l: LifetimeDef, fld: &mut T)
-                                         -> LifetimeDef {
-    let attrs: Vec<_> = l.attrs.into();
-    LifetimeDef {
-        attrs: attrs.into_iter()
-            .flat_map(|x| fld.fold_attribute(x).into_iter())
-            .collect::<Vec<_>>()
-            .into(),
-        lifetime: fld.fold_lifetime(l.lifetime),
-        bounds: fld.fold_lifetimes(l.bounds),
-    }
-}
-
 pub fn noop_fold_lifetimes<T: Folder>(lts: Vec<Lifetime>, fld: &mut T) -> Vec<Lifetime> {
     lts.move_map(|l| fld.fold_lifetime(l))
-}
-
-pub fn noop_fold_lifetime_defs<T: Folder>(lts: Vec<LifetimeDef>, fld: &mut T)
-                                          -> Vec<LifetimeDef> {
-    lts.move_map(|l| fld.fold_lifetime_def(l))
 }
 
 pub fn noop_fold_opt_lifetime<T: Folder>(o_lt: Option<Lifetime>, fld: &mut T)
