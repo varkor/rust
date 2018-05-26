@@ -1791,7 +1791,7 @@ impl<'a> Visitor<'a> for PostExpansionVisitor<'a> {
                     gate_feature_post!(&self, associated_type_defaults, ti.span,
                                        "associated type defaults are unstable");
                 }
-                if ti.generics.is_parameterized() {
+                if !ti.generics.params.is_empty() {
                     gate_feature_post!(&self, generic_associated_types, ti.span,
                                        "generic associated types are unstable");
                 }
@@ -1818,7 +1818,7 @@ impl<'a> Visitor<'a> for PostExpansionVisitor<'a> {
                     gate_feature_post!(&self, const_fn, ii.span, "const fn is unstable");
                 }
             }
-            ast::ImplItemKind::Type(_) if ii.generics.is_parameterized() => {
+            ast::ImplItemKind::Type(_) if !ii.generics.params.is_empty() => {
                 gate_feature_post!(&self, generic_associated_types, ii.span,
                                    "generic associated types are unstable");
             }

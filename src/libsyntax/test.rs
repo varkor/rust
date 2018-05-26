@@ -353,7 +353,7 @@ fn is_test_fn(cx: &TestCtxt, i: &ast::Item) -> bool {
 
                 match (has_output, cx.features.termination_trait_test, has_should_panic_attr) {
                     (true, true, true) => No(BadTestSignature::ShouldPanicOnlyWithNoArgs),
-                    (true, true, false) => if generics.is_parameterized() {
+                    (true, true, false) => if !generics.params.is_empty() {
                         No(BadTestSignature::WrongTypeSignature)
                     } else {
                         Yes
@@ -410,9 +410,10 @@ fn is_bench_fn(cx: &TestCtxt, i: &ast::Item) -> bool {
                         ast::FunctionRetTy::Ty(ref t) if t.node == ast::TyKind::Tup(vec![]) => true,
                         _ => false
                     };
-                    let tparm_cnt = generics.params.iter()
-                        .filter(|param| param.is_type_param())
-                        .count();
+                    let tparm_cnt = generics.params.iter().filter(|param| match param.kind {
+                        ast::GenericParamKindAST::Type { .. } => true,
+                        _ => false,
+                    }).count();
 
                     no_output && tparm_cnt == 0
                 };
