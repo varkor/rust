@@ -909,21 +909,21 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                     ref bound_generic_params,
                     ..
                 }) => {
-                    if bound_generic_params.iter().any(|p| p.is_lifetime_param()) {
+                    let lifetimes: FxHashMap<_, _> = bound_generic_params.iter()
+                        .filter_map(|param| {
+                            match param.kind {
+                                GenericParamKind::Lifetime { .. } => {
+                                    Some(Region::late(&self.tcx.hir, param))
+                                }
+                                _ => None,
+                            }
+                        })
+                        .collect();
+                    if !lifetimes.is_empty() {
                         self.trait_ref_hack = true;
                         let next_early_index = self.next_early_index();
                         let scope = Scope::Binder {
-                            lifetimes: bound_generic_params
-                                .iter()
-                                .filter_map(|param| {
-                                    match param.kind {
-                                        GenericParamKind::Lifetime { .. } => {
-                                            Some(Region::late(&self.tcx.hir, param))
-                                        }
-                                        _ => None,
-                                    }
-                                })
-                                .collect(),
+                            lifetimes,
                             s: self.scope,
                             next_early_index,
                             track_lifetime_uses: true,
@@ -974,7 +974,12 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
             || trait_ref
                 .bound_generic_params
                 .iter()
-                .any(|p| p.is_lifetime_param())
+                .any(|param| {
+                    match param.kind {
+                        GenericParamKind::Lifetime { .. } => true,
+                        _ => false,
+                    }
+                })
         {
             if self.trait_ref_hack {
                 span_err!(
