@@ -833,11 +833,15 @@ impl<'a, 'tcx> Visitor<'tcx> for Resolver<'a> {
         // put all the parameters on the ban list and then remove
         // them one by one as they are processed and become available.
         let mut default_ban_rib = Rib::new(ForwardTyParamBanRibKind);
+        let mut found_default = false;
         default_ban_rib.bindings.extend(generics.params.iter()
             .filter_map(|param| match param.kind {
                 GenericParamKindAST::Lifetime { .. } => None,
                 GenericParamKindAST::Type { ref default, .. } => {
                     if default.is_some() {
+                        found_default = true;
+                    }
+                    if found_default {
                         return Some((Ident::with_empty_ctxt(param.ident.name), Def::Err));
                     }
                     None
