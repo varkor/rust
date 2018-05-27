@@ -18,8 +18,7 @@
 use hir::def::Def;
 use hir::def_id::{CrateNum, DefId, LocalDefId, LOCAL_CRATE};
 use hir::map::Map;
-use hir::ItemLocalId;
-use hir::LifetimeName;
+use hir::{GenericArg, ItemLocalId, LifetimeName};
 use ty::{self, TyCtxt, GenericParamDefKind};
 
 use errors::DiagnosticBuilder;
@@ -1705,11 +1704,21 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             return;
         }
 
-        if generic_args.lifetimes().all(|l| l.is_elided()) {
-            self.resolve_elided_lifetimes(generic_args.lifetimes().collect(), true);
+        let mut elide_lifetimes = true;
+        let lifetimes = generic_args.args.iter().filter_map(|arg| match arg {
+            hir::GenericArg::Lifetime(lt) => {
+                if !lt.is_elided() {
+                    elide_lifetimes = false;
+                }
+                Some(lt)
+            }
+            _ => None,
+        }).collect();
+        if elide_lifetimes {
+            self.resolve_elided_lifetimes(lifetimes, true);
         } else {
-            for l in generic_args.lifetimes() {
-                self.visit_lifetime(l);
+            for lt in lifetimes {
+                self.visit_lifetime(lt);
             }
         }
 
@@ -1772,29 +1781,41 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                         }).collect()
                     })
             };
-            unsubst
-                .iter()
-                .map(|set| match *set {
-                    Set1::Empty => if in_body {
-                        None
-                    } else {
-                        Some(Region::Static)
-                    },
-                    Set1::One(r) => r.subst(generic_args.lifetimes(), map),
-                    Set1::Many => None,
-                })
-                .collect()
+            unsubst.iter()
+                   .map(|set| match *set {
+                       Set1::Empty => if in_body {
+                           None
+                       } else {
+                           Some(Region::Static)
+                       },
+                       Set1::One(r) => {
+                           let lifetimes = generic_args.args.iter().filter_map(|arg| match arg {
+                               GenericArg::Lifetime(lt) => Some(lt),
+                               _ => None,
+                           });
+                           r.subst(lifetimes, map)
+                       }
+                       Set1::Many => None,
+                   })
+                   .collect()
         });
 
-        for (i, ty) in generic_args.types().enumerate() {
-            if let Some(&lt) = object_lifetime_defaults.get(i) {
-                let scope = Scope::ObjectLifetimeDefault {
-                    lifetime: lt,
-                    s: self.scope,
-                };
-                self.with(scope, |_, this| this.visit_ty(ty));
-            } else {
-                self.visit_ty(ty);
+        let mut i = 0;
+        for arg in &generic_args.args {
+            match arg {
+                GenericArg::Lifetime(_) => {}
+                GenericArg::Type(ty) => {
+                    if let Some(&lt) = object_lifetime_defaults.get(i) {
+                        let scope = Scope::ObjectLifetimeDefault {
+                            lifetime: lt,
+                            s: self.scope,
+                        };
+                        self.with(scope, |_, this| this.visit_ty(ty));
+                    } else {
+                        self.visit_ty(ty);
+                    }
+                    i += 1;
+                }
             }
         }
 

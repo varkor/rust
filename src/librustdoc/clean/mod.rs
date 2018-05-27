@@ -36,7 +36,7 @@ use rustc::middle::resolve_lifetime as rl;
 use rustc::ty::fold::TypeFolder;
 use rustc::middle::lang_items;
 use rustc::mir::interpret::GlobalId;
-use rustc::hir::{self, HirVec};
+use rustc::hir::{self, GenericArg, HirVec};
 use rustc::hir::def::{self, Def, CtorKind};
 use rustc::hir::def_id::{CrateNum, DefId, DefIndex, CRATE_DEF_INDEX, LOCAL_CRATE};
 use rustc::hir::def_id::DefIndexAddressSpace;
@@ -2728,8 +2728,20 @@ impl Clean<Type> for hir::Ty {
                         for param in generics.params.iter() {
                             match param.kind {
                                 hir::GenericParamKind::Lifetime { .. } => {
-                                    if let Some(lt) = generic_args.lifetimes()
-                                        .nth(indices.lifetimes).cloned() {
+                                    let mut j = 0;
+                                    let lifetime = generic_args.args.iter().find_map(|arg| {
+                                        match arg {
+                                            GenericArg::Lifetime(lt) => {
+                                                if indices.lifetimes == j {
+                                                    return Some(lt);
+                                                }
+                                                j += 1;
+                                                None
+                                            }
+                                            _ => None,
+                                        }
+                                    });
+                                    if let Some(lt) = lifetime.cloned() {
                                         if !lt.is_elided() {
                                             let lt_def_id =
                                                 cx.tcx.hir.local_def_id(param.id);
@@ -2741,8 +2753,20 @@ impl Clean<Type> for hir::Ty {
                                 hir::GenericParamKind::Type { ref default, .. } => {
                                     let ty_param_def =
                                         Def::TyParam(cx.tcx.hir.local_def_id(param.id));
-                                    if let Some(ty) = generic_args.types()
-                                        .nth(indices.types).cloned() {
+                                    let mut j = 0;
+                                    let type_ = generic_args.args.iter().find_map(|arg| {
+                                        match arg {
+                                            GenericArg::Type(ty) => {
+                                                if indices.types == j {
+                                                    return Some(ty);
+                                                }
+                                                j += 1;
+                                                None
+                                            }
+                                            _ => None,
+                                        }
+                                    });
+                                    if let Some(ty) = type_.cloned() {
                                         ty_substs.insert(ty_param_def, ty.into_inner().clean(cx));
                                     } else if let Some(default) = default.clone() {
                                         ty_substs.insert(ty_param_def,
@@ -3355,13 +3379,28 @@ impl Clean<GenericArgs> for hir::GenericArgs {
                 output: if output != Type::Tuple(Vec::new()) { Some(output) } else { None }
             }
         } else {
+            let mut lifetimes = vec![];
+            let mut types = vec![];
+            let mut elided_lifetimes = true;
+            for arg in &self.args {
+                match arg {
+                    GenericArg::Lifetime(lt) if elided_lifetimes => {
+                        if lt.is_elided() {
+                            elided_lifetimes = false;
+                            lifetimes = vec![];
+                            continue;
+                        }
+                        lifetimes.push(lt.clean(cx));
+                    }
+                    GenericArg::Lifetime(_) => {}
+                    GenericArg::Type(ty) => {
+                        types.push(ty.clean(cx));
+                    }
+                }
+            }
             GenericArgs::AngleBracketed {
-                lifetimes: if self.lifetimes().all(|lt| lt.is_elided()) {
-                    vec![]
-                } else {
-                    self.lifetimes().map(|lt| lt.clean(cx)).collect()
-                },
-                types: self.types().map(|ty| ty.clean(cx)).collect(),
+                lifetimes,
+                types,
                 bindings: self.bindings.clean(cx),
             }
         }
