@@ -4964,21 +4964,21 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         };
         let expected_text = count_type_params(ty_accepted);
         let actual_text = count_type_params(types.len());
-        if let Some(mut err) = if types.len() > ty_accepted {
+        if let Some((mut err, span)) = if types.len() > ty_accepted {
             // To prevent derived errors to accumulate due to extra
             // type parameters, we force instantiate_value_path to
             // use inference variables instead of the provided types.
             *segment = None;
             let span = types[ty_accepted].span;
-            Some(struct_span_err!(self.tcx.sess, span, E0087,
+            Some((struct_span_err!(self.tcx.sess, span, E0087,
                                   "too many type parameters provided: \
                                   expected at most {}, found {}",
-                                  expected_text, actual_text))
+                                  expected_text, actual_text), span))
         } else if types.len() < ty_required && !infer_types && !supress_mismatch_error {
-            Some(struct_span_err!(self.tcx.sess, span, E0089,
+            Some((struct_span_err!(self.tcx.sess, span, E0089,
                                   "too few type parameters provided: \
                                   expected {}, found {}",
-                                  expected_text, actual_text))
+                                  expected_text, actual_text), span))
         } else {
             None
         } {
@@ -5018,17 +5018,17 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         };
         let expected_text = count_lifetime_params(lt_accepted);
         let actual_text = count_lifetime_params(lifetimes.len());
-        if let Some(mut err) = if lifetimes.len() > lt_accepted {
+        if let Some((mut err, span)) = if lifetimes.len() > lt_accepted {
             let span = lifetimes[lt_accepted].span;
-            Some(struct_span_err!(self.tcx.sess, span, E0088,
+            Some((struct_span_err!(self.tcx.sess, span, E0088,
                                   "too many lifetime parameters provided: \
                                   expected at most {}, found {}",
-                                  expected_text, actual_text))
+                                  expected_text, actual_text), span))
         } else if lifetimes.len() < lt_accepted && !infer_lifetimes {
-            Some(struct_span_err!(self.tcx.sess, span, E0090,
+            Some((struct_span_err!(self.tcx.sess, span, E0090,
                                   "too few lifetime parameters provided: \
                                   expected {}, found {}",
-                                  expected_text, actual_text))
+                                  expected_text, actual_text), span))
         } else {
             None
         } {
