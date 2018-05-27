@@ -411,7 +411,7 @@ fn is_bench_fn(cx: &TestCtxt, i: &ast::Item) -> bool {
                         _ => false
                     };
                     let tparm_cnt = generics.params.iter().filter(|param| match param.kind {
-                        ast::GenericParamKindAST::Type { .. } => true,
+                        ast::GenericParamKind::Type { .. } => true,
                         _ => false,
                     }).count();
 
