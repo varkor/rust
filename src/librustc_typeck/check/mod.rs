@@ -5054,13 +5054,11 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                         -> bool {
         let segment = segment.map(|(path_segment, generics)| {
             let explicit = !path_segment.infer_types;
-            let impl_trait = generics.params.iter().any(|param| {
-                match param.kind {
-                    ty::GenericParamDefKind::Type {
-                        synthetic: Some(hir::SyntheticTyParamKind::ImplTrait), ..
-                    } => true,
-                    _ => false,
-                }
+            let impl_trait = generics.params.iter().any(|param| match param.kind {
+                ty::GenericParamDefKind::Type {
+                    synthetic: Some(hir::SyntheticTyParamKind::ImplTrait), ..
+                } => true,
+                _ => false,
             });
 
             if explicit && impl_trait {
@@ -5144,11 +5142,9 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         }
     }
 
-    let types = generics.params.iter().filter(|param| {
-        match param.kind {
-            hir::GenericParamKind::Type { .. } => true,
-            _ => false,
-        }
+    let types = generics.params.iter().filter(|param| match param.kind {
+        hir::GenericParamKind::Type { .. } => true,
+        _ => false,
     });
     for (&used, param) in types_used.iter().zip(types) {
         if !used {
