@@ -1719,7 +1719,8 @@ impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef {
                 (self.name.to_string(), GenericParamDefKind::Lifetime)
             }
             ty::GenericParamDefKind::Type { has_default, .. } => {
-                cx.renderinfo.borrow_mut().external_typarams.insert(self.def_id, self.name.clean(cx));
+                cx.renderinfo.borrow_mut().external_typarams
+                             .insert(self.def_id, self.name.clean(cx));
                 let default = if has_default {
                     Some(cx.tcx.type_of(self.def_id).clean(cx))
                 } else {
