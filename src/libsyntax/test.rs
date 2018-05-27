@@ -410,12 +410,12 @@ fn is_bench_fn(cx: &TestCtxt, i: &ast::Item) -> bool {
                         ast::FunctionRetTy::Ty(ref t) if t.node == ast::TyKind::Tup(vec![]) => true,
                         _ => false
                     };
-                    let tparm_cnt = generics.params.iter().filter(|param| match param.kind {
+                    let ty_count = generics.params.iter().filter(|param| match param.kind {
                         ast::GenericParamKind::Type { .. } => true,
                         _ => false,
                     }).count();
 
-                    no_output && tparm_cnt == 0
+                    no_output && ty_count == 0
                 };
 
                 // NB: inadequate check, but we're running
