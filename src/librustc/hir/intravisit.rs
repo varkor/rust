@@ -729,16 +729,14 @@ pub fn walk_param_bound<'v, V: Visitor<'v>>(visitor: &mut V, bound: &'v ParamBou
         TraitTyParamBound(ref typ, modifier) => {
             visitor.visit_poly_trait_ref(typ, modifier);
         }
-        Outlives(ref lifetime) => {
-            visitor.visit_lifetime(lifetime);
-        }
+        Outlives(ref lifetime) => visitor.visit_lifetime(lifetime),
     }
 }
 
 pub fn walk_generic_param<'v, V: Visitor<'v>>(visitor: &mut V, param: &'v GenericParam) {
     match param.kind {
-        GenericParamKind::Lifetime { ref lifetime, .. } => {
-            visitor.visit_lifetime(lifetime);
+        GenericParamKind::Lifetime { .. } => {
+            // visit lifetime
         }
         GenericParamKind::Type { ref default, ref attrs, .. } => {
             visitor.visit_id(param.id);

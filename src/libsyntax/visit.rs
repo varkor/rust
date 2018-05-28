@@ -491,16 +491,15 @@ pub fn walk_param_bound<'a, V: Visitor<'a>>(visitor: &mut V, bound: &'a ParamBou
 
 pub fn walk_generic_param<'a, V: Visitor<'a>>(visitor: &mut V, param: &'a GenericParam) {
     match param.kind {
-        GenericParamKind::Lifetime { ref lifetime } => {
-            visitor.visit_lifetime(lifetime);
-            walk_list!(visitor, visit_attribute, param.attrs.iter());
+        GenericParamKind::Lifetime => {
+            // visitor.visit_lifetime(lifetime);
         }
         GenericParamKind::Type { ref default } => {
             visitor.visit_ident(param.ident);
             walk_list!(visitor, visit_ty, default);
-            walk_list!(visitor, visit_attribute, param.attrs.iter());
         }
     }
+    walk_list!(visitor, visit_attribute, param.attrs.iter());
     walk_list!(visitor, visit_param_bound, &param.bounds);
 }
 

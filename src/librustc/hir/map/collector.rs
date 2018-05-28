@@ -348,10 +348,7 @@ impl<'a, 'hir> Visitor<'hir> for NodeCollector<'a, 'hir> {
 
     fn visit_generics(&mut self, generics: &'hir Generics) {
         for param in &generics.params {
-            match param.kind {
-                GenericParamKind::Lifetime { .. } => {}
-                GenericParamKind::Type { .. } => self.insert(param.id, NodeGenericParam(param)),
-            }
+            self.insert(param.id, NodeGenericParam(param));
         }
         intravisit::walk_generics(self, generics);
     }

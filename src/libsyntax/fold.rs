@@ -691,16 +691,14 @@ pub fn noop_fold_generic_param<T: Folder>(param: GenericParam, fld: &mut T) -> G
         .into();
     let bounds = fld.fold_bounds(param.bounds);
     match param.kind {
-        GenericParamKind::Lifetime { lifetime } => {
-            let lifetime = fld.fold_lifetime(lifetime);
+        GenericParamKind::Lifetime => {
+            let lifetime = fld.fold_lifetime(Lifetime { id: param.id, ident: param.ident });
             GenericParam {
                 ident: lifetime.ident,
                 id: lifetime.id,
                 attrs,
                 bounds,
-                kind: GenericParamKind::Lifetime {
-                    lifetime,
-                }
+                kind: GenericParamKind::Lifetime,
             }
         }
         GenericParamKind::Type { default } => {
