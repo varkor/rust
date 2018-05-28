@@ -1686,7 +1686,7 @@ impl<'a> Parser<'a> {
                     s.print_mutability(mut_ty.mutbl)?;
                     s.popen()?;
                     s.print_type(&mut_ty.ty)?;
-                    s.print_bounds(" +", &bounds)?;
+                    s.print_type_bounds(" +", &bounds)?;
                     s.pclose()
                 });
                 err.span_suggestion_with_applicability(
@@ -4814,10 +4814,10 @@ impl<'a> Parser<'a> {
 
     // Parse bounds of a lifetime parameter `BOUND + BOUND + BOUND`, possibly with trailing `+`.
     // BOUND = LT_BOUND (e.g. `'a`)
-    fn parse_lt_param_bounds(&mut self) -> Vec<Lifetime> {
+    fn parse_lt_param_bounds(&mut self) -> ParamBounds {
         let mut lifetimes = Vec::new();
         while self.check_lifetime() {
-            lifetimes.push(self.expect_lifetime());
+            lifetimes.push(ast::ParamBound::Outlives(self.expect_lifetime()));
 
             if !self.eat(&token::BinOp(token::Plus)) {
                 break
@@ -4892,9 +4892,7 @@ impl<'a> Parser<'a> {
                 let lifetime = self.expect_lifetime();
                 // Parse lifetime parameter.
                 let bounds = if self.eat(&token::Colon) {
-                    self.parse_lt_param_bounds().iter()
-                        .map(|bound| ast::ParamBound::Outlives(*bound))
-                        .collect()
+                    self.parse_lt_param_bounds()
                 } else {
                     Vec::new()
                 };

@@ -790,7 +790,7 @@ pub fn noop_fold_where_predicate<T: Folder>(
             ast::WherePredicate::RegionPredicate(ast::WhereRegionPredicate {
                 span: fld.new_span(span),
                 lifetime: fld.fold_lifetime(lifetime),
-                bounds: bounds.move_map(|bound| fld.fold_lifetime(bound))
+                bounds: bounds.move_map(|bound| fld.fold_ty_param_bound(bound))
             })
         }
         ast::WherePredicate::EqPredicate(ast::WhereEqPredicate{id,
