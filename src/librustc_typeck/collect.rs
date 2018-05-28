@@ -727,10 +727,10 @@ fn has_late_bound_regions<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             self.outer_index.shift_out(1);
         }
 
-        fn visit_lifetime(&mut self, lt: &'tcx hir::Lifetime) {
+        fn visit_lifetime(&mut self, lt: hir::LifetimeRef<'tcx>) {
             if self.has_late_bound_regions.is_some() { return }
 
-            let hir_id = self.tcx.hir.node_to_hir_id(lt.id);
+            let hir_id = self.tcx.hir.node_to_hir_id(*lt.id);
             match self.tcx.named_region(hir_id) {
                 Some(rl::Region::Static) | Some(rl::Region::EarlyBound(..)) => {}
                 Some(rl::Region::LateBound(debruijn, _, _)) |
@@ -740,7 +740,7 @@ fn has_late_bound_regions<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 Some(rl::Region::LateBoundAnon(..)) |
                 Some(rl::Region::Free(..)) |
                 None => {
-                    self.has_late_bound_regions = Some(lt.span);
+                    self.has_late_bound_regions = Some(*lt.span);
                 }
             }
         }

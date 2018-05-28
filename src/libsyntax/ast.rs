@@ -58,6 +58,7 @@ impl fmt::Debug for Lifetime {
     }
 }
 
+#[derive(Clone)]
 pub struct LifetimeRef<'a> {
     pub id: &'a NodeId,
     pub ident: &'a Ident,

@@ -121,7 +121,7 @@ impl<'ast> Visitor<'ast> for NodeCounter {
         self.count += 1;
         walk_variant(self, v, g, item_id)
     }
-    fn visit_lifetime(&mut self, lifetime: &Lifetime) {
+    fn visit_lifetime<'a>(&mut self, lifetime: LifetimeRef<'a>) {
         self.count += 1;
         walk_lifetime(self, lifetime)
     }

@@ -1243,7 +1243,7 @@ impl<'a> LoweringContext<'a> {
                         // like `fn foo<'d>() -> impl for<'a, 'b: 'a, 'c: 'b + 'd>`.
                         self.currently_bound_lifetimes.push(lt_name);
                         param.bounds.iter().for_each(|bound| match bound {
-                            hir::ParamBound::Outlives(lt) => self.visit_lifetime(lt),
+                            hir::ParamBound::Outlives(lt) => self.visit_lifetime(lt.into()),
                             _ => bug!(),
                         });
                     }
@@ -1255,7 +1255,7 @@ impl<'a> LoweringContext<'a> {
                 self.currently_bound_lifetimes.truncate(old_len);
             }
 
-            fn visit_lifetime(&mut self, lifetime: &'v hir::Lifetime) {
+            fn visit_lifetime(&mut self, lifetime: hir::LifetimeRef<'v>) {
                 let name = match lifetime.name {
                     hir::LifetimeName::Implicit | hir::LifetimeName::Underscore => {
                         if self.collect_elided_lifetimes {
@@ -1266,8 +1266,8 @@ impl<'a> LoweringContext<'a> {
                             return;
                         }
                     }
-                    name @ hir::LifetimeName::Fresh(_) => name,
-                    name @ hir::LifetimeName::Name(_) => name,
+                    name @ hir::LifetimeName::Fresh(_) => *name,
+                    name @ hir::LifetimeName::Name(_) => *name,
                     hir::LifetimeName::Static => return,
                 };
 
@@ -1278,7 +1278,7 @@ impl<'a> LoweringContext<'a> {
 
                     self.output_lifetimes.push(hir::Lifetime {
                         id: self.context.next_id().node_id,
-                        span: lifetime.span,
+                        span: *lifetime.span,
                         name,
                     });
 
@@ -1289,13 +1289,13 @@ impl<'a> LoweringContext<'a> {
                         DefPathData::LifetimeParam(name.name().as_interned_str()),
                         DefIndexAddressSpace::High,
                         Mark::root(),
-                        lifetime.span,
+                        *lifetime.span,
                     );
 
                     self.output_lifetime_params.push(hir::GenericParam {
                         id: def_node_id,
                         name: name.name(),
-                        span: lifetime.span,
+                        span: *lifetime.span,
                         pure_wrt_drop: false,
                         bounds: vec![].into(),
                         kind: hir::GenericParamKind::Lifetime {

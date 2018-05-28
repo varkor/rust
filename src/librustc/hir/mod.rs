@@ -200,6 +200,7 @@ pub struct Lifetime {
     pub name: LifetimeName,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct LifetimeRef<'a> {
     pub id: &'a NodeId,
     pub span: &'a Span,
@@ -275,7 +276,7 @@ impl LifetimeName {
         }
     }
 
-    fn is_elided(&self) -> bool {
+    pub fn is_elided(&self) -> bool {
         use self::LifetimeName::*;
         match self {
             Implicit | Underscore => true,
@@ -289,7 +290,7 @@ impl LifetimeName {
         }
     }
 
-    fn is_static(&self) -> bool {
+    pub fn is_static(&self) -> bool {
         self == &LifetimeName::Static
     }
 }

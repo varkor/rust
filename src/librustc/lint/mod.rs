@@ -223,7 +223,7 @@ pub trait LateLintPass<'a, 'tcx>: LintPass {
                           _: &LateContext<'a, 'tcx>,
                           _: &'tcx hir::Variant,
                           _: &'tcx hir::Generics) { }
-    fn check_lifetime(&mut self, _: &LateContext<'a, 'tcx>, _: &'tcx hir::Lifetime) { }
+    fn check_lifetime(&mut self, _: &LateContext<'a, 'tcx>, _: hir::LifetimeRef<'tcx>) { }
     fn check_path(&mut self, _: &LateContext<'a, 'tcx>, _: &'tcx hir::Path, _: ast::NodeId) { }
     fn check_attribute(&mut self, _: &LateContext<'a, 'tcx>, _: &'tcx ast::Attribute) { }
 
@@ -274,7 +274,7 @@ pub trait EarlyLintPass: LintPass {
     fn check_struct_field(&mut self, _: &EarlyContext, _: &ast::StructField) { }
     fn check_variant(&mut self, _: &EarlyContext, _: &ast::Variant, _: &ast::Generics) { }
     fn check_variant_post(&mut self, _: &EarlyContext, _: &ast::Variant, _: &ast::Generics) { }
-    fn check_lifetime(&mut self, _: &EarlyContext, _: &ast::Lifetime) { }
+    fn check_lifetime<'lr>(&mut self, _: &EarlyContext, _: ast::LifetimeRef<'lr>) { }
     fn check_path(&mut self, _: &EarlyContext, _: &ast::Path, _: ast::NodeId) { }
     fn check_attribute(&mut self, _: &EarlyContext, _: &ast::Attribute) { }
 

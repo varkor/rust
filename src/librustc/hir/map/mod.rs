@@ -67,7 +67,7 @@ pub enum Node<'hir> {
     /// NodeStructCtor represents a tuple struct.
     NodeStructCtor(&'hir VariantData),
 
-    NodeLifetime(&'hir Lifetime),
+    NodeLifetime(LifetimeRef<'hir>),
     NodeGenericParam(&'hir GenericParam),
     NodeVisibility(&'hir Visibility),
 }
@@ -95,7 +95,7 @@ enum MapEntry<'hir> {
     EntryPat(NodeId, DepNodeIndex, &'hir Pat),
     EntryBlock(NodeId, DepNodeIndex, &'hir Block),
     EntryStructCtor(NodeId, DepNodeIndex, &'hir VariantData),
-    EntryLifetime(NodeId, DepNodeIndex, &'hir Lifetime),
+    EntryLifetime(NodeId, DepNodeIndex, LifetimeRef<'hir>),
     EntryGenericParam(NodeId, DepNodeIndex, &'hir GenericParam),
     EntryVisibility(NodeId, DepNodeIndex, &'hir Visibility),
     EntryLocal(NodeId, DepNodeIndex, &'hir Local),
@@ -983,7 +983,7 @@ impl<'hir> Map<'hir> {
             Some(EntryPat(_, _, pat)) => pat.span,
             Some(EntryBlock(_, _, block)) => block.span,
             Some(EntryStructCtor(_, _, _)) => self.expect_item(self.get_parent(id)).span,
-            Some(EntryLifetime(_, _, lifetime)) => lifetime.span,
+            Some(EntryLifetime(_, _, lifetime)) => *lifetime.span,
             Some(EntryGenericParam(_, _, param)) => param.span,
             Some(EntryVisibility(_, _, &Visibility::Restricted { ref path, .. })) => path.span,
             Some(EntryVisibility(_, _, v)) => bug!("unexpected Visibility {:?}", v),
@@ -1210,7 +1210,7 @@ impl<'a> print::State<'a> {
                 self.ibox(0)?;
                 self.print_block(&a)
             }
-            NodeLifetime(a)     => self.print_lifetime(&a),
+            NodeLifetime(a)     => self.print_name(a.name.name()),
             NodeVisibility(a)   => self.print_visibility(&a),
             NodeGenericParam(_) => bug!("cannot print NodeGenericParam"),
             NodeField(_)        => bug!("cannot print StructField"),

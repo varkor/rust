@@ -346,11 +346,11 @@ pub trait Visitor<'v> : Sized {
     }
     fn visit_generic_arg(&mut self, generic_arg: &'v GenericArg) {
         match generic_arg {
-            GenericArg::Lifetime(lt) => self.visit_lifetime(lt),
+            GenericArg::Lifetime(lt) => self.visit_lifetime(lt.into()),
             GenericArg::Type(ty) => self.visit_ty(ty),
         }
     }
-    fn visit_lifetime(&mut self, lifetime: &'v Lifetime) {
+    fn visit_lifetime(&mut self, lifetime: LifetimeRef<'v>) {
         walk_lifetime(self, lifetime)
     }
     fn visit_qpath(&mut self, qpath: &'v QPath, id: NodeId, span: Span) {
@@ -430,11 +430,11 @@ pub fn walk_label<'v, V: Visitor<'v>>(visitor: &mut V, label: &'v Label) {
     visitor.visit_name(label.span, label.name);
 }
 
-pub fn walk_lifetime<'v, V: Visitor<'v>>(visitor: &mut V, lifetime: &'v Lifetime) {
-    visitor.visit_id(lifetime.id);
+pub fn walk_lifetime<'v, V: Visitor<'v>>(visitor: &mut V, lifetime: LifetimeRef<'v>) {
+    visitor.visit_id(*lifetime.id);
     match lifetime.name {
         LifetimeName::Name(name) => {
-            visitor.visit_name(lifetime.span, name);
+            visitor.visit_name(*lifetime.span, *name);
         }
         LifetimeName::Fresh(_) |
         LifetimeName::Static |
@@ -578,7 +578,7 @@ pub fn walk_ty<'v, V: Visitor<'v>>(visitor: &mut V, typ: &'v Ty) {
             visitor.visit_ty(&mutable_type.ty)
         }
         TyRptr(ref lifetime, ref mutable_type) => {
-            visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(lifetime.into());
             visitor.visit_ty(&mutable_type.ty)
         }
         TyNever => {},
@@ -600,13 +600,15 @@ pub fn walk_ty<'v, V: Visitor<'v>>(visitor: &mut V, typ: &'v Ty) {
             for bound in bounds {
                 visitor.visit_poly_trait_ref(bound, TraitBoundModifier::None);
             }
-            visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(lifetime.into());
         }
         TyImplTraitExistential(ref existty, ref lifetimes) => {
             let ExistTy { ref generics, ref bounds } = *existty;
             walk_generics(visitor, generics);
             walk_list!(visitor, visit_param_bound, bounds);
-            walk_list!(visitor, visit_lifetime, lifetimes);
+            for lifetime in lifetimes {
+                visitor.visit_lifetime(lifetime.into());
+            }
         }
         TyTypeof(ref expression) => {
             visitor.visit_anon_const(expression)
@@ -729,14 +731,14 @@ pub fn walk_param_bound<'v, V: Visitor<'v>>(visitor: &mut V, bound: &'v ParamBou
         TraitTyParamBound(ref typ, modifier) => {
             visitor.visit_poly_trait_ref(typ, modifier);
         }
-        Outlives(ref lifetime) => visitor.visit_lifetime(lifetime),
+        Outlives(ref lifetime) => visitor.visit_lifetime(lifetime.into()),
     }
 }
 
 pub fn walk_generic_param<'v, V: Visitor<'v>>(visitor: &mut V, param: &'v GenericParam) {
     match param.kind {
         GenericParamKind::Lifetime { .. } => {
-            // visit lifetime
+            visitor.visit_lifetime(param.into());
         }
         GenericParamKind::Type { ref default, ref attrs, .. } => {
             visitor.visit_id(param.id);
@@ -770,7 +772,7 @@ pub fn walk_where_predicate<'v, V: Visitor<'v>>(
         &WherePredicate::RegionPredicate(WhereRegionPredicate{ref lifetime,
                                                               ref bounds,
                                                               ..}) => {
-            visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(lifetime.into());
             walk_list!(visitor, visit_param_bound, bounds);
         }
         &WherePredicate::EqPredicate(WhereEqPredicate{id,

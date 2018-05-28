@@ -107,7 +107,7 @@ pub trait Visitor<'ast>: Sized {
     fn visit_label(&mut self, label: &'ast Label) {
         walk_label(self, label)
     }
-    fn visit_lifetime(&mut self, lifetime: &'ast Lifetime) {
+    fn visit_lifetime(&mut self, lifetime: LifetimeRef<'ast>) {
         walk_lifetime(self, lifetime)
     }
     fn visit_mac(&mut self, _mac: &'ast Mac) {
@@ -135,7 +135,7 @@ pub trait Visitor<'ast>: Sized {
     }
     fn visit_generic_arg(&mut self, generic_arg: &'ast GenericArg) {
         match generic_arg {
-            GenericArg::Lifetime(lt) => self.visit_lifetime(lt),
+            GenericArg::Lifetime(lt) => self.visit_lifetime(lt.into()),
             GenericArg::Type(ty) => self.visit_ty(ty),
         }
     }
@@ -201,8 +201,8 @@ pub fn walk_label<'a, V: Visitor<'a>>(visitor: &mut V, label: &'a Label) {
     visitor.visit_ident(label.ident);
 }
 
-pub fn walk_lifetime<'a, V: Visitor<'a>>(visitor: &mut V, lifetime: &'a Lifetime) {
-    visitor.visit_ident(lifetime.ident);
+pub fn walk_lifetime<'a, V: Visitor<'a>>(visitor: &mut V, lifetime: LifetimeRef<'a>) {
+    visitor.visit_ident(*lifetime.ident);
 }
 
 pub fn walk_poly_trait_ref<'a, V>(visitor: &mut V,
@@ -318,7 +318,9 @@ pub fn walk_ty<'a, V: Visitor<'a>>(visitor: &mut V, typ: &'a Ty) {
             visitor.visit_ty(&mutable_type.ty)
         }
         TyKind::Rptr(ref opt_lifetime, ref mutable_type) => {
-            walk_list!(visitor, visit_lifetime, opt_lifetime);
+            if let Some(lifetime) = opt_lifetime {
+                visitor.visit_lifetime(lifetime.into());
+            }
             visitor.visit_ty(&mutable_type.ty)
         }
         TyKind::Never => {},
@@ -484,7 +486,7 @@ pub fn walk_param_bound<'a, V: Visitor<'a>>(visitor: &mut V, bound: &'a ParamBou
             visitor.visit_poly_trait_ref(typ, modifier);
         }
         Outlives(ref lifetime) => {
-            visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(lifetime.into());
         }
     }
 }
@@ -492,7 +494,7 @@ pub fn walk_param_bound<'a, V: Visitor<'a>>(visitor: &mut V, bound: &'a ParamBou
 pub fn walk_generic_param<'a, V: Visitor<'a>>(visitor: &mut V, param: &'a GenericParam) {
     match param.kind {
         GenericParamKind::Lifetime => {
-            // visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(param.into());
         }
         GenericParamKind::Type { ref default } => {
             visitor.visit_ident(param.ident);
@@ -521,7 +523,7 @@ pub fn walk_where_predicate<'a, V: Visitor<'a>>(visitor: &mut V, predicate: &'a 
         WherePredicate::RegionPredicate(WhereRegionPredicate{ref lifetime,
                                                              ref bounds,
                                                              ..}) => {
-            visitor.visit_lifetime(lifetime);
+            visitor.visit_lifetime(lifetime.into());
             walk_list!(visitor, visit_param_bound, bounds);
         }
         WherePredicate::EqPredicate(WhereEqPredicate{ref lhs_ty,

@@ -348,7 +348,14 @@ impl<'a, 'hir> Visitor<'hir> for NodeCollector<'a, 'hir> {
 
     fn visit_generics(&mut self, generics: &'hir Generics) {
         for param in &generics.params {
-            self.insert(param.id, NodeGenericParam(param));
+            match param.kind {
+                GenericParamKind::Lifetime { .. } => {
+                    self.insert(param.id, NodeLifetime(param.into()))
+                }
+                GenericParamKind::Type { .. } => {
+                    self.insert(param.id, NodeGenericParam(param));
+                }
+            }
         }
         intravisit::walk_generics(self, generics);
     }
@@ -451,8 +458,8 @@ impl<'a, 'hir> Visitor<'hir> for NodeCollector<'a, 'hir> {
         })
     }
 
-    fn visit_lifetime(&mut self, lifetime: &'hir Lifetime) {
-        self.insert(lifetime.id, NodeLifetime(lifetime));
+    fn visit_lifetime(&mut self, lifetime_ref: LifetimeRef<'hir>) {
+        self.insert(*lifetime_ref.id, NodeLifetime(lifetime_ref));
     }
 
     fn visit_vis(&mut self, visibility: &'hir Visibility) {
