@@ -58,6 +58,37 @@ impl fmt::Debug for Lifetime {
     }
 }
 
+pub struct LifetimeRef<'a> {
+    pub id: &'a NodeId,
+    pub ident: &'a Ident,
+    pub lifetime: Option<&'a Lifetime>,
+}
+
+impl<'a> From<&'a Lifetime> for LifetimeRef<'a> {
+    fn from(lifetime: &'a Lifetime) -> Self {
+        LifetimeRef {
+            id: &lifetime.id,
+            ident: &lifetime.ident,
+            lifetime: Some(&lifetime),
+        }
+    }
+}
+
+impl<'a> From<&'a GenericParam> for LifetimeRef<'a> {
+    fn from(param: &'a GenericParam) -> Self {
+        match param.kind {
+            GenericParamKind::Lifetime => {
+                LifetimeRef {
+                    id: &param.id,
+                    ident: &param.ident,
+                    lifetime: None,
+                }
+            }
+            _ => panic!(),
+        }
+    }
+}
+
 /// A "Path" is essentially Rust's notion of a name.
 ///
 /// It's represented as a sequence of identifiers,
