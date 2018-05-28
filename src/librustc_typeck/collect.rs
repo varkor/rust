@@ -911,7 +911,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let early_lifetimes = early_bound_lifetimes_from_generics(tcx, ast_generics);
     params.extend(early_lifetimes.enumerate().map(|(i, param)| {
         ty::GenericParamDef {
-            name: param.name().as_interned_str(),
+            name: param.name.as_interned_str(),
             index: own_start + i as u32,
             def_id: tcx.hir.local_def_id(param.id),
             pure_wrt_drop: param.pure_wrt_drop,
@@ -927,9 +927,8 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let mut i = 0;
     params.extend(ast_generics.params.iter().filter_map(|param| match param.kind {
         GenericParamKind::Type { ref default, synthetic, .. } => {
-            if param.name() == keywords::SelfType.name() {
-                span_bug!(param.span,
-                            "`Self` should not be the name of a regular parameter");
+            if param.name == keywords::SelfType.name() {
+                span_bug!(param.span,  "`Self` should not be the name of a regular parameter");
             }
 
             if !allow_defaults && default.is_some() {
@@ -945,7 +944,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
             let ty_param = ty::GenericParamDef {
                 index: type_start + i as u32,
-                name: param.name().as_interned_str(),
+                name: param.name.as_interned_str(),
                 def_id: tcx.hir.local_def_id(param.id),
                 pure_wrt_drop: param.pure_wrt_drop,
                 kind: ty::GenericParamDefKind::Type {
@@ -1458,7 +1457,7 @@ pub fn explicit_predicates_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         let region = tcx.mk_region(ty::ReEarlyBound(ty::EarlyBoundRegion {
             def_id: tcx.hir.local_def_id(param.id),
             index,
-            name: param.name().as_interned_str(),
+            name: param.name.as_interned_str(),
         }));
         index += 1;
 
@@ -1482,7 +1481,7 @@ pub fn explicit_predicates_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     for param in &ast_generics.params {
         match param.kind {
             GenericParamKind::Type { .. } => {
-                let param_ty = ty::ParamTy::new(index, param.name().as_interned_str()).to_ty(tcx);
+                let param_ty = ty::ParamTy::new(index, param.name.as_interned_str()).to_ty(tcx);
                 index += 1;
 
                 let sized = SizedByDefault::Yes;

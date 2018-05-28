@@ -740,9 +740,9 @@ pub fn walk_generic_param<'v, V: Visitor<'v>>(visitor: &mut V, param: &'v Generi
         GenericParamKind::Lifetime { ref lifetime, .. } => {
             visitor.visit_lifetime(lifetime);
         }
-        GenericParamKind::Type { name, ref default, ref attrs, .. } => {
+        GenericParamKind::Type { ref default, ref attrs, .. } => {
             visitor.visit_id(param.id);
-            visitor.visit_name(param.span, name);
+            visitor.visit_name(param.span, param.name);
             walk_list!(visitor, visit_ty, default);
             walk_list!(visitor, visit_attribute, attrs.iter());
         }
