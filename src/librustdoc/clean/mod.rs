@@ -1317,8 +1317,8 @@ impl Clean<Attributes> for [ast::Attribute] {
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
 pub enum ParamBound {
-    RegionBound(Lifetime),
-    TraitBound(PolyTrait, hir::TraitBoundModifier)
+    TraitBound(PolyTrait, hir::TraitBoundModifier),
+    Outlives(Lifetime),
 }
 
 impl ParamBound {
@@ -1368,7 +1368,7 @@ impl ParamBound {
 impl Clean<ParamBound> for hir::ParamBound {
     fn clean(&self, cx: &DocContext) -> ParamBound {
         match *self {
-            hir::Outlives(lt) => RegionBound(lt.clean(cx)),
+            hir::Outlives(lt) => Outlives(lt.clean(cx)),
             hir::TraitTyParamBound(ref t, modifier) => TraitBound(t.clean(cx), modifier),
         }
     }
@@ -1482,7 +1482,7 @@ impl<'tcx> Clean<Option<Vec<ParamBound>>> for Substs<'tcx> {
     fn clean(&self, cx: &DocContext) -> Option<Vec<ParamBound>> {
         let mut v = Vec::new();
         v.extend(self.regions().filter_map(|r| r.clean(cx))
-                     .map(RegionBound));
+                     .map(Outlives));
         v.extend(self.types().map(|t| TraitBound(PolyTrait {
             trait_: t.clean(cx),
             generic_params: Vec::new(),
@@ -1579,7 +1579,7 @@ impl Clean<Option<Lifetime>> for ty::RegionKind {
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
 pub enum WherePredicate {
     BoundPredicate { ty: Type, bounds: Vec<ParamBound> },
-    RegionPredicate { lifetime: Lifetime, bounds: Vec<Lifetime>},
+    RegionPredicate { lifetime: Lifetime, bounds: Vec<ParamBound> },
     EqPredicate { lhs: Type, rhs: Type },
 }
 
@@ -1649,7 +1649,7 @@ impl<'tcx> Clean<WherePredicate> for ty::OutlivesPredicate<ty::Region<'tcx>, ty:
         let ty::OutlivesPredicate(ref a, ref b) = *self;
         WherePredicate::RegionPredicate {
             lifetime: a.clean(cx).unwrap(),
-            bounds: vec![b.clean(cx).unwrap()]
+            bounds: vec![ParamBound::Outlives(b.clean(cx).unwrap())]
         }
     }
 }
@@ -1660,7 +1660,7 @@ impl<'tcx> Clean<WherePredicate> for ty::OutlivesPredicate<Ty<'tcx>, ty::Region<
 
         WherePredicate::BoundPredicate {
             ty: ty.clean(cx),
-            bounds: vec![ParamBound::RegionBound(lt.clean(cx).unwrap())]
+            bounds: vec![ParamBound::Outlives(lt.clean(cx).unwrap())]
         }
     }
 }
@@ -1678,9 +1678,7 @@ impl<'tcx> Clean<Type> for ty::ProjectionTy<'tcx> {
     fn clean(&self, cx: &DocContext) -> Type {
         let trait_ = match self.trait_ref(cx.tcx).clean(cx) {
             ParamBound::TraitBound(t, _) => t.trait_,
-            ParamBound::RegionBound(_) => {
-                panic!("cleaning a trait got a region")
-            }
+            ParamBound::Outlives(_) => panic!("cleaning a trait got a lifetime"),
         };
         Type::QPath {
             name: cx.tcx.associated_item(self.item_def_id).name.clean(cx),
@@ -2837,18 +2835,13 @@ impl Clean<Type> for hir::Ty {
             TyTraitObject(ref bounds, ref lifetime) => {
                 match bounds[0].clean(cx).trait_ {
                     ResolvedPath { path, typarams: None, did, is_generic } => {
-                        let mut bounds: Vec<_> = bounds[1..].iter().map(|bound| {
+                        let mut bounds: Vec<self::ParamBound> = bounds[1..].iter().map(|bound| {
                             TraitBound(bound.clean(cx), hir::TraitBoundModifier::None)
                         }).collect();
                         if !lifetime.is_elided() {
-                            bounds.push(RegionBound(lifetime.clean(cx)));
+                            bounds.push(self::Outlives(lifetime.clean(cx)));
                         }
-                        ResolvedPath {
-                            path,
-                            typarams: Some(bounds),
-                            did,
-                            is_generic,
-                        }
+                        ResolvedPath { path, typarams: Some(bounds), did, is_generic, }
                     }
                     _ => Infer // shouldn't happen
                 }
@@ -2938,7 +2931,7 @@ impl<'tcx> Clean<Type> for Ty<'tcx> {
                     inline::record_extern_fqn(cx, did, TypeKind::Trait);
 
                     let mut typarams = vec![];
-                    reg.clean(cx).map(|b| typarams.push(RegionBound(b)));
+                    reg.clean(cx).map(|b| typarams.push(Outlives(b)));
                     for did in obj.auto_traits() {
                         let empty = cx.tcx.intern_substs(&[]);
                         let path = external_path(cx, &cx.tcx.item_name(did).as_str(),
@@ -2995,7 +2988,7 @@ impl<'tcx> Clean<Type> for Ty<'tcx> {
                         tr
                     } else if let ty::Predicate::TypeOutlives(pred) = *predicate {
                         // these should turn up at the end
-                        pred.skip_binder().1.clean(cx).map(|r| regions.push(RegionBound(r)));
+                        pred.skip_binder().1.clean(cx).map(|r| regions.push(Outlives(r)));
                         return None;
                     } else {
                         return None;
@@ -4299,8 +4292,8 @@ struct RegionDeps<'tcx> {
 
 #[derive(Eq, PartialEq, Hash, Debug)]
 enum SimpleBound {
-    RegionBound(Lifetime),
-    TraitBound(Vec<PathSegment>, Vec<SimpleBound>, Vec<GenericParamDef>, hir::TraitBoundModifier)
+    TraitBound(Vec<PathSegment>, Vec<SimpleBound>, Vec<GenericParamDef>, hir::TraitBoundModifier),
+    Outlives(Lifetime),
 }
 
 enum AutoTraitResult {
@@ -4321,7 +4314,7 @@ impl AutoTraitResult {
 impl From<ParamBound> for SimpleBound {
     fn from(bound: ParamBound) -> Self {
         match bound.clone() {
-            ParamBound::RegionBound(l) => SimpleBound::RegionBound(l),
+            ParamBound::Outlives(l) => SimpleBound::Outlives(l),
             ParamBound::TraitBound(t, mod_) => match t.trait_ {
                 Type::ResolvedPath { path, typarams, .. } => {
                     SimpleBound::TraitBound(path.segments,
