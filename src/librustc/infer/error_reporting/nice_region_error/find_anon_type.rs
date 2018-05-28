@@ -230,8 +230,8 @@ impl<'a, 'gcx, 'tcx> Visitor<'gcx> for TyPathVisitor<'a, 'gcx, 'tcx> {
         NestedVisitorMap::OnlyBodies(&self.tcx.hir)
     }
 
-    fn visit_lifetime<'lr>(&mut self, lifetime: hir::LifetimeRef<'lr>) {
-        let hir_id = self.tcx.hir.node_to_hir_id(*lifetime.id);
+    fn visit_lifetime<'lr>(&mut self, lifetime_ref: hir::LifetimeRef<'lr>) {
+        let hir_id = self.tcx.hir.node_to_hir_id(lifetime_ref.id);
         match (self.tcx.named_region(hir_id), self.bound_region) {
             // the lifetime of the TyPath!
             (Some(rl::Region::LateBoundAnon(debruijn_index, anon_index)), ty::BrAnon(br_index)) => {

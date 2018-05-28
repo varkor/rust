@@ -200,20 +200,20 @@ pub struct Lifetime {
     pub name: LifetimeName,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct LifetimeRef<'a> {
-    pub id: &'a NodeId,
-    pub span: &'a Span,
-    pub name: &'a LifetimeName,
+    pub id: NodeId,
+    pub span: Span,
+    pub name: LifetimeName,
     pub lifetime: Option<&'a Lifetime>,
 }
 
 impl<'a> From<&'a Lifetime> for LifetimeRef<'a> {
     fn from(lifetime: &'a Lifetime) -> Self {
         LifetimeRef {
-            id: &lifetime.id,
-            span: &lifetime.span,
-            name: &lifetime.name,
+            id: lifetime.id,
+            span: lifetime.span,
+            name: lifetime.name,
             lifetime: Some(&lifetime),
         }
     }
@@ -222,10 +222,10 @@ impl<'a> From<&'a Lifetime> for LifetimeRef<'a> {
 impl<'a> From<&'a GenericParam> for LifetimeRef<'a> {
     fn from(param: &'a GenericParam) -> Self {
         match param.kind {
-            GenericParamKind::Lifetime { ref lt_name, .. } => {
+            GenericParamKind::Lifetime { lt_name, .. } => {
                 LifetimeRef {
-                    id: &param.id,
-                    span: &param.span,
+                    id: param.id,
+                    span: param.span,
                     name: lt_name,
                     lifetime: None,
                 }

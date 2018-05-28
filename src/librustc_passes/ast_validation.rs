@@ -237,9 +237,9 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
         visit::walk_label(self, label);
     }
 
-    fn visit_lifetime(&mut self, lifetime: LifetimeRef<'a>) {
-        self.check_lifetime(*lifetime.ident);
-        visit::walk_lifetime(self, lifetime);
+    fn visit_lifetime(&mut self, lifetime_ref: LifetimeRef<'a>) {
+        self.check_lifetime(lifetime_ref.ident);
+        visit::walk_lifetime(self, lifetime_ref);
     }
 
     fn visit_item(&mut self, item: &'a Item) {

@@ -983,7 +983,7 @@ impl<'hir> Map<'hir> {
             Some(EntryPat(_, _, pat)) => pat.span,
             Some(EntryBlock(_, _, block)) => block.span,
             Some(EntryStructCtor(_, _, _)) => self.expect_item(self.get_parent(id)).span,
-            Some(EntryLifetime(_, _, lifetime)) => *lifetime.span,
+            Some(EntryLifetime(_, _, lifetime)) => lifetime.span,
             Some(EntryGenericParam(_, _, param)) => param.span,
             Some(EntryVisibility(_, _, &Visibility::Restricted { ref path, .. })) => path.span,
             Some(EntryVisibility(_, _, v)) => bug!("unexpected Visibility {:?}", v),

@@ -220,9 +220,9 @@ impl<'v> hir_visit::Visitor<'v> for StatCollector<'v> {
         self.record("Variant", Id::None, v);
         hir_visit::walk_variant(self, v, g, item_id)
     }
-    fn visit_lifetime(&mut self, lifetime: hir::LifetimeRef<'v>) {
-        self.record("Lifetime", Id::Node(*lifetime.id), &lifetime);
-        hir_visit::walk_lifetime(self, lifetime)
+    fn visit_lifetime(&mut self, lifetime_ref: hir::LifetimeRef<'v>) {
+        self.record("Lifetime", Id::Node(lifetime_ref.id), &lifetime_ref);
+        hir_visit::walk_lifetime(self, lifetime_ref)
     }
     fn visit_qpath(&mut self, qpath: &'v hir::QPath, id: NodeId, span: Span) {
         self.record("QPath", Id::None, qpath);
@@ -340,9 +340,9 @@ impl<'v> ast_visit::Visitor<'v> for StatCollector<'v> {
         ast_visit::walk_variant(self, v, g, item_id)
     }
 
-    fn visit_lifetime(&mut self, lifetime: ast::LifetimeRef<'v>) {
-        self.record("Lifetime", Id::None, &lifetime);
-        ast_visit::walk_lifetime(self, lifetime)
+    fn visit_lifetime(&mut self, lifetime_ref: ast::LifetimeRef<'v>) {
+        self.record("Lifetime", Id::None, &lifetime_ref);
+        ast_visit::walk_lifetime(self, lifetime_ref)
     }
 
     fn visit_mac(&mut self, mac: &'v ast::Mac) {

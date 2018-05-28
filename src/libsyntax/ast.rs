@@ -58,18 +58,18 @@ impl fmt::Debug for Lifetime {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct LifetimeRef<'a> {
-    pub id: &'a NodeId,
-    pub ident: &'a Ident,
+    pub id: NodeId,
+    pub ident: Ident,
     pub lifetime: Option<&'a Lifetime>,
 }
 
 impl<'a> From<&'a Lifetime> for LifetimeRef<'a> {
     fn from(lifetime: &'a Lifetime) -> Self {
         LifetimeRef {
-            id: &lifetime.id,
-            ident: &lifetime.ident,
+            id: lifetime.id,
+            ident: lifetime.ident,
             lifetime: Some(&lifetime),
         }
     }
@@ -80,8 +80,8 @@ impl<'a> From<&'a GenericParam> for LifetimeRef<'a> {
         match param.kind {
             GenericParamKind::Lifetime => {
                 LifetimeRef {
-                    id: &param.id,
-                    ident: &param.ident,
+                    id: param.id,
+                    ident: param.ident,
                     lifetime: None,
                 }
             }

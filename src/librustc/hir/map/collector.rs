@@ -459,7 +459,7 @@ impl<'a, 'hir> Visitor<'hir> for NodeCollector<'a, 'hir> {
     }
 
     fn visit_lifetime(&mut self, lifetime_ref: LifetimeRef<'hir>) {
-        self.insert(*lifetime_ref.id, NodeLifetime(lifetime_ref));
+        self.insert(lifetime_ref.id, NodeLifetime(lifetime_ref));
     }
 
     fn visit_vis(&mut self, visibility: &'hir Visibility) {

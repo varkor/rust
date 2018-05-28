@@ -107,8 +107,8 @@ pub trait Visitor<'ast>: Sized {
     fn visit_label(&mut self, label: &'ast Label) {
         walk_label(self, label)
     }
-    fn visit_lifetime(&mut self, lifetime: LifetimeRef<'ast>) {
-        walk_lifetime(self, lifetime)
+    fn visit_lifetime(&mut self, lifetime_ref: LifetimeRef<'ast>) {
+        walk_lifetime(self, lifetime_ref)
     }
     fn visit_mac(&mut self, _mac: &'ast Mac) {
         panic!("visit_mac disabled by default");
@@ -201,8 +201,8 @@ pub fn walk_label<'a, V: Visitor<'a>>(visitor: &mut V, label: &'a Label) {
     visitor.visit_ident(label.ident);
 }
 
-pub fn walk_lifetime<'a, V: Visitor<'a>>(visitor: &mut V, lifetime: LifetimeRef<'a>) {
-    visitor.visit_ident(*lifetime.ident);
+pub fn walk_lifetime<'a, V: Visitor<'a>>(visitor: &mut V, lifetime_ref: LifetimeRef<'a>) {
+    visitor.visit_ident(lifetime_ref.ident);
 }
 
 pub fn walk_poly_trait_ref<'a, V>(visitor: &mut V,

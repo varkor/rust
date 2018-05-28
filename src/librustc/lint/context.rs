@@ -861,10 +861,9 @@ impl<'a, 'tcx> hir_visit::Visitor<'tcx> for LateContext<'a, 'tcx> {
         self.generics = generics;
     }
 
-    fn visit_lifetime(&mut self, lt: hir::LifetimeRef<'tcx>) {
-        let lt: hir::LifetimeRef<'tcx> = lt.into();
-        run_lints!(self, check_lifetime, late_passes, lt.clone());
-        hir_visit::walk_lifetime(self, lt);
+    fn visit_lifetime(&mut self, lifetime_ref: hir::LifetimeRef<'tcx>) {
+        run_lints!(self, check_lifetime, late_passes, lifetime_ref);
+        hir_visit::walk_lifetime(self, lifetime_ref);
     }
 
     fn visit_path(&mut self, p: &'tcx hir::Path, id: ast::NodeId) {
@@ -1024,10 +1023,9 @@ impl<'a> ast_visit::Visitor<'a> for EarlyContext<'a> {
         });
     }
 
-    fn visit_lifetime(&mut self, lt: ast::LifetimeRef<'a>) {
-        let lt: ast::LifetimeRef<'a> = lt.into();
-        run_lints!(self, check_lifetime, early_passes, lt.clone());
-        self.check_id(*lt.id);
+    fn visit_lifetime(&mut self, lifetime_ref: ast::LifetimeRef<'a>) {
+        run_lints!(self, check_lifetime, early_passes, lifetime_ref.clone());
+        self.check_id(lifetime_ref.id);
     }
 
     fn visit_path(&mut self, p: &'a ast::Path, id: ast::NodeId) {

@@ -350,8 +350,8 @@ pub trait Visitor<'v> : Sized {
             GenericArg::Type(ty) => self.visit_ty(ty),
         }
     }
-    fn visit_lifetime(&mut self, lifetime: LifetimeRef<'v>) {
-        walk_lifetime(self, lifetime)
+    fn visit_lifetime(&mut self, lifetime_ref: LifetimeRef<'v>) {
+        walk_lifetime(self, lifetime_ref)
     }
     fn visit_qpath(&mut self, qpath: &'v QPath, id: NodeId, span: Span) {
         walk_qpath(self, qpath, id, span)
@@ -430,11 +430,11 @@ pub fn walk_label<'v, V: Visitor<'v>>(visitor: &mut V, label: &'v Label) {
     visitor.visit_name(label.span, label.name);
 }
 
-pub fn walk_lifetime<'v, V: Visitor<'v>>(visitor: &mut V, lifetime: LifetimeRef<'v>) {
-    visitor.visit_id(*lifetime.id);
-    match lifetime.name {
+pub fn walk_lifetime<'v, V: Visitor<'v>>(visitor: &mut V, lifetime_ref: LifetimeRef<'v>) {
+    visitor.visit_id(lifetime_ref.id);
+    match lifetime_ref.name {
         LifetimeName::Name(name) => {
-            visitor.visit_name(*lifetime.span, *name);
+            visitor.visit_name(lifetime_ref.span, name);
         }
         LifetimeName::Fresh(_) |
         LifetimeName::Static |

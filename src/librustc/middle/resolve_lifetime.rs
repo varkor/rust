@@ -1393,8 +1393,8 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                         self.tcx
                             .struct_span_lint_node(
                                 lint::builtin::SINGLE_USE_LIFETIMES,
-                                *id,
-                                *span,
+                                id,
+                                span,
                                 &format!(
                                     "lifetime parameter `{}` only used once",
                                     hir_lifetime.name.name()
@@ -1412,17 +1412,15 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                         let span = hir_lifetime.span;
                         let id = hir_lifetime.id;
 
-                        self.tcx
-                            .struct_span_lint_node(
-                                lint::builtin::UNUSED_LIFETIMES,
-                                *id,
-                                *span,
-                                &format!(
-                                    "lifetime parameter `{}` never used",
-                                    hir_lifetime.name.name()
-                                ),
-                            )
-                            .emit();
+                        self.tcx.struct_span_lint_node(
+                            lint::builtin::UNUSED_LIFETIMES,
+                            id,
+                            span,
+                            &format!(
+                                "lifetime parameter `{}` never used",
+                                hir_lifetime.name.name()
+                            ),
+                        ).emit();
                     }
                 }
             }
@@ -1609,11 +1607,11 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     | Region::LateBound(_, _, LifetimeDefOrigin::InBand) => {
                         struct_span_err!(
                             self.tcx.sess,
-                            *lifetime_ref.span,
+                            lifetime_ref.span,
                             E0687,
                             "lifetimes used in `fn` or `Fn` syntax must be \
                              explicitly declared using `<...>` binders"
-                        ).span_label(*lifetime_ref.span, "in-band lifetime definition")
+                        ).span_label(lifetime_ref.span, "in-band lifetime definition")
                             .emit();
                     }
 
@@ -1629,12 +1627,11 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
         } else {
             struct_span_err!(
                 self.tcx.sess,
-                *lifetime_ref.span,
+                lifetime_ref.span,
                 E0261,
                 "use of undeclared lifetime name `{}`",
                 lifetime_ref.name.name()
-            ).span_label(*lifetime_ref.span, "undeclared lifetime")
-                .emit();
+            ).span_label(lifetime_ref.span, "undeclared lifetime").emit();
         }
     }
 
@@ -2057,14 +2054,12 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
         let mut late_depth = 0;
         let mut scope = self.scope;
         if deprecated {
-            self.tcx
-                .struct_span_lint_node(
-                    lint::builtin::ELIDED_LIFETIMES_IN_PATHS,
-                    *id,
-                    *span,
-                    &format!("hidden lifetime parameters are deprecated, try `Foo<'_>`"),
-                )
-                .emit();
+            self.tcx.struct_span_lint_node(
+                lint::builtin::ELIDED_LIFETIMES_IN_PATHS,
+                id,
+                span,
+                &format!("hidden lifetime parameters are deprecated, try `Foo<'_>`"),
+            ).emit();
         }
         let error = loop {
             match *scope {
@@ -2102,7 +2097,8 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             }
         };
 
-        let mut err = report_missing_lifetime_specifiers(self.tcx.sess, *span, lifetime_refs.len());
+        let mut err =
+            report_missing_lifetime_specifiers(self.tcx.sess, span, lifetime_refs.len());
 
         if let Some(params) = error {
             if lifetime_refs.len() == 1 {
@@ -2416,9 +2412,9 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
     }
 
     fn insert_lifetime(&mut self, lifetime_ref: hir::LifetimeRef<'tcx>, def: Region) {
-        if *lifetime_ref.id == ast::DUMMY_NODE_ID {
+        if lifetime_ref.id == ast::DUMMY_NODE_ID {
             span_bug!(
-                *lifetime_ref.span,
+                lifetime_ref.span,
                 "lifetime reference not renumbered, \
                  probably a bug in syntax::fold"
             );
@@ -2426,11 +2422,11 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
 
         debug!(
             "insert_lifetime: {} resolved to {:?} span={:?}",
-            self.tcx.hir.node_to_string(*lifetime_ref.id),
+            self.tcx.hir.node_to_string(lifetime_ref.id),
             def,
-            self.tcx.sess.codemap().span_to_string(*lifetime_ref.span)
+            self.tcx.sess.codemap().span_to_string(lifetime_ref.span)
         );
-        self.map.defs.insert(*lifetime_ref.id, def);
+        self.map.defs.insert(lifetime_ref.id, def);
 
         match def {
             Region::LateBoundAnon(..) | Region::Static => {
@@ -2442,7 +2438,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
             | Region::EarlyBound(_, def_id, _) => {
                 // A lifetime declared by the user.
                 let def_local_id = self.tcx.hir.as_local_node_id(def_id).unwrap();
-                if def_local_id == *lifetime_ref.id {
+                if def_local_id == lifetime_ref.id {
                     // This is weird. Because the HIR defines a
                     // lifetime *definition* as wrapping a Lifetime,
                     // we wind up invoking this method also for the
@@ -2612,7 +2608,7 @@ fn insert_late_bound_lifetimes(
         }
 
         fn visit_lifetime(&mut self, lifetime_ref: hir::LifetimeRef<'v>) {
-            self.regions.insert(*lifetime_ref.name);
+            self.regions.insert(lifetime_ref.name);
         }
     }
 
@@ -2626,7 +2622,7 @@ fn insert_late_bound_lifetimes(
         }
 
         fn visit_lifetime(&mut self, lifetime_ref: hir::LifetimeRef<'v>) {
-            self.regions.insert(*lifetime_ref.name);
+            self.regions.insert(lifetime_ref.name);
         }
     }
 }

@@ -121,9 +121,9 @@ impl<'ast> Visitor<'ast> for NodeCounter {
         self.count += 1;
         walk_variant(self, v, g, item_id)
     }
-    fn visit_lifetime<'a>(&mut self, lifetime: LifetimeRef<'a>) {
+    fn visit_lifetime<'a>(&mut self, lifetime_ref: LifetimeRef<'a>) {
         self.count += 1;
-        walk_lifetime(self, lifetime)
+        walk_lifetime(self, lifetime_ref)
     }
     fn visit_mac(&mut self, _mac: &Mac) {
         self.count += 1;
