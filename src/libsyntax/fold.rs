@@ -272,17 +272,17 @@ pub trait Folder : Sized {
         noop_fold_opt_lifetime(o_lt, self)
     }
 
-    fn fold_opt_bounds(&mut self, b: Option<TyParamBounds>)
-                       -> Option<TyParamBounds> {
+    fn fold_opt_bounds(&mut self, b: Option<ParamBounds>)
+                       -> Option<ParamBounds> {
         noop_fold_opt_bounds(b, self)
     }
 
-    fn fold_bounds(&mut self, b: TyParamBounds)
-                       -> TyParamBounds {
+    fn fold_bounds(&mut self, b: ParamBounds)
+                       -> ParamBounds {
         noop_fold_bounds(b, self)
     }
 
-    fn fold_ty_param_bound(&mut self, tpb: TyParamBound) -> TyParamBound {
+    fn fold_ty_param_bound(&mut self, tpb: ParamBound) -> ParamBound {
         noop_fold_ty_param_bound(tpb, self)
     }
 
@@ -674,12 +674,12 @@ pub fn noop_fold_fn_decl<T: Folder>(decl: P<FnDecl>, fld: &mut T) -> P<FnDecl> {
     })
 }
 
-pub fn noop_fold_ty_param_bound<T>(tpb: TyParamBound, fld: &mut T)
-                                   -> TyParamBound
+pub fn noop_fold_ty_param_bound<T>(tpb: ParamBound, fld: &mut T)
+                                   -> ParamBound
                                    where T: Folder {
     match tpb {
         TraitTyParamBound(ty, modifier) => TraitTyParamBound(fld.fold_poly_trait_ref(ty), modifier),
-        RegionTyParamBound(lifetime) => RegionTyParamBound(fld.fold_lifetime(lifetime)),
+        Outlives(lifetime) => Outlives(fld.fold_lifetime(lifetime)),
     }
 }
 
@@ -689,26 +689,27 @@ pub fn noop_fold_generic_param<T: Folder>(param: GenericParam, fld: &mut T) -> G
         .flat_map(|x| fld.fold_attribute(x).into_iter())
         .collect::<Vec<_>>()
         .into();
+    let bounds = fld.fold_bounds(param.bounds);
     match param.kind {
-        GenericParamKind::Lifetime { bounds, lifetime } => {
+        GenericParamKind::Lifetime { lifetime } => {
             let lifetime = fld.fold_lifetime(lifetime);
             GenericParam {
                 ident: lifetime.ident,
                 id: lifetime.id,
                 attrs,
+                bounds,
                 kind: GenericParamKind::Lifetime {
-                    bounds: fld.fold_lifetimes(bounds),
                     lifetime,
                 }
             }
         }
-        GenericParamKind::Type { bounds, default } => {
+        GenericParamKind::Type { default } => {
             GenericParam {
                 ident: fld.fold_ident(param.ident),
                 id: fld.new_id(param.id),
                 attrs,
+                bounds,
                 kind: GenericParamKind::Type {
-                    bounds: fld.fold_bounds(bounds),
                     default: default.map(|x| fld.fold_ty(x)),
                 }
             }
@@ -868,13 +869,13 @@ pub fn noop_fold_mt<T: Folder>(MutTy {ty, mutbl}: MutTy, folder: &mut T) -> MutT
     }
 }
 
-pub fn noop_fold_opt_bounds<T: Folder>(b: Option<TyParamBounds>, folder: &mut T)
-                                       -> Option<TyParamBounds> {
+pub fn noop_fold_opt_bounds<T: Folder>(b: Option<ParamBounds>, folder: &mut T)
+                                       -> Option<ParamBounds> {
     b.map(|bounds| folder.fold_bounds(bounds))
 }
 
-fn noop_fold_bounds<T: Folder>(bounds: TyParamBounds, folder: &mut T)
-                          -> TyParamBounds {
+fn noop_fold_bounds<T: Folder>(bounds: ParamBounds, folder: &mut T)
+                          -> ParamBounds {
     bounds.move_map(|bound| folder.fold_ty_param_bound(bound))
 }
 

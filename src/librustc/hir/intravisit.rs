@@ -314,7 +314,7 @@ pub trait Visitor<'v> : Sized {
     fn visit_trait_ref(&mut self, t: &'v TraitRef) {
         walk_trait_ref(self, t)
     }
-    fn visit_ty_param_bound(&mut self, bounds: &'v TyParamBound) {
+    fn visit_ty_param_bound(&mut self, bounds: &'v ParamBound) {
         walk_ty_param_bound(self, bounds)
     }
     fn visit_poly_trait_ref(&mut self, t: &'v PolyTraitRef, m: TraitBoundModifier) {
@@ -724,12 +724,12 @@ pub fn walk_foreign_item<'v, V: Visitor<'v>>(visitor: &mut V, foreign_item: &'v 
     walk_list!(visitor, visit_attribute, &foreign_item.attrs);
 }
 
-pub fn walk_ty_param_bound<'v, V: Visitor<'v>>(visitor: &mut V, bound: &'v TyParamBound) {
+pub fn walk_ty_param_bound<'v, V: Visitor<'v>>(visitor: &mut V, bound: &'v ParamBound) {
     match *bound {
         TraitTyParamBound(ref typ, modifier) => {
             visitor.visit_poly_trait_ref(typ, modifier);
         }
-        RegionTyParamBound(ref lifetime) => {
+        Outlives(ref lifetime) => {
             visitor.visit_lifetime(lifetime);
         }
     }
@@ -737,18 +737,17 @@ pub fn walk_ty_param_bound<'v, V: Visitor<'v>>(visitor: &mut V, bound: &'v TyPar
 
 pub fn walk_generic_param<'v, V: Visitor<'v>>(visitor: &mut V, param: &'v GenericParam) {
     match param.kind {
-        GenericParamKind::Lifetime { ref bounds, ref lifetime, .. } => {
+        GenericParamKind::Lifetime { ref lifetime, .. } => {
             visitor.visit_lifetime(lifetime);
-            walk_list!(visitor, visit_lifetime, bounds);
         }
-        GenericParamKind::Type { name, ref bounds, ref default, ref attrs, .. } => {
+        GenericParamKind::Type { name, ref default, ref attrs, .. } => {
             visitor.visit_id(param.id);
             visitor.visit_name(param.span, name);
-            walk_list!(visitor, visit_ty_param_bound, bounds);
             walk_list!(visitor, visit_ty, default);
             walk_list!(visitor, visit_attribute, attrs.iter());
         }
     }
+    walk_list!(visitor, visit_ty_param_bound, &param.bounds);
 }
 
 pub fn walk_generics<'v, V: Visitor<'v>>(visitor: &mut V, generics: &'v Generics) {
