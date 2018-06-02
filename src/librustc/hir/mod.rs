@@ -1199,12 +1199,22 @@ impl Decl_ {
     }
 }
 
-/// represents one arm of a 'match'
+/// Represents the (optional) guard condition for a `match` arm.
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
+pub enum Guard {
+    /// An `if expr` guard.
+    If(P<Expr>),
+
+    /// An `if let pat = expr` guard.
+    IfLet(HirVec<P<Pat>>, P<Expr>),
+}
+
+/// Represents one arm of a `match`.
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct Arm {
     pub attrs: HirVec<Attribute>,
     pub pats: HirVec<P<Pat>>,
-    pub guard: Option<P<Expr>>,
+    pub guard: Option<P<Guard>>,
     pub body: P<Expr>,
 }
 

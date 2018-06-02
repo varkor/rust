@@ -999,8 +999,18 @@ impl<'a> LoweringContext<'a> {
         hir::Arm {
             attrs: self.lower_attrs(&arm.attrs),
             pats: arm.pats.iter().map(|x| self.lower_pat(x)).collect(),
-            guard: arm.guard.as_ref().map(|ref x| P(self.lower_expr(x))),
+            guard: arm.guard.as_ref().map(|ref x| P(self.lower_guard(x))),
             body: P(self.lower_expr(&arm.body)),
+        }
+    }
+
+    fn lower_guard(&mut self, guard: &Guard) -> hir::Guard {
+        match guard {
+            Guard::If(e) => hir::Guard::If(self.lower_expr(e)),
+            Guard::IfLet(pats, e) => {
+                let pats = pats.iter().map(|x| self.lower_pat(x)).collect();
+                hir::Guard::IfLet(pats, self.lower_expr(e))
+            }
         }
     }
 

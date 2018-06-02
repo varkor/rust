@@ -883,7 +883,17 @@ pub struct Local {
     pub attrs: ThinVec<Attribute>,
 }
 
-/// An arm of a 'match'.
+/// The (optional) guard in the arm of a `match`.
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
+pub enum Guard {
+    /// An `if expr` guard.
+    If(P<Expr>),
+
+    /// An `if let pat = expr` guard.
+    IfLet(Vec<P<Pat>>, P<Expr>),
+}
+
+/// An arm of a `match`.
 ///
 /// E.g. `0...10 => { println!("match!") }` as in
 ///
@@ -897,7 +907,7 @@ pub struct Local {
 pub struct Arm {
     pub attrs: Vec<Attribute>,
     pub pats: Vec<P<Pat>>,
-    pub guard: Option<P<Expr>>,
+    pub guard: Option<P<Guard>>,
     pub body: P<Expr>,
 }
 

@@ -512,6 +512,11 @@ impl_stable_hash_for!(enum hir::Decl_ {
     DeclItem(item_id)
 });
 
+impl_stable_hash_for!(enum hir::Guard {
+    If(expr),
+    IfLet(pats, expr)
+});
+
 impl_stable_hash_for!(struct hir::Arm {
     attrs,
     pats,

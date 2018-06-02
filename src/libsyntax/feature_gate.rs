@@ -475,6 +475,9 @@ declare_features! (
 
     // 'a: { break 'a; }
     (active, label_break_value, "1.28.0", Some(48594), None),
+
+    // Allow if let in match guards
+    (active, if_let_guard, "1.28.0", Some(51114), None),
 );
 
 declare_features! (

@@ -68,6 +68,7 @@ pub trait Visitor<'ast>: Sized {
     fn visit_block(&mut self, b: &'ast Block) { walk_block(self, b) }
     fn visit_stmt(&mut self, s: &'ast Stmt) { walk_stmt(self, s) }
     fn visit_arm(&mut self, a: &'ast Arm) { walk_arm(self, a) }
+    fn visit_guard(&mut self, g: &'ast Guard) { walk_guard(self, g) }
     fn visit_pat(&mut self, p: &'ast Pat) { walk_pat(self, p) }
     fn visit_anon_const(&mut self, c: &'ast AnonConst) { walk_anon_const(self, c) }
     fn visit_expr(&mut self, ex: &'ast Expr) { walk_expr(self, ex) }
@@ -813,9 +814,18 @@ pub fn walk_expr<'a, V: Visitor<'a>>(visitor: &mut V, expression: &'a Expr) {
 
 pub fn walk_arm<'a, V: Visitor<'a>>(visitor: &mut V, arm: &'a Arm) {
     walk_list!(visitor, visit_pat, &arm.pats);
-    walk_list!(visitor, visit_expr, &arm.guard);
     visitor.visit_expr(&arm.body);
     walk_list!(visitor, visit_attribute, &arm.attrs);
+}
+
+pub fn walk_guard<'v, V: Visitor<'v>>(visitor: &mut V, guard: &'v Guard) {
+    match guard {
+        Guard::If(expr) => visitor.visit_expr(expr),
+        Guard::IfLet(pats, expr) => {
+            walk_list!(visitor, visit_pat, pats);
+            visitor.visit_expr(&expr);
+        }
+    }
 }
 
 pub fn walk_vis<'a, V: Visitor<'a>>(visitor: &mut V, vis: &'a Visibility) {

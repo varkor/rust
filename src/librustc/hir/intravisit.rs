@@ -269,6 +269,9 @@ pub trait Visitor<'v> : Sized {
     fn visit_arm(&mut self, a: &'v Arm) {
         walk_arm(self, a)
     }
+    fn visit_guard(&mut self, g: &'v Guard) {
+        walk_guard(self, g)
+    }
     fn visit_pat(&mut self, p: &'v Pat) {
         walk_pat(self, p)
     }
@@ -1100,9 +1103,19 @@ pub fn walk_expr<'v, V: Visitor<'v>>(visitor: &mut V, expression: &'v Expr) {
 
 pub fn walk_arm<'v, V: Visitor<'v>>(visitor: &mut V, arm: &'v Arm) {
     walk_list!(visitor, visit_pat, &arm.pats);
-    walk_list!(visitor, visit_expr, &arm.guard);
+    walk_list!(visitor, visit_guard, &arm.guard);
     visitor.visit_expr(&arm.body);
     walk_list!(visitor, visit_attribute, &arm.attrs);
+}
+
+pub fn walk_guard<'v, V: Visitor<'v>>(visitor: &mut V, guard: &'v Guard) {
+    match guard {
+        Guard::If(expr) => visitor.visit_expr(expr),
+        Guard::IfLet(pats, expr) => {
+            walk_list!(visitor, visit_pat, pats);
+            visitor.visit_expr(&expr);
+        }
+    }
 }
 
 pub fn walk_vis<'v, V: Visitor<'v>>(visitor: &mut V, vis: &'v Visibility) {

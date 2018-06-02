@@ -3487,7 +3487,13 @@ impl<'a> Parser<'a> {
         self.eat(&token::BinOp(token::Or));
         let pats = self.parse_pats()?;
         let guard = if self.eat_keyword(keywords::If) {
-            Some(self.parse_expr()?)
+            if self.eat_keyword(keywords::Let) {
+                let if_pats = self.parse_pats()?;
+                self.expect(&token::Eq)?;
+                Some(P(ast::Guard::IfLet(if_pats, self.parse_expr()?)))
+            } else {
+                Some(P(ast::Guard::If(self.parse_expr()?)))
+            }
         } else {
             None
         };

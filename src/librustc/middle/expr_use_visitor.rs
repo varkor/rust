@@ -791,7 +791,16 @@ impl<'a, 'gcx, 'tcx> ExprUseVisitor<'a, 'gcx, 'tcx> {
         }
 
         if let Some(ref guard) = arm.guard {
-            self.consume_expr(&guard);
+            match guard {
+                hir::Guard::If(expr) => self.consume_expr(expr),
+                hir::Guard::IfLet(pats, expr) => {
+                    for pat in pats {
+                        self.determine_pat_move_mode(discr_cmt.clone(), &pat, &mut mode);
+                    }
+                    self.consume_expr(expr)
+                }
+            }
+
         }
 
         self.consume_expr(&arm.body);
