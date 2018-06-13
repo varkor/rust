@@ -905,12 +905,8 @@ impl<'a> Parser<'a> {
     }
 
     fn check_const(&mut self) -> bool {
-        if self.token.can_begin_const() {
-            true
-        } else {
-            self.expected_tokens.push(TokenType::Const);
-            false
-        }
+        self.expected_tokens.push(TokenType::Const);
+        self.check_keyword(keywords::Const)
     }
 
     /// Expect and consume a `+`. if `+=` is seen, replace it with a `=`
@@ -5017,13 +5013,13 @@ impl<'a> Parser<'a> {
                     self.span_err(self.prev_span,
                         "lifetime parameters must be declared prior to type and const parameters");
                 }
-            } else if self.check_ident() {
-                // Parse type parameter.
-                params.push(self.parse_ty_param(attrs)?);
-                seen_non_lifetime_param = true;
             } else if self.check_const() { //self.check_keyword(keywords::Const)
                 //TODO(yodaldevoid): should const parameters be forced to be after type parameters?
                 params.push(self.parse_const_param(attrs)?);
+                seen_non_lifetime_param = true;
+            } else if self.check_ident() {
+                // Parse type parameter.
+                params.push(self.parse_ty_param(attrs)?);
                 seen_non_lifetime_param = true;
             } else {
                 // Check for trailing attributes and stop parsing.
