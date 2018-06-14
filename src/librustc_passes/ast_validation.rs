@@ -449,7 +449,8 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                     }
                 }
                 (GenericParamKind::Const { .. }, _) => {
-                    unimplemented!() //TODO(yodaldevoid):
+                    seen_non_lifetime_param = true;
+                    //TODO(yodaldevoid): defaults
                 }
             }
         }
