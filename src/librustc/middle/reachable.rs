@@ -41,6 +41,7 @@ fn generics_require_inlining(generics: &ty::Generics) -> bool {
     for param in &generics.params {
         match param.kind {
             GenericParamDefKind::Lifetime { .. } => {}
+            GenericParamDefKind::Const { .. } |
             GenericParamDefKind::Type { .. } => return true,
         }
     }

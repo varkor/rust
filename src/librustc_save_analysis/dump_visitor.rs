@@ -372,6 +372,7 @@ impl<'l, 'tcx: 'l, 'll, O: DumpOutput + 'll> DumpVisitor<'l, 'tcx, 'll, O> {
         for param in &generics.params {
             match param.kind {
                 ast::GenericParamKind::Lifetime { .. } => {}
+                ast::GenericParamKind::Const { .. } |
                 ast::GenericParamKind::Type { .. } => {
                     let param_ss = param.ident.span;
                     let name = escape(self.span.snippet(param_ss));
@@ -1534,6 +1535,14 @@ impl<'l, 'tcx: 'l, 'll, O: DumpOutput + 'll> Visitor<'l> for DumpVisitor<'l, 'tc
                 if let Some(ref ty) = default {
                     self.visit_ty(&ty);
                 }
+            }
+            ast::GenericParamKind::Const { ref ty } => {
+                for bound in &param.bounds {
+                    if let ast::GenericBound::Trait(ref trait_ref, _) = *bound {
+                        self.process_path(trait_ref.trait_ref.ref_id, &trait_ref.trait_ref.path)
+                    }
+                }
+                self.visit_ty(&ty);
             }
         });
     }

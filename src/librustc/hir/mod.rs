@@ -393,6 +393,7 @@ impl PathSegment {
 pub enum GenericArg {
     Lifetime(Lifetime),
     Type(Ty),
+    Const(Expr),
 }
 
 impl GenericArg {
@@ -400,6 +401,7 @@ impl GenericArg {
         match self {
             GenericArg::Lifetime(l) => l.span,
             GenericArg::Type(t) => t.span,
+            GenericArg::Const(c) => c.span,
         }
     }
 }
@@ -434,6 +436,7 @@ impl GenericArgs {
         if self.parenthesized {
             for arg in &self.args {
                 match arg {
+                    GenericArg::Const(_) | //TODO(yodaldevoid): is this right?
                     GenericArg::Lifetime(_) => {}
                     GenericArg::Type(ref ty) => {
                         if let TyKind::Tup(ref tys) = ty.node {
@@ -489,7 +492,10 @@ pub enum GenericParamKind {
     Type {
         default: Option<P<Ty>>,
         synthetic: Option<SyntheticTyParamKind>,
-    }
+    },
+    Const {
+        ty: P<Ty>,
+    },
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
@@ -507,6 +513,7 @@ pub struct GenericParam {
 pub struct GenericParamCount {
     pub lifetimes: usize,
     pub types: usize,
+    pub consts: usize,
 }
 
 /// Represents lifetimes and type parameters attached to a declaration
@@ -537,12 +544,14 @@ impl Generics {
         let mut own_counts = GenericParamCount {
             lifetimes: 0,
             types: 0,
+            consts: 0,
         };
 
         for param in &self.params {
             match param.kind {
                 GenericParamKind::Lifetime { .. } => own_counts.lifetimes += 1,
                 GenericParamKind::Type { .. } => own_counts.types += 1,
+                GenericParamKind::Const { .. } => own_counts.consts += 1,
             };
         }
 

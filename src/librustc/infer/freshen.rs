@@ -141,6 +141,16 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for TypeFreshener<'a, 'gcx, 'tcx> {
                     ty::FreshTy)
             }
 
+            ty::TyInfer(ty::ConstVar(v)) => {
+                self.freshen(
+                    self.infcx.const_unification_table.borrow_mut()
+                        .probe_value(v)
+                        .map(|v| v.to_type(tcx)),
+                    ty::ConstVar(v),
+                    ty::FreshIntTy
+                )
+            }
+
             ty::TyInfer(ty::IntVar(v)) => {
                 self.freshen(
                     self.infcx.int_unification_table.borrow_mut()
@@ -160,6 +170,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for TypeFreshener<'a, 'gcx, 'tcx> {
             }
 
             ty::TyInfer(ty::FreshTy(c)) |
+            ty::TyInfer(ty::FreshConstTy(c)) |
             ty::TyInfer(ty::FreshIntTy(c)) |
             ty::TyInfer(ty::FreshFloatTy(c)) => {
                 if c >= self.freshen_count {

@@ -123,6 +123,10 @@ impl<'a, 'tcx> Visitor<'tcx> for CollectItemTypesVisitor<'a, 'tcx> {
                     self.tcx.type_of(def_id);
                 }
                 hir::GenericParamKind::Type { .. } => {}
+                hir::GenericParamKind::Const { .. } => {
+                    let def_id = self.tcx.hir.local_def_id(param.id);
+                    self.tcx.type_of(def_id);
+                }
             }
         }
         intravisit::walk_generics(self, generics);
@@ -949,6 +953,22 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             i += 1;
             Some(ty_param)
         }
+        //TODO(yodaldevoid): should this be split out to put const parameters after type parameters?
+        GenericParamKind::Const { .. } => {
+            if param.name.name() == keywords::SelfType.name() {
+                span_bug!(param.span,  "`Self` should not be the name of a regular parameter");
+            }
+
+            let const_param = ty::GenericParamDef {
+                index: type_start + i as u32,
+                name: param.name.name().as_interned_str(),
+                def_id: tcx.hir.local_def_id(param.id),
+                pure_wrt_drop: param.pure_wrt_drop,
+                kind: ty::GenericParamDefKind::Const,
+            };
+            i += 1;
+            Some(const_param)
+        }
         _ => None,
     }));
 
@@ -1160,6 +1180,9 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         NodeGenericParam(param) => {
             match param.kind {
                 hir::GenericParamKind::Type { default: Some(ref ty), .. } => {
+                    icx.to_ty(ty)
+                }
+                hir::GenericParamKind::Const { ref ty, .. } => {
                     icx.to_ty(ty)
                 }
                 _ => bug!("unexpected non-type NodeGenericParam"),

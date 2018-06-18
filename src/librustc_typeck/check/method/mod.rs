@@ -258,6 +258,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         // Construct a trait-reference `self_ty : Trait<input_tys>`
         let substs = Substs::for_item(self.tcx, trait_def_id, |param, _| {
             match param.kind {
+                GenericParamDefKind::Const |
                 GenericParamDefKind::Lifetime => {}
                 GenericParamDefKind::Type {..} => {
                     if param.index == 0 {

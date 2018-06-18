@@ -413,6 +413,9 @@ impl<'b, 'a, 'tcx> ReachEverythingInTheInterfaceVisitor<'b, 'a, 'tcx> {
                         self.ev.tcx.type_of(param.def_id).visit_with(self);
                     }
                 }
+                GenericParamDefKind::Const => {
+                    self.ev.tcx.type_of(param.def_id).visit_with(self);
+                }
                 GenericParamDefKind::Lifetime => {}
             }
         }
@@ -1272,6 +1275,7 @@ impl<'a, 'tcx> Visitor<'tcx> for ObsoleteVisiblePrivateTypesVisitor<'a, 'tcx> {
     fn visit_generics(&mut self, generics: &'tcx hir::Generics) {
         generics.params.iter().for_each(|param| match param.kind {
             GenericParamKind::Lifetime { .. } => {}
+            GenericParamKind::Const { .. } |
             GenericParamKind::Type { .. } => {
                 for bound in &param.bounds {
                     self.check_generic_bound(bound);
@@ -1361,6 +1365,9 @@ impl<'a, 'tcx: 'a> SearchInterfaceForPrivateItemsVisitor<'a, 'tcx> {
                     if has_default {
                         self.tcx.type_of(param.def_id).visit_with(self);
                     }
+                }
+                GenericParamDefKind::Const => {
+                    self.tcx.type_of(param.def_id).visit_with(self);
                 }
                 GenericParamDefKind::Lifetime => {}
             }

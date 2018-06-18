@@ -52,6 +52,7 @@ pub trait AstBuilder {
     fn ty(&self, span: Span, ty: ast::TyKind) -> P<ast::Ty>;
     fn ty_path(&self, path: ast::Path) -> P<ast::Ty>;
     fn ty_ident(&self, span: Span, idents: ast::Ident) -> P<ast::Ty>;
+    fn const_ident(&self, span: Span, idents: ast::Ident) -> P<ast::Expr>;
 
     fn ty_rptr(&self, span: Span,
                ty: P<ast::Ty>,
@@ -398,6 +399,10 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     fn ty_ident(&self, span: Span, ident: ast::Ident)
         -> P<ast::Ty> {
         self.ty_path(self.path_ident(span, ident))
+    }
+
+    fn const_ident(&self, _span: Span, _ident: ast::Ident) -> P<ast::Expr> {
+        unimplemented!() // TODO(yodaldevoid)
     }
 
     fn ty_rptr(&self,

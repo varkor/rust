@@ -329,9 +329,10 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
             if i < parent_substs.len() {
                 parent_substs[i]
             } else {
-                let (is_lt, is_ty) = match param.kind {
-                    GenericParamDefKind::Lifetime => (true, false),
-                    GenericParamDefKind::Type { .. } => (false, true),
+                let (is_lt, is_ty, is_ct) = match param.kind {
+                    GenericParamDefKind::Lifetime => (true, false, false),
+                    GenericParamDefKind::Type { .. } => (false, true, false),
+                    GenericParamDefKind::Const => (false, false, true),
                 };
                 provided.as_ref().and_then(|data| {
                     for arg in &data.args {
@@ -351,6 +352,13 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
                                 i -= 1;
                             }
                             GenericArg::Type(_) => {}
+                            GenericArg::Const(_ct) if is_ct => {
+                                if i == parent_substs.len() + own_counts.lifetimes + own_counts.types {
+                                    unimplemented!()
+                                }
+                                i -= 1;
+                            }
+                            GenericArg::Const(_) => {}
                         }
                     }
                     None

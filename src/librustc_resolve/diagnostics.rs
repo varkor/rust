@@ -533,7 +533,7 @@ closures or copying the parameters should still work.
 "##,
 
 E0403: r##"
-Some type parameters have the same name.
+Some type or const parameters have the same name.
 
 Erroneous code example:
 

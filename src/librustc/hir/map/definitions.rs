@@ -348,6 +348,8 @@ pub enum DefPathData {
     TypeParam(InternedString),
     /// A lifetime definition
     LifetimeParam(InternedString),
+    /// A const parameter (generic parameter)
+    ConstParam(InternedString),
     /// A variant of a enum
     EnumVariant(InternedString),
     /// A struct field
@@ -613,6 +615,7 @@ impl DefPathData {
             MacroDef(name) |
             TypeParam(name) |
             LifetimeParam(name) |
+            ConstParam(name) |
             EnumVariant(name) |
             Field(name) |
             GlobalMetaData(name) => Some(name),
@@ -640,6 +643,7 @@ impl DefPathData {
             MacroDef(name) |
             TypeParam(name) |
             LifetimeParam(name) |
+            ConstParam(name) |
             EnumVariant(name) |
             Field(name) |
             GlobalMetaData(name) => {

@@ -1219,6 +1219,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for InvalidNoMangleItems {
                     for param in &generics.params {
                         match param.kind {
                             GenericParamKind::Lifetime { .. } => {}
+                            GenericParamKind::Const { .. } |
                             GenericParamKind::Type { .. } => {
                                 let mut err = cx.struct_span_lint(NO_MANGLE_GENERIC_ITEMS,
                                                                   it.span,

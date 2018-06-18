@@ -476,6 +476,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                 }
                 match x.val {
                     ConstValue::Unevaluated(def_id, substs) => {
+                        // TODO(varkor): this case should be entirely removed.
                         // FIXME(eddyb) get the right param_env.
                         let param_env = ty::ParamEnv::empty();
                         match tcx.lift_to_global(&substs) {
@@ -506,7 +507,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                     }
                     _ => {
                         tcx.sess.delay_span_bug(DUMMY_SP,
-                            &format!("arrays should not have {:?} as length", x));
+                            &format!("arrays should not have const {:?} as length", x));
                         Err(ErrorReported)
                     }
                 }
@@ -638,6 +639,17 @@ impl<'tcx> Relate<'tcx> for &'tcx Substs<'tcx> {
     }
 }
 
+impl<'tcx> Relate<'tcx> for &'tcx ty::Const<'tcx> {
+    fn relate<'a, 'gcx, R>(_relation: &mut R,
+                           _a: &&'tcx ty::Const<'tcx>,
+                           _b: &&'tcx ty::Const<'tcx>)
+                           -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>
+        where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
+    {
+        unimplemented!() // TODO(yodaldevoid)
+    }
+}
+
 impl<'tcx> Relate<'tcx> for ty::Region<'tcx> {
     fn relate<'a, 'gcx, R>(relation: &mut R,
                            a: &ty::Region<'tcx>,
@@ -702,7 +714,12 @@ impl<'tcx> Relate<'tcx> for Kind<'tcx> {
             (UnpackedKind::Type(a_ty), UnpackedKind::Type(b_ty)) => {
                 Ok(relation.relate(&a_ty, &b_ty)?.into())
             }
-            (UnpackedKind::Lifetime(_), _) | (UnpackedKind::Type(_), _) => bug!()
+            (UnpackedKind::Const(a_ct), UnpackedKind::Const(b_ct)) => {
+                Ok(relation.relate(&a_ct, &b_ct)?.into())
+            }
+            (UnpackedKind::Lifetime(_), _) |
+            (UnpackedKind::Type(_), _) |
+            (UnpackedKind::Const(_), _) => bug!()
         }
     }
 }

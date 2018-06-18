@@ -84,6 +84,7 @@ for ty::subst::UnpackedKind<'gcx> {
         match self {
             ty::subst::UnpackedKind::Lifetime(lt) => lt.hash_stable(hcx, hasher),
             ty::subst::UnpackedKind::Type(ty) => ty.hash_stable(hcx, hasher),
+            ty::subst::UnpackedKind::Const(ct) => ct.hash_stable(hcx, hasher),
         }
     }
 }
@@ -145,6 +146,15 @@ impl<'a> HashStable<StableHashingContext<'a>> for ty::RegionVid {
                                           hasher: &mut StableHasher<W>) {
         use rustc_data_structures::indexed_vec::Idx;
         self.index().hash_stable(hcx, hasher);
+    }
+}
+
+impl<'gcx> HashStable<StableHashingContext<'gcx>> for ty::ConstVid {
+    #[inline]
+    fn hash_stable<W: StableHasherResult>(&self,
+                                          hcx: &mut StableHashingContext<'gcx>,
+                                          hasher: &mut StableHasher<W>) {
+        self.index.hash_stable(hcx, hasher);
     }
 }
 
@@ -701,6 +711,7 @@ impl<'a> HashStable<StableHashingContext<'a>> for ty::GenericParamDefKind {
                                           hasher: &mut StableHasher<W>) {
         mem::discriminant(self).hash_stable(hcx, hasher);
         match *self {
+            ty::GenericParamDefKind::Const |
             ty::GenericParamDefKind::Lifetime => {}
             ty::GenericParamDefKind::Type {
                 has_default,
@@ -890,9 +901,11 @@ for ty::TypeVariants<'gcx>
 
 impl_stable_hash_for!(enum ty::InferTy {
     TyVar(a),
+    ConstVar(a),
     IntVar(a),
     FloatVar(a),
     FreshTy(a),
+    FreshConstTy(a),
     FreshIntTy(a),
     FreshFloatTy(a),
     CanonicalTy(a),
@@ -933,6 +946,11 @@ for ty::FloatVid
         bug!("ty::TypeVariants::hash_stable() - can't hash a FloatVid {:?}.", *self)
     }
 }
+
+impl_stable_hash_for!(struct ty::ParamConst {
+    idx,
+    name
+});
 
 impl_stable_hash_for!(struct ty::ParamTy {
     idx,
@@ -1271,6 +1289,7 @@ impl_stable_hash_for!(enum infer::canonical::CanonicalVarKind {
 
 impl_stable_hash_for!(enum infer::canonical::CanonicalTyVarKind {
     General,
+    Const,
     Int,
     Float
 });

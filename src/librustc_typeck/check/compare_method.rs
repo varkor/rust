@@ -744,12 +744,12 @@ fn compare_synthetic_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let trait_m_generics = tcx.generics_of(trait_m.def_id);
     let impl_m_type_params = impl_m_generics.params.iter().filter_map(|param| match param.kind {
         GenericParamDefKind::Type { synthetic, .. } => Some((param.def_id, synthetic)),
-        GenericParamDefKind::Lifetime => None,
+        GenericParamDefKind::Lifetime | GenericParamDefKind::Const => None,
     });
     let trait_m_type_params = trait_m_generics.params.iter().filter_map(|param| {
         match param.kind {
             GenericParamDefKind::Type { synthetic, .. } => Some((param.def_id, synthetic)),
-            GenericParamDefKind::Lifetime => None,
+            GenericParamDefKind::Lifetime | GenericParamDefKind::Const => None,
         }
     });
     for ((impl_def_id, impl_synthetic),
@@ -858,6 +858,7 @@ fn compare_synthetic_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         let bounds = impl_m.generics.params.iter().find_map(|param| {
                             match param.kind {
                                 GenericParamKind::Lifetime { .. } => None,
+                                GenericParamKind::Const { .. } |
                                 GenericParamKind::Type { .. } => {
                                     if param.id == impl_node_id {
                                         Some(&param.bounds)

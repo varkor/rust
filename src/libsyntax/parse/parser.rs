@@ -394,6 +394,7 @@ crate enum TokenType {
     Ident,
     Path,
     Type,
+    Const,
 }
 
 impl TokenType {
@@ -406,6 +407,7 @@ impl TokenType {
             TokenType::Ident => "identifier".to_string(),
             TokenType::Path => "path".to_string(),
             TokenType::Type => "type".to_string(),
+            TokenType::Const => "const".to_string(),
         }
     }
 }
@@ -898,6 +900,15 @@ impl<'a> Parser<'a> {
             true
         } else {
             self.expected_tokens.push(TokenType::Type);
+            false
+        }
+    }
+
+    fn check_const(&mut self) -> bool {
+        if self.token.can_begin_const() {
+            true
+        } else {
+            self.expected_tokens.push(TokenType::Const);
             false
         }
     }
@@ -4962,11 +4973,29 @@ impl<'a> Parser<'a> {
         Ok((ident, TraitItemKind::Type(bounds, default), generics))
     }
 
-    /// Parses (possibly empty) list of lifetime and type parameters, possibly including
+    //TODO(yodaldevoid): docs
+    fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, GenericParam> {
+        self.expect_keyword(keywords::Const)?;
+        let ident = self.parse_ident()?;
+        self.expect(&token::Colon)?;
+        let ty = self.parse_ty()?;
+
+        Ok(GenericParam {
+            ident,
+            id: ast::DUMMY_NODE_ID,
+            attrs: preceding_attrs.into(),
+            bounds: Vec::new(),
+            kind: GenericParamKind::Const {
+                ty,
+            }
+        })
+    }
+
+    /// Parses (possibly empty) list of lifetime, const, and type parameters, possibly including
     /// trailing comma and erroneous trailing attributes.
     crate fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
         let mut params = Vec::new();
-        let mut seen_ty_param = false;
+        let mut seen_non_lifetime_param = false;
         loop {
             let attrs = self.parse_outer_attributes()?;
             if self.check_lifetime() {
@@ -4984,18 +5013,26 @@ impl<'a> Parser<'a> {
                     bounds,
                     kind: ast::GenericParamKind::Lifetime,
                 });
-                if seen_ty_param {
+                if seen_non_lifetime_param {
                     self.span_err(self.prev_span,
-                        "lifetime parameters must be declared prior to type parameters");
+                        "lifetime parameters must be declared prior to type and const parameters");
                 }
             } else if self.check_ident() {
                 // Parse type parameter.
                 params.push(self.parse_ty_param(attrs)?);
-                seen_ty_param = true;
+                seen_non_lifetime_param = true;
+            } else if self.check_const() { //self.check_keyword(keywords::Const)
+                //TODO(yodaldevoid): should const parameters be forced to be after type parameters?
+                params.push(self.parse_const_param(attrs)?);
+                seen_non_lifetime_param = true;
             } else {
                 // Check for trailing attributes and stop parsing.
                 if !attrs.is_empty() {
-                    let param_kind = if seen_ty_param { "type" } else { "lifetime" };
+                    let param_kind = if seen_non_lifetime_param {
+                        "type and const"
+                    } else {
+                        "lifetime"
+                    };
                     self.span_err(attrs[0].span,
                         &format!("trailing attribute after {} parameters", param_kind));
                 }

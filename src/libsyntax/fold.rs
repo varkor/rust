@@ -144,6 +144,7 @@ pub trait Folder : Sized {
         match arg {
             GenericArg::Lifetime(lt) => GenericArg::Lifetime(self.fold_lifetime(lt)),
             GenericArg::Type(ty) => GenericArg::Type(self.fold_ty(ty)),
+            GenericArg::Const(ct) => GenericArg::Const(self.fold_expr(ct)), //TODO(yodaldevoid):
         }
     }
 
@@ -719,7 +720,10 @@ pub fn noop_fold_generic_param<T: Folder>(param: GenericParam, fld: &mut T) -> G
             GenericParamKind::Lifetime => GenericParamKind::Lifetime,
             GenericParamKind::Type { default } => GenericParamKind::Type {
                 default: default.map(|ty| fld.fold_ty(ty))
-            }
+            },
+            GenericParamKind::Const { ty } => GenericParamKind::Const {
+                ty: fld.fold_ty(ty),
+            },
         }
     }
 }

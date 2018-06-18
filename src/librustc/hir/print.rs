@@ -1734,6 +1734,7 @@ impl<'a> State<'a> {
                     GenericArg::Type(ty) => {
                         types.push(ty);
                     }
+                    GenericArg::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
                 }
             }
             if !elide_lifetimes {
@@ -1742,6 +1743,7 @@ impl<'a> State<'a> {
                     match generic_arg {
                         GenericArg::Lifetime(lt) => s.print_lifetime(lt),
                         GenericArg::Type(ty) => s.print_type(ty),
+                        GenericArg::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
                     }
                 })?;
             } else if !types.is_empty() {
@@ -2138,6 +2140,11 @@ impl<'a> State<'a> {
                     }
                     _ => Ok(()),
                 }
+            }
+            GenericParamKind::Const { ref ty } => {
+                self.word_space(":")?;
+                self.print_type(ty)?;
+                self.print_bounds(":", &param.bounds)
             }
         }
     }

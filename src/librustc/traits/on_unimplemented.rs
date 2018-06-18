@@ -288,6 +288,7 @@ impl<'a, 'gcx, 'tcx> OnUnimplementedFormatString {
         let generics = tcx.generics_of(trait_ref.def_id);
         let generic_map = generics.params.iter().filter_map(|param| {
             let value = match param.kind {
+                GenericParamDefKind::Const |
                 GenericParamDefKind::Type {..} => {
                     trait_ref.substs[param.index as usize].to_string()
                 },

@@ -265,6 +265,7 @@ impl PrintContext {
         let mut own_counts = GenericParamCount {
             lifetimes: 0,
             types: 0,
+            consts: 0,
         };
         let mut is_value_path = false;
         let fn_trait_kind = ty::tls::with(|tcx| {
@@ -295,6 +296,7 @@ impl PrintContext {
                     DefPathData::ClosureExpr |
                     DefPathData::TypeParam(_) |
                     DefPathData::LifetimeParam(_) |
+                    DefPathData::ConstParam(_) |
                     DefPathData::Field(_) |
                     DefPathData::StructCtor |
                     DefPathData::AnonConst |
@@ -347,6 +349,7 @@ impl PrintContext {
                         GenericParamDefKind::Type { has_default, .. } => {
                             Some((param.def_id, has_default))
                         }
+                        GenericParamDefKind::Const => unimplemented!(), //TODO(yodaldevoid):
                     }).peekable();
                 let has_default = {
                     let has_default = type_params.peek().map(|(_, has_default)| has_default);
@@ -625,6 +628,7 @@ impl fmt::Debug for ty::GenericParamDef {
         let type_name = match self.kind {
             ty::GenericParamDefKind::Lifetime => "Lifetime",
             ty::GenericParamDefKind::Type {..} => "Type",
+            ty::GenericParamDefKind::Const => "Const",
         };
         write!(f, "{}({}, {:?}, {})",
                type_name,
@@ -910,6 +914,12 @@ impl fmt::Debug for ty::TyVid {
     }
 }
 
+impl fmt::Debug for ty::ConstVid {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "_#{}f", self.index)
+    }
+}
+
 impl fmt::Debug for ty::IntVid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "_#{}i", self.index)
@@ -945,10 +955,12 @@ define_print! {
             } else {
                 match *self {
                     ty::TyVar(_) => write!(f, "_"),
+                    ty::ConstVar(_) => write!(f, "{}", "{const}"),
                     ty::IntVar(_) => write!(f, "{}", "{integer}"),
                     ty::FloatVar(_) => write!(f, "{}", "{float}"),
                     ty::CanonicalTy(_) => write!(f, "_"),
                     ty::FreshTy(v) => write!(f, "FreshTy({})", v),
+                    ty::FreshConstTy(v) => write!(f, "FreshConstTy({})", v),
                     ty::FreshIntTy(v) => write!(f, "FreshIntTy({})", v),
                     ty::FreshFloatTy(v) => write!(f, "FreshFloatTy({})", v)
                 }
@@ -957,14 +969,22 @@ define_print! {
         debug {
             match *self {
                 ty::TyVar(ref v) => write!(f, "{:?}", v),
+                ty::ConstVar(ref v) => write!(f, "{:?}", v),
                 ty::IntVar(ref v) => write!(f, "{:?}", v),
                 ty::FloatVar(ref v) => write!(f, "{:?}", v),
                 ty::CanonicalTy(v) => write!(f, "?{:?}", v.index()),
                 ty::FreshTy(v) => write!(f, "FreshTy({:?})", v),
+                ty::FreshConstTy(v) => write!(f, "FreshConstTy({:?})", v),
                 ty::FreshIntTy(v) => write!(f, "FreshIntTy({:?})", v),
                 ty::FreshFloatTy(v) => write!(f, "FreshFloatTy({:?})", v)
             }
         }
+    }
+}
+
+impl fmt::Debug for ty::ConstVarValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
@@ -1269,6 +1289,17 @@ define_print! {
 
 define_print! {
     () ty::ParamTy, (self, f, cx) {
+        display {
+            write!(f, "{}", self.name)
+        }
+        debug {
+            write!(f, "{}/#{}", self.name, self.idx)
+        }
+    }
+}
+
+define_print! {
+    () ty::ParamConst, (self, f, cx) {
         display {
             write!(f, "{}", self.name)
         }

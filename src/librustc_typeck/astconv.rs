@@ -223,12 +223,18 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             GenericArg::Type(ty) => Some(ty),
             _ => None,
         }).collect();
+        let consts: Vec<_> = generic_args.args.iter().filter_map(|arg| match arg {
+            GenericArg::Const(ct) => Some(ct),
+            _ => None,
+        }).collect();
         let lt_provided = lifetimes.len();
         let ty_provided = types.len();
+        let const_provided = consts.len();
 
         let decl_generics = tcx.generics_of(def_id);
         let mut lt_accepted = 0;
         let mut ty_params = ParamRange { required: 0, accepted: 0 };
+        let mut const_accepted = 0;
         for param in &decl_generics.params {
             match param.kind {
                 GenericParamDefKind::Lifetime => {
@@ -240,6 +246,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         ty_params.required += 1;
                     }
                 }
+                GenericParamDefKind::Const => const_accepted += 1,
             };
         }
         if self_ty.is_some() {
@@ -256,7 +263,12 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
 
         // Check the number of type parameters supplied by the user.
         if !infer_types || ty_provided > ty_params.required {
-            check_type_argument_count(tcx, span, ty_provided, ty_params);
+            check_type_argument_count(tcx, span, ty_provided, &ty_params);
+        }
+
+        // Check the number of const parameters supplied by the user.
+        if const_accepted != const_provided {
+            report_const_number_error(tcx, span, const_provided, const_accepted);
         }
 
         let is_object = self_ty.map_or(false, |ty| ty.sty == TRAIT_OBJECT_DUMMY_SELF);
@@ -334,6 +346,16 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         }
                     } else {
                         // We've already errored above about the mismatch.
+                        tcx.types.err.into()
+                    }
+                }
+                GenericParamDefKind::Const => {
+                    let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
+                    if i < const_provided {
+                        unimplemented!() //TODO(yodaldevoid):
+                    } else {
+                        // We've already errored above about the mismatch.
+                        //TODO(yodaldevoid): does this need to be changed?
                         tcx.types.err.into()
                     }
                 }
@@ -981,7 +1003,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
     pub fn prohibit_generics(&self, segments: &[hir::PathSegment]) {
         for segment in segments {
             segment.with_generic_args(|generic_args| {
-                let (mut err_for_lt, mut err_for_ty) = (false, false);
+                let (mut err_for_lt, mut err_for_ty, _err_for_ct) = (false, false, false);
                 for arg in &generic_args.args {
                     let (mut span_err, span, kind) = match arg {
                         hir::GenericArg::Lifetime(lt) => {
@@ -1001,10 +1023,20 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                              ty.span,
                              "type")
                         }
+                        hir::GenericArg::Const(_ct) => {
+                            //TODO(yodaldevoid): just needs to be uncommented after impling GenericArg::Const
+                            //if err_for_ct { continue }
+                            //err_for_ct = true;
+                            //(struct_span_err!(self.tcx().sess, ct.span, E0111,
+                            //                "const parameters are not allowed on this type"),
+                            // ct.span,
+                            // "const")
+                            unimplemented!()
+                        }
                     };
                     span_err.span_label(span, format!("{} parameter not allowed", kind))
                             .emit();
-                    if err_for_lt && err_for_ty {
+                    if err_for_lt && err_for_ty && _err_for_ct {
                         break;
                     }
                 }
@@ -1175,6 +1207,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             hir::TyKind::Array(ref ty, ref length) => {
                 let length_def_id = tcx.hir.local_def_id(length.id);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
+                //TODO(yodaldevoid): const param?
                 let length = ty::Const::unevaluated(tcx, length_def_id, substs, tcx.types.usize);
                 let array_ty = tcx.mk_ty(ty::TyArray(self.ast_ty_to_ty(&ty), length));
                 self.normalize_ty(ast_ty.span, array_ty)
@@ -1396,7 +1429,7 @@ fn split_auto_traits<'a, 'b, 'gcx, 'tcx>(tcx: TyCtxt<'a, 'gcx, 'tcx>,
 fn check_type_argument_count(tcx: TyCtxt,
                              span: Span,
                              supplied: usize,
-                             ty_params: ParamRange)
+                             ty_params: &ParamRange)
 {
     let (required, accepted) = (ty_params.required, ty_params.accepted);
     if supplied < required {
@@ -1435,6 +1468,29 @@ fn check_type_argument_count(tcx: TyCtxt,
             )
             .emit();
     }
+}
+
+//TODO(yodaldevoid): deduplicate this
+fn report_const_number_error(tcx: TyCtxt, span: Span, number: usize, expected: usize) {
+    let label = if number < expected {
+        if expected == 1 {
+            format!("expected {} const parameter", expected)
+        } else {
+            format!("expected {} const parameters", expected)
+        }
+    } else {
+        let additional = number - expected;
+        if additional == 1 {
+            "unexpected const parameter".to_string()
+        } else {
+            format!("{} unexpected const parameters", additional)
+        }
+    };
+    struct_span_err!(tcx.sess, span, E0108,
+                     "wrong number of const parameters: expected {}, found {}",
+                     expected, number)
+        .span_label(span, label)
+        .emit();
 }
 
 fn report_lifetime_number_error(tcx: TyCtxt, span: Span, number: usize, expected: usize) {

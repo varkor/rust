@@ -118,6 +118,13 @@ pub enum Ty<'a> {
     Tuple(Vec<Ty<'a>>),
 }
 
+/// A const expression. Supports literals and blocks.
+#[derive(Clone, Eq, PartialEq)]
+pub enum Const {
+    Literal,
+    Block,
+}
+
 pub fn borrowed_ptrty<'r>() -> PtrTy<'r> {
     Borrowed(None, ast::Mutability::Immutable)
 }
@@ -190,6 +197,9 @@ impl<'a> Ty<'a> {
                     }
                     GenericParamKind::Type { .. } => {
                         GenericArg::Type(cx.ty_ident(span, param.ident))
+                    }
+                    GenericParamKind::Const { .. } => {
+                        GenericArg::Const(cx.const_ident(span, param.ident))
                     }
                 }).collect();
 

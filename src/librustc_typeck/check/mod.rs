@@ -1851,9 +1851,9 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     }
 
     fn ty_infer_for_def(&self,
-                        ty_param_def: &ty::GenericParamDef,
+                        def: &ty::GenericParamDef,
                         span: Span) -> Ty<'tcx> {
-        if let UnpackedKind::Type(ty) = self.var_for_def(span, ty_param_def).unpack() {
+        if let UnpackedKind::Type(ty) = self.var_for_def(span, def).unpack() {
             return ty;
         }
         unreachable!()
@@ -4825,6 +4825,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         let mut ufcs_associated = None;
         let mut type_segment = None;
         let mut fn_segment = None;
+        //TODO: Const Params
         match def {
             // Case 1. Reference to a struct/variant constructor.
             Def::StructCtor(def_id, ..) |
@@ -4918,6 +4919,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         // FIXME(varkor): Separating out the parameters is messy.
         let mut lifetimes_type_seg = vec![];
         let mut types_type_seg = vec![];
+        let mut consts_type_seg = vec![];
         let mut infer_types_type_seg = true;
         if let Some((seg, _)) = type_segment {
             if let Some(ref data) = seg.args {
@@ -4925,6 +4927,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     match arg {
                         GenericArg::Lifetime(lt) => lifetimes_type_seg.push(lt),
                         GenericArg::Type(ty) => types_type_seg.push(ty),
+                        GenericArg::Const(ct) => consts_type_seg.push(ct),
                     }
                 }
             }
@@ -4933,6 +4936,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
 
         let mut lifetimes_fn_seg = vec![];
         let mut types_fn_seg = vec![];
+        let mut consts_fn_seg = vec![];
         let mut infer_types_fn_seg = true;
         if let Some((seg, _)) = fn_segment {
             if let Some(ref data) = seg.args {
@@ -4940,6 +4944,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     match arg {
                         GenericArg::Lifetime(lt) => lifetimes_fn_seg.push(lt),
                         GenericArg::Type(ty) => types_fn_seg.push(ty),
+                        GenericArg::Const(ct) => consts_fn_seg.push(ct),
                     }
                 }
             }
@@ -4949,7 +4954,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         let substs = Substs::for_item(self.tcx, def.def_id(), |param, substs| {
             let mut i = param.index as usize;
 
-            let (segment, lifetimes, types, infer_types) = if i < fn_start {
+            let (segment, lifetimes, types, _consts, infer_types) = if i < fn_start {
                 if let GenericParamDefKind::Type { .. } = param.kind {
                     // Handle Self first, so we can adjust the index to match the AST.
                     if has_self && i == 0 {
@@ -4959,10 +4964,10 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     }
                 }
                 i -= has_self as usize;
-                (type_segment, &lifetimes_type_seg, &types_type_seg, infer_types_type_seg)
+                (type_segment, &lifetimes_type_seg, &types_type_seg, &consts_type_seg, infer_types_type_seg)
             } else {
                 i -= fn_start;
-                (fn_segment, &lifetimes_fn_seg, &types_fn_seg, infer_types_fn_seg)
+                (fn_segment, &lifetimes_fn_seg, &types_fn_seg, &consts_fn_seg, infer_types_fn_seg)
             };
 
             match param.kind {
@@ -5001,6 +5006,9 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                         // TyError to let type inference recover somewhat.
                         self.var_for_def(span, param)
                     }
+                }
+                GenericParamDefKind::Const => {
+                    unimplemented!() //TODO(yodaldevoid):
                 }
             }
         });
@@ -5080,31 +5088,33 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                       directly, not through a function pointer");
     }
 
+    //TODO(yodaldevoid): this is a lot of duplication from create_substs_for_ast_path in librustc_typeck/astconv.rs
     /// Report errors if the provided parameters are too few or too many.
     fn check_generic_arg_count(&self,
                                span: Span,
                                segment: &mut Option<(&hir::PathSegment, &ty::Generics)>,
                                is_method_call: bool,
                                supress_mismatch_error: bool) {
-        let (lifetimes, types, infer_types, bindings) = segment.map_or(
-            (vec![], vec![], true, &[][..]),
+        let (lifetimes, types, _consts, infer_types, bindings) = segment.map_or(
+            (vec![], vec![], vec![], true, &[][..]),
             |(s, _)| {
                 s.args.as_ref().map_or(
-                    (vec![], vec![], s.infer_types, &[][..]),
+                    (vec![], vec![], vec![], s.infer_types, &[][..]),
                     |data| {
-                        let (mut lifetimes, mut types) = (vec![], vec![]);
+                        let (mut lifetimes, mut types, mut consts) = (vec![], vec![], vec![]);
                         data.args.iter().for_each(|arg| match arg {
                             GenericArg::Lifetime(lt) => lifetimes.push(lt),
                             GenericArg::Type(ty) => types.push(ty),
+                            GenericArg::Const(ct) => consts.push(ct),
                         });
-                        (lifetimes, types, s.infer_types, &data.bindings[..])
+                        (lifetimes, types, consts, s.infer_types, &data.bindings[..])
                     }
                 )
             });
 
         // Check provided parameters.
-        let ((ty_required, ty_accepted), lt_accepted) =
-            segment.map_or(((0, 0), 0), |(_, generics)| {
+        let ((ty_required, ty_accepted), lt_accepted, _const_accepted) =
+            segment.map_or(((0, 0), 0, 0), |(_, generics)| {
                 struct ParamRange {
                     required: usize,
                     accepted: usize
@@ -5112,6 +5122,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
 
                 let mut lt_accepted = 0;
                 let mut ty_params = ParamRange { required: 0, accepted: 0 };
+                let mut const_accepted = 0;
                 for param in &generics.params {
                     match param.kind {
                         GenericParamDefKind::Lifetime => lt_accepted += 1,
@@ -5121,6 +5132,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                 ty_params.required += 1;
                             }
                         }
+                        GenericParamDefKind::Const => const_accepted += 1,
                     };
                 }
                 if generics.parent.is_none() && generics.has_self {
@@ -5128,7 +5140,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     ty_params.accepted -= 1;
                 }
 
-                ((ty_params.required, ty_params.accepted), lt_accepted)
+                ((ty_params.required, ty_params.accepted), lt_accepted, const_accepted)
             });
 
         let count_type_params = |n| {
@@ -5206,6 +5218,29 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         } {
             err.span_label(span, format!("expected {}", expected_text)).emit();
         }
+
+        //TODO(yodaldevoid): uncomment once GenericArg::Const has been impl
+        //let count_const_params = |n| {
+        //    format!("{} const parameter{}", n, if n == 1 { "" } else { "s" })
+        //};
+        //let expected_text = count_const_params(const_accepted);
+        //let actual_text = count_const_params(consts.len());
+        //if let Some((mut err, span)) = if consts.len() > const_accepted {
+        //    let span = consts[const_accepted].span;
+        //    Some((struct_span_err!(self.tcx.sess, span, E0085,
+        //                          "too many const parameters provided: \
+        //                          expected at most {}, found {}",
+        //                          expected_text, actual_text), span))
+        //} else if consts.len() < const_accepted {
+        //    Some((struct_span_err!(self.tcx.sess, span, E0086,
+        //                          "too few const parameters provided: \
+        //                          expected {}, found {}",
+        //                          expected_text, actual_text), span))
+        //} else {
+        //    None
+        //} {
+        //    err.span_label(span, format!("expected {}", expected_text)).emit();
+        //}
     }
 
     /// Report error if there is an explicit type parameter when using `impl Trait`.
@@ -5279,6 +5314,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
     }
 }
 
+//TODO: Const Params
 pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                        generics: &ty::Generics,
                                        ty: Ty<'tcx>) {

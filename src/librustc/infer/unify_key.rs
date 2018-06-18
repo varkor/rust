@@ -8,11 +8,27 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ty::{self, FloatVarValue, IntVarValue, Ty, TyCtxt};
+use ty::{self, ConstVarValue, FloatVarValue, IntVarValue, Ty, TyCtxt};
 use rustc_data_structures::unify::{NoError, EqUnifyValue, UnifyKey, UnifyValue};
 
 pub trait ToType {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx>;
+}
+
+impl UnifyKey for ty::ConstVid {
+    type Value = Option<ConstVarValue>;
+    fn index(&self) -> u32 { self.index }
+    fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
+    fn tag() -> &'static str { "ConstVid" }
+}
+
+impl EqUnifyValue for ConstVarValue {
+}
+
+impl ToType for ConstVarValue {
+    fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {
+        tcx.mk_mach_const(self.0)
+    }
 }
 
 impl UnifyKey for ty::IntVid {

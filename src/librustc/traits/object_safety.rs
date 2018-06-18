@@ -304,7 +304,8 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         }
 
         // We can't monomorphize things like `fn foo<A>(...)`.
-        if self.generics_of(method.def_id).own_counts().types != 0 {
+        let own_counts = self.generics_of(method.def_id).own_counts();
+        if own_counts.types != 0 || own_counts.consts != 0 {
             return Some(MethodViolationCode::Generic);
         }
 
