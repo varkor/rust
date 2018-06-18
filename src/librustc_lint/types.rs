@@ -820,7 +820,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for VariantSizeDifferences {
             let generics = cx.tcx.generics_of(item_def_id);
             for param in &generics.params {
                 match param.kind {
-                    ty::GenericParamDefKind::Const |
+                    ty::GenericParamDefKind::Const {..} |
                     ty::GenericParamDefKind::Lifetime { .. } => {},
                     ty::GenericParamDefKind::Type { .. } => return,
                 }

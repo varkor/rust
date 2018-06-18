@@ -246,7 +246,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         ty_params.required += 1;
                     }
                 }
-                GenericParamDefKind::Const => const_accepted += 1,
+                GenericParamDefKind::Const {..} => const_accepted += 1,
             };
         }
         if self_ty.is_some() {
@@ -349,7 +349,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         tcx.types.err.into()
                     }
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
                     if i < const_provided {
                         unimplemented!() //TODO(yodaldevoid):

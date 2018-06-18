@@ -5007,7 +5007,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                         self.var_for_def(span, param)
                     }
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     unimplemented!() //TODO(yodaldevoid):
                 }
             }
@@ -5132,7 +5132,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                 ty_params.required += 1;
                             }
                         }
-                        GenericParamDefKind::Const => const_accepted += 1,
+                        GenericParamDefKind::Const {..} => const_accepted += 1,
                     };
                 }
                 if generics.parent.is_none() && generics.has_self {

@@ -103,7 +103,7 @@ pub struct GlobalArenas<'tcx> {
     layout: TypedArena<LayoutDetails>,
 
     // references
-    generics: TypedArena<ty::Generics>,
+    generics: TypedArena<ty::Generics<'tcx>>,
     trait_def: TypedArena<ty::TraitDef>,
     adt_def: TypedArena<ty::AdtDef>,
     steal_mir: TypedArena<Steal<Mir<'tcx>>>,
@@ -952,7 +952,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         }
     }
 
-    pub fn alloc_generics(self, generics: ty::Generics) -> &'gcx ty::Generics {
+    pub fn alloc_generics(self, generics: ty::Generics<'tcx>) -> &'gcx ty::Generics<'tcx> {
         self.global_arenas.generics.alloc(generics)
     }
 
@@ -2417,7 +2417,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                         self.type_of(param.def_id).subst(self, substs).into()
                     }
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     if param.index == 0 {
                         ty.into()
                     } else {
@@ -2559,7 +2559,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(TyParam(ParamTy { idx: index, name: name }))
     }
 
-    pub fn mk_const_param(self, _index: u32, _name: InternedString) -> &'tcx ty::Const<'tcx> {
+    pub fn mk_const_param(self, _index: u32, _name: InternedString, _ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
         //TODO(yodaldevoid):
         //self.mk_const(ty::Const {
         //    val: ConstVal::Param(ParamConst { index, name }),
@@ -2572,13 +2572,13 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty_param(0, keywords::SelfType.name().as_interned_str())
     }
 
-    pub fn mk_param_from_def(self, param: &ty::GenericParamDef) -> Kind<'tcx> {
+    pub fn mk_param_from_def(self, param: &ty::GenericParamDef<'tcx>) -> Kind<'tcx> {
         match param.kind {
             GenericParamDefKind::Lifetime => {
                 self.mk_region(ty::ReEarlyBound(param.to_early_bound_region_data())).into()
             }
             GenericParamDefKind::Type {..} => self.mk_ty_param(param.index, param.name).into(),
-            GenericParamDefKind::Const => self.mk_const_param(param.index, param.name).into(),
+            GenericParamDefKind::Const { ty } => self.mk_const_param(param.index, param.name, ty).into(),
         }
     }
 

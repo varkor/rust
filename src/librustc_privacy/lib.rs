@@ -413,7 +413,7 @@ impl<'b, 'a, 'tcx> ReachEverythingInTheInterfaceVisitor<'b, 'a, 'tcx> {
                         self.ev.tcx.type_of(param.def_id).visit_with(self);
                     }
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     self.ev.tcx.type_of(param.def_id).visit_with(self);
                 }
                 GenericParamDefKind::Lifetime => {}
@@ -1366,7 +1366,7 @@ impl<'a, 'tcx: 'a> SearchInterfaceForPrivateItemsVisitor<'a, 'tcx> {
                         self.tcx.type_of(param.def_id).visit_with(self);
                     }
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     self.tcx.type_of(param.def_id).visit_with(self);
                 }
                 GenericParamDefKind::Lifetime => {}

@@ -135,7 +135,7 @@ fn enforce_impl_params_are_constrained<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                             &param.name.to_string());
                 }
             }
-            ty::GenericParamDefKind::Const => {
+            ty::GenericParamDefKind::Const {..} => {
                 unimplemented!() //TODO(yodaldevoid):
             }
         }

@@ -977,7 +977,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
                 self.tcx.mk_ty_var(ty_var_id).into()
             }
-            GenericParamDefKind::Const => {
+            GenericParamDefKind::Const {..} => {
                 let _ty_var_id =
                     self.type_variables
                         .borrow_mut()
