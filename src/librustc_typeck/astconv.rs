@@ -673,7 +673,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                             tcx.types.err.into()
                         }
                     }
-                    GenericParamDefKind::Const => {
+                    GenericParamDefKind::Const { .. } => {
                         // FIXME(varkor)
                         let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
                         if i < const_provided {

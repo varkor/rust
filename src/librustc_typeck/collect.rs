@@ -801,7 +801,7 @@ fn has_late_bound_regions<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
 fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                          def_id: DefId)
-                         -> &'tcx ty::Generics {
+                         -> &'tcx ty::Generics<'tcx> {
     use rustc::hir::map::*;
     use rustc::hir::*;
 
@@ -954,17 +954,22 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             Some(ty_param)
         }
         //TODO(yodaldevoid): should this be split out to put const parameters after type parameters?
-        GenericParamKind::Const { .. } => {
+        GenericParamKind::Const { ref ty } => {
             if param.name.name() == keywords::SelfType.name() {
                 span_bug!(param.span,  "`Self` should not be the name of a regular parameter");
             }
 
+            let const_param_def_id = tcx.hir.local_def_id(param.id);
+            let icx = ItemCtxt::new(tcx, const_param_def_id);
+
             let const_param = ty::GenericParamDef {
                 index: type_start + i as u32,
                 name: param.name.name().as_interned_str(),
-                def_id: tcx.hir.local_def_id(param.id),
+                def_id: const_param_def_id,
                 pure_wrt_drop: param.pure_wrt_drop,
-                kind: ty::GenericParamDefKind::Const,
+                kind: ty::GenericParamDefKind::Const{
+                    ty: icx.to_ty(&ty)
+                },
             };
             i += 1;
             Some(const_param)

@@ -838,18 +838,20 @@ impl ty::EarlyBoundRegion {
 }
 
 #[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub enum GenericParamDefKind {
+pub enum GenericParamDefKind<'tcx> {
     Lifetime,
     Type {
         has_default: bool,
         object_lifetime_default: ObjectLifetimeDefault,
         synthetic: Option<hir::SyntheticTyParamKind>,
     },
-    Const,
+    Const {
+        ty: Ty<'tcx>,
+    }
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable)]
-pub struct GenericParamDef {
+pub struct GenericParamDef<'tcx> {
     pub name: InternedString,
     pub def_id: DefId,
     pub index: u32,
@@ -859,10 +861,10 @@ pub struct GenericParamDef {
     /// `'a`/`T` won't be accessed during the parent type's `Drop` impl.
     pub pure_wrt_drop: bool,
 
-    pub kind: GenericParamDefKind,
+    pub kind: GenericParamDefKind<'tcx>,
 }
 
-impl GenericParamDef {
+impl<'tcx> GenericParamDef<'tcx> {
     pub fn to_early_bound_region_data(&self) -> ty::EarlyBoundRegion {
         match self.kind {
             GenericParamDefKind::Lifetime => {
@@ -899,10 +901,10 @@ pub struct GenericParamCount {
 /// The ordering of parameters is the same as in Subst (excluding child generics):
 /// Self (optionally), Lifetime params..., Type params...
 #[derive(Clone, Debug, RustcEncodable, RustcDecodable)]
-pub struct Generics {
+pub struct Generics<'tcx> {
     pub parent: Option<DefId>,
     pub parent_count: usize,
-    pub params: Vec<GenericParamDef>,
+    pub params: Vec<GenericParamDef<'tcx>>,
 
     /// Reverse map to the `index` field of each `GenericParamDef`
     pub param_def_id_to_index: FxHashMap<DefId, u32>,
@@ -911,7 +913,7 @@ pub struct Generics {
     pub has_late_bound_regions: Option<Span>,
 }
 
-impl<'a, 'gcx, 'tcx> Generics {
+impl<'a, 'gcx, 'tcx> Generics<'tcx> {
     pub fn count(&self) -> usize {
         self.parent_count + self.params.len()
     }
@@ -927,7 +929,7 @@ impl<'a, 'gcx, 'tcx> Generics {
             match param.kind {
                 GenericParamDefKind::Lifetime => own_counts.lifetimes += 1,
                 GenericParamDefKind::Type { .. } => own_counts.types += 1,
-                GenericParamDefKind::Const => own_counts.consts += 1,
+                GenericParamDefKind::Const { .. } => own_counts.consts += 1,
             };
         }
 
@@ -937,7 +939,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     pub fn requires_monomorphization(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> bool {
         for param in &self.params {
             match param.kind {
-                GenericParamDefKind::Type { .. } | GenericParamDefKind::Const => return true,
+                GenericParamDefKind::Type { .. } | GenericParamDefKind::Const { .. } => return true,
                 GenericParamDefKind::Lifetime => {}
             }
         }
@@ -988,7 +990,7 @@ impl<'a, 'gcx, 'tcx> Generics {
                        param: &ParamConst,
                        tcx: TyCtxt<'a, 'gcx, 'tcx>)
                        -> &GenericParamDef {
-        if let Some(index) = param.idx.checked_sub(self.parent_count as u32) {
+        if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
             let param = &self.params[index as usize];
             match param.kind {
                 ty::GenericParamDefKind::Const {..} => param,

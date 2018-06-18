@@ -113,7 +113,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     self.infcx
                         .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
-                GenericParamDefKind::Const => {
+                GenericParamDefKind::Const {..} => {
                     unimplemented!() //TODO(yodaldevoid):
                 }
             }

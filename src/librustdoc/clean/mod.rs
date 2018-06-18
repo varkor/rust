@@ -1242,7 +1242,7 @@ impl Clean<Lifetime> for hir::GenericParam {
     }
 }
 
-impl<'tcx> Clean<Lifetime> for ty::GenericParamDef {
+impl<'tcx> Clean<Lifetime> for ty::GenericParamDef<'tcx> {
     fn clean(&self, _cx: &DocContext) -> Lifetime {
         Lifetime(self.name.to_string())
     }
@@ -1407,7 +1407,7 @@ impl GenericParamDef {
     }
 }
 
-impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef {
+impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef<'tcx> {
     fn clean(&self, cx: &DocContext) -> GenericParamDef {
         let (name, kind) = match self.kind {
             ty::GenericParamDefKind::Lifetime => {
@@ -1548,7 +1548,7 @@ impl Clean<Generics> for hir::Generics {
     }
 }
 
-impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics,
+impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics<'tcx>,
                                     &'a ty::GenericPredicates<'tcx>) {
     fn clean(&self, cx: &DocContext) -> Generics {
         use self::WherePredicate as WP;

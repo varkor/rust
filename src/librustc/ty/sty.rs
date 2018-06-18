@@ -995,23 +995,23 @@ impl<'a, 'gcx, 'tcx> ParamTy {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable)]
+#[derive(Copy, Clone, Hash, RustcEncodable, RustcDecodable, Eq, PartialEq, Ord, PartialOrd)]
 pub struct ParamConst {
-    pub idx: u32,
+    pub index: u32,
     pub name: InternedString,
 }
 
 impl<'a, 'gcx, 'tcx> ParamConst {
     pub fn new(index: u32, name: InternedString) -> ParamConst {
-        ParamConst { idx: index, name: name }
+        ParamConst { index, name }
     }
 
     pub fn for_def(def: &ty::GenericParamDef) -> ParamConst {
         ParamConst::new(def.index, def.name)
     }
 
-    pub fn to_const(self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> &'tcx Const<'tcx> {
-        tcx.mk_const_param(self.idx, self.name)
+    pub fn to_const(self, tcx: TyCtxt<'a, 'gcx, 'tcx>, ty: Ty<'tcx>) -> &'tcx Const<'tcx> {
+        tcx.mk_const_param(self.index, self.name, ty)
     }
 }
 

@@ -5040,6 +5040,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     }
                     GenericParamDefKind::Const { .. } => {
                         // FIXME(varkor)
+                        unimplemented!()
                     }
                 }
             },
