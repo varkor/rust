@@ -673,6 +673,17 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                             tcx.types.err.into()
                         }
                     }
+                    GenericParamDefKind::Const => {
+                        // FIXME(varkor)
+                        let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
+                        if i < const_provided {
+                            unimplemented!() //TODO(yodaldevoid):
+                        } else {
+                            // We've already errored above about the mismatch.
+                            //TODO(yodaldevoid): does this need to be changed?
+                            tcx.types.err.into()
+                        }
+                    }
                 }
             },
         );
@@ -1318,7 +1329,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
     pub fn prohibit_generics<'a, T: IntoIterator<Item = &'a hir::PathSegment>>(&self, segments: T) {
         for segment in segments {
             segment.with_generic_args(|generic_args| {
-                let (mut err_for_lt, mut err_for_ty) = (false, false);
+                let (mut err_for_lt, mut err_for_ty, _err_for_ct) = (false, false, false);
                 for arg in &generic_args.args {
                     let (mut span_err, span, kind) = match arg {
                         hir::GenericArg::Lifetime(lt) => {
@@ -1338,10 +1349,20 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                              ty.span,
                              "type")
                         }
+                        hir::GenericArg::Const(_ct) => {
+                            //TODO(yodaldevoid): just needs to be uncommented after impling GenericArg::Const
+                            //if err_for_ct { continue }
+                            //err_for_ct = true;
+                            //(struct_span_err!(self.tcx().sess, ct.span, E0111,
+                            //                "const parameters are not allowed on this type"),
+                            // ct.span,
+                            // "const")
+                            unimplemented!()
+                        }
                     };
                     span_err.span_label(span, format!("{} parameter not allowed", kind))
                             .emit();
-                    if err_for_lt && err_for_ty {
+                    if err_for_lt && err_for_ty && _err_for_ct {
                         break;
                     }
                 }
@@ -1512,6 +1533,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             hir::TyKind::Array(ref ty, ref length) => {
                 let length_def_id = tcx.hir.local_def_id(length.id);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
+                //TODO(yodaldevoid): const param?
                 let length = ty::Const::unevaluated(tcx, length_def_id, substs, tcx.types.usize);
                 let array_ty = tcx.mk_ty(ty::Array(self.ast_ty_to_ty(&ty), length));
                 self.normalize_ty(ast_ty.span, array_ty)

@@ -75,6 +75,9 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
         let a_is_expected = relation.a_is_expected();
 
         match (&a.sty, &b.sty) {
+            // Relate const parameter variables to other types
+            // TODO(yodaldevoid):
+
             // Relate integral variables to other types
             (&ty::Infer(ty::IntVar(a_id)), &ty::Infer(ty::IntVar(b_id))) => {
                 self.int_unification_table
@@ -425,7 +428,7 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
 
                             let origin = *variables.var_origin(vid);
                             let new_var_id = variables.new_var(universe, false, origin);
-                            let u = self.tcx().mk_var(new_var_id);
+                            let u = self.tcx().mk_ty_var(new_var_id);
                             debug!("generalize: replacing original vid={:?} with new={:?}",
                                    vid, u);
                             return Ok(u);

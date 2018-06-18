@@ -370,6 +370,7 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                                         side of a trait alias cannot have defaults");
                             }
                         }
+                        GenericParamKind::Const { .. } => {}
                     }
                 }
             }
@@ -446,6 +447,9 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                             .span_err(span, "type parameters with a default must be trailing");
                         break;
                     }
+                }
+                (GenericParamKind::Const { .. }, _) => {
+                    unimplemented!() //TODO(yodaldevoid):
                 }
             }
         }

@@ -34,17 +34,19 @@ use std::num::NonZeroUsize;
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Kind<'tcx> {
     ptr: NonZeroUsize,
-    marker: PhantomData<(Ty<'tcx>, ty::Region<'tcx>)>
+    marker: PhantomData<(Ty<'tcx>, ty::Region<'tcx>, &'tcx ty::Const<'tcx>)>
 }
 
 const TAG_MASK: usize = 0b11;
 const TYPE_TAG: usize = 0b00;
 const REGION_TAG: usize = 0b01;
+const CONST_TAG: usize = 0b10;
 
 #[derive(Debug, RustcEncodable, RustcDecodable)]
 pub enum UnpackedKind<'tcx> {
     Lifetime(ty::Region<'tcx>),
     Type(Ty<'tcx>),
+    Const(&'tcx ty::Const<'tcx>),
 }
 
 impl<'tcx> UnpackedKind<'tcx> {
@@ -60,6 +62,11 @@ impl<'tcx> UnpackedKind<'tcx> {
                 assert_eq!(mem::align_of_val(ty) & TAG_MASK, 0);
                 (TYPE_TAG, ty as *const _ as usize)
             }
+            UnpackedKind::Const(ct) => {
+                // Ensure we can use the tag bits.
+                assert_eq!(mem::align_of_val(ct) & TAG_MASK, 0);
+                (CONST_TAG, ct as *const _ as usize)
+            }
         };
 
         Kind {
@@ -74,15 +81,27 @@ impl<'tcx> UnpackedKind<'tcx> {
 impl<'tcx> Ord for Kind<'tcx> {
     fn cmp(&self, other: &Kind) -> Ordering {
         match (self.unpack(), other.unpack()) {
-            (UnpackedKind::Type(_), UnpackedKind::Lifetime(_)) => Ordering::Greater,
-
             (UnpackedKind::Type(ty1), UnpackedKind::Type(ty2)) => {
                 ty1.sty.cmp(&ty2.sty)
             }
 
+            (UnpackedKind::Const(ct1), UnpackedKind::Const(ct2)) => {
+                ct1.cmp(&ct2)
+            }
+
             (UnpackedKind::Lifetime(reg1), UnpackedKind::Lifetime(reg2)) => reg1.cmp(reg2),
 
+            (UnpackedKind::Type(_), UnpackedKind::Lifetime(_)) => Ordering::Greater,
+
+            (UnpackedKind::Type(_), UnpackedKind::Const(_)) => Ordering::Greater,
+
             (UnpackedKind::Lifetime(_), UnpackedKind::Type(_))  => Ordering::Less,
+
+            (UnpackedKind::Lifetime(_), UnpackedKind::Const(_))  => Ordering::Greater,
+
+            (UnpackedKind::Const(_), UnpackedKind::Type(_))  => Ordering::Less,
+
+            (UnpackedKind::Const(_), UnpackedKind::Lifetime(_))  => Ordering::Less,
         }
     }
 }
@@ -105,6 +124,12 @@ impl<'tcx> From<Ty<'tcx>> for Kind<'tcx> {
     }
 }
 
+impl<'tcx> From<&'tcx ty::Const<'tcx>> for Kind<'tcx> {
+    fn from(c: &'tcx ty::Const<'tcx>) -> Kind<'tcx> {
+        UnpackedKind::Const(c).pack()
+    }
+}
+
 impl<'tcx> Kind<'tcx> {
     #[inline]
     pub fn unpack(self) -> UnpackedKind<'tcx> {
@@ -113,6 +138,7 @@ impl<'tcx> Kind<'tcx> {
             match ptr & TAG_MASK {
                 REGION_TAG => UnpackedKind::Lifetime(&*((ptr & !TAG_MASK) as *const _)),
                 TYPE_TAG => UnpackedKind::Type(&*((ptr & !TAG_MASK) as *const _)),
+                CONST_TAG => UnpackedKind::Const(&*((ptr & !TAG_MASK) as *const _)),
                 _ => intrinsics::unreachable()
             }
         }
@@ -124,6 +150,7 @@ impl<'tcx> fmt::Debug for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => write!(f, "{:?}", lt),
             UnpackedKind::Type(ty) => write!(f, "{:?}", ty),
+            UnpackedKind::Const(ct) => write!(f, "{:?}", ct),
         }
     }
 }
@@ -133,6 +160,7 @@ impl<'tcx> fmt::Display for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => write!(f, "{}", lt),
             UnpackedKind::Type(ty) => write!(f, "{}", ty),
+            UnpackedKind::Const(ct) => write!(f, "{:?}", ct), //TODO(yodaldevoid): impl display for Const
         }
     }
 }
@@ -144,6 +172,7 @@ impl<'a, 'tcx> Lift<'tcx> for Kind<'a> {
         match self.unpack() {
             UnpackedKind::Lifetime(a) => a.lift_to_tcx(tcx).map(|a| a.into()),
             UnpackedKind::Type(a) => a.lift_to_tcx(tcx).map(|a| a.into()),
+            UnpackedKind::Const(a) => a.lift_to_tcx(tcx).map(|a| a.into()),
         }
     }
 }
@@ -153,6 +182,7 @@ impl<'tcx> TypeFoldable<'tcx> for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => lt.fold_with(folder).into(),
             UnpackedKind::Type(ty) => ty.fold_with(folder).into(),
+            UnpackedKind::Const(ct) => ct.fold_with(folder).into(),
         }
     }
 
@@ -160,6 +190,7 @@ impl<'tcx> TypeFoldable<'tcx> for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => lt.visit_with(visitor),
             UnpackedKind::Type(ty) => ty.visit_with(visitor),
+            UnpackedKind::Const(ct) => ct.visit_with(visitor),
         }
     }
 }
@@ -280,6 +311,17 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
+    pub fn consts(&'a self) -> impl DoubleEndedIterator<Item=&'tcx ty::Const<'tcx>> + 'a {
+        self.iter().filter_map(|k| {
+            if let UnpackedKind::Const(ct) = k.unpack() {
+                Some(ct)
+            } else {
+                None
+            }
+        })
+    }
+
+    #[inline]
     pub fn type_at(&self, i: usize) -> Ty<'tcx> {
         if let UnpackedKind::Type(ty) = self[i].unpack() {
             ty
@@ -294,6 +336,15 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
             lt
         } else {
             bug!("expected region for param #{} in {:?}", i, self);
+        }
+    }
+
+    #[inline]
+    pub fn const_at(&self, i: usize) -> &'tcx ty::Const<'tcx> {
+        if let UnpackedKind::Const(ct) = self[i].unpack() {
+            ct
+        } else {
+            bug!("expected const for param #{} in {:?}", i, self);
         }
     }
 
@@ -465,6 +516,8 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for SubstFolder<'a, 'gcx, 'tcx> {
 
         return t1;
     }
+
+    //TODO(yodaldevoid): fold const?
 }
 
 impl<'a, 'gcx, 'tcx> SubstFolder<'a, 'gcx, 'tcx> {

@@ -163,6 +163,7 @@ impl GenericArgs {
 pub enum GenericArg {
     Lifetime(Lifetime),
     Type(P<Ty>),
+    Const(P<Expr>), //TODO(yodaldevoid):
 }
 
 /// A path like `Foo<'a, T>`
@@ -304,7 +305,10 @@ pub enum GenericParamKind {
     Lifetime,
     Type {
         default: Option<P<Ty>>,
-    }
+    },
+    Const {
+        ty: P<Ty>,
+    },
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
@@ -1395,6 +1399,21 @@ pub enum ImplItemKind {
     Type(P<Ty>),
     Existential(GenericBounds),
     Macro(Mac),
+}
+
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Copy, PartialOrd, Ord)]
+pub struct ConstTy;
+
+impl fmt::Debug for ConstTy {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
+    }
+}
+
+impl fmt::Display for ConstTy {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self) // TODO(varkor)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable, Copy)]

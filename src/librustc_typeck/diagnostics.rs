@@ -1040,6 +1040,35 @@ enum NightsWatch {}
 ```
 "##,
 
+E0085: r##"
+Too many const parameters were supplied for a function. For example:
+
+```compile_fail,E0085
+fn foo<const T: u8>() {}
+
+fn main() {
+    foo::<1, 2>(); // error, expected 1 parameter, found 2 parameters
+}
+```
+
+The number of supplied parameters must exactly match the number of defined const
+parameters.
+"##,
+
+E0086: r##"
+Not enough const parameters were supplied for a function. For example:
+
+```compile_fail,E0086
+fn foo<const T: u8, const U: i32>() {}
+
+fn main() {
+    foo::<1>(); // error, expected 2 parameters, found 1 parameter
+}
+```
+
+//TODO(yodaldevoid): example of infering const parameter
+"##,
+
 E0087: r##"
 Too many type arguments were supplied for a function. For example:
 
@@ -1268,6 +1297,21 @@ enum Bar { A, B, C }
 struct Baz<'a> {
     foo: Foo<'a>, // error: expected 2, found 1
     bar: Bar<'a>, // error: expected 0, found 1
+}
+```
+"##,
+
+E0108: r##"
+This error means that an incorrect number of const parameters were provided
+for a type (like a struct or enum) or trait:
+
+```compile_fail,E0108
+struct Foo<const WIDTH: usize, const HEIGHT: usize>([[u8; WIDTH] HEIGHT]);
+enum Bar { A, B, C }
+
+struct Baz {
+    foo: Foo<1>, // error: expected 2, found 1
+    bar: Bar<1>, // error: expected 0, found 1
 }
 ```
 "##,

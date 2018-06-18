@@ -761,6 +761,14 @@ impl<'l, 'tcx: 'l> SaveContext<'l, 'tcx> {
                     ref_id: id_from_def_id(def_id),
                 })
             }
+            HirDef::ConstParam(def_id) => {
+                let span = self.span_from_span(sub_span);
+                Some(Ref {
+                    kind: RefKind::Variable,
+                    span,
+                    ref_id: id_from_def_id(def_id),
+                })
+            }
             HirDef::StructCtor(def_id, _) => {
                 // This is a reference to a tuple struct where the def_id points
                 // to an invisible constructor function. That is not a very useful

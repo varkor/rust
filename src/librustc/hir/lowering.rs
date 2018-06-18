@@ -1074,6 +1074,7 @@ impl<'a> LoweringContext<'a> {
         match arg {
             ast::GenericArg::Lifetime(lt) => GenericArg::Lifetime(self.lower_lifetime(&lt)),
             ast::GenericArg::Type(ty) => GenericArg::Type(self.lower_ty_direct(&ty, itctx)),
+            ast::GenericArg::Const(ct) => GenericArg::Const(self.lower_expr(&ct)),
         }
     }
 
@@ -2318,6 +2319,21 @@ impl<'a> LoweringContext<'a> {
                                               .filter(|attr| attr.check_name("rustc_synthetic"))
                                               .map(|_| hir::SyntheticTyParamKind::ImplTrait)
                                               .next(),
+                    }
+                }
+            }
+            GenericParamKind::Const { ref ty } => {
+                let mut name = self.lower_ident(param.ident);
+
+                hir::GenericParam {
+                    id: self.lower_node_id(param.id).node_id,
+                    name: hir::ParamName::Plain(name),
+                    span: param.ident.span,
+                    pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
+                    attrs: self.lower_attrs(&param.attrs),
+                    bounds,
+                    kind: hir::GenericParamKind::Const {
+                        ty: self.lower_ty(&ty, ImplTraitContext::Disallowed),
                     }
                 }
             }

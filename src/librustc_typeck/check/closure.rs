@@ -113,6 +113,9 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     self.infcx
                         .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
+                GenericParamDefKind::Const => {
+                    unimplemented!() //TODO(yodaldevoid):
+                }
             }
         });
         if let Some(GeneratorTypes { yield_ty, interior, movability }) = generator_types {

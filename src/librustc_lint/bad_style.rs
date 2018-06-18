@@ -146,6 +146,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for NonCamelCaseTypes {
 
     fn check_generic_param(&mut self, cx: &LateContext, param: &hir::GenericParam) {
         match param.kind {
+            GenericParamKind::Const { .. } |
             GenericParamKind::Lifetime { .. } => {}
             GenericParamKind::Type { synthetic, .. } => {
                 if synthetic.is_none() {
@@ -259,6 +260,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for NonSnakeCase {
                 let name = param.name.ident().as_str();
                 self.check_snake_case(cx, "lifetime", &name, Some(param.span));
             }
+            GenericParamKind::Const { .. } |
             GenericParamKind::Type { .. } => {}
         }
     }
@@ -410,6 +412,20 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for NonUpperCaseGlobals {
                                                           path.segments[0].ident.name,
                                                           path.span);
                 }
+            }
+        }
+    }
+
+    fn check_generic_param(&mut self, cx: &LateContext, param: &hir::GenericParam) {
+        match param.kind {
+            GenericParamKind::Lifetime { .. } | GenericParamKind::Type { .. } => {}
+            GenericParamKind::Const { .. } => {
+                NonUpperCaseGlobals::check_upper_case(
+                    cx,
+                    "const parameter",
+                    param.name.name(),
+                    param.span
+                );
             }
         }
     }

@@ -135,8 +135,8 @@ impl Ord for BindingError {
 enum ResolutionError<'a> {
     /// error E0401: can't use type parameters from outer function
     TypeParametersFromOuterFunction(Def),
-    /// error E0403: the name is already used for a type parameter in this type parameter list
-    NameAlreadyUsedInTypeParameterList(Name, &'a Span),
+    /// error E0403: the name is already used for a type or const parameter in this type parameter list
+    NameAlreadyUsedInParameterList(Name, &'a Span),
     /// error E0407: method is not a member of trait
     MethodNotMemberOfTrait(Name, &'a str),
     /// error E0437: type is not a member of trait
@@ -203,12 +203,12 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
                         err.span_label(reduce_impl_span_to_impl_keyword(cm, impl_span),
                                     "`Self` type implicitly declared here, on the `impl`");
                     }
-                },
+                }
                 Def::TyParam(typaram_defid) => {
                     if let Some(typaram_span) = resolver.definitions.opt_span(typaram_defid) {
                         err.span_label(typaram_span, "type variable from outer function");
                     }
-                },
+                }
                 _ => {
                     bug!("TypeParametersFromOuterFunction should only be used with Def::SelfTy or \
                          Def::TyParam")
@@ -231,12 +231,12 @@ fn resolve_struct_error<'sess, 'a>(resolver: &'sess Resolver,
 
             err
         }
-        ResolutionError::NameAlreadyUsedInTypeParameterList(name, first_use_span) => {
+        ResolutionError::NameAlreadyUsedInParameterList(name, first_use_span) => {
              let mut err = struct_span_err!(resolver.session,
                                             span,
                                             E0403,
-                                            "the name `{}` is already used for a type parameter \
-                                            in this type parameter list",
+                                            "the name `{}` is already used for a type or const \
+                                            parameter in this type parameter list",
                                             name);
              err.span_label(span, "already used");
              err.span_label(first_use_span.clone(), format!("first use of `{}`", name));
@@ -820,6 +820,7 @@ impl<'a, 'tcx, 'cl> Visitor<'tcx> for Resolver<'a, 'cl> {
         let mut found_default = false;
         default_ban_rib.bindings.extend(generics.params.iter()
             .filter_map(|param| match param.kind {
+                GenericParamKind::Const { .. } |
                 GenericParamKind::Lifetime { .. } => None,
                 GenericParamKind::Type { ref default, .. } => {
                     found_default |= default.is_some();
@@ -847,6 +848,15 @@ impl<'a, 'tcx, 'cl> Visitor<'tcx> for Resolver<'a, 'cl> {
 
                     // Allow all following defaults to refer to this type parameter.
                     default_ban_rib.bindings.remove(&Ident::with_empty_ctxt(param.ident.name));
+                }
+                GenericParamKind::Const { ref ty } => {
+                    for bound in &param.bounds {
+                        self.visit_param_bound(bound);
+                    }
+
+                    self.visit_ty(ty);
+
+                    //TODO(yodaldevoid): do we need to do thing banning here too?
                 }
             }
         }
@@ -2360,6 +2370,24 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
 
                         // Plain insert (no renaming).
                         let def = Def::TyParam(self.definitions.local_def_id(param.id));
+                            function_type_rib.bindings.insert(ident, def);
+                            self.record_def(param.id, PathResolution::new(def));
+                        }
+                        GenericParamKind::Const { .. } => {
+                            let ident = param.ident.modern();
+                            debug!("with_type_parameter_rib: {}", param.id);
+
+                            if seen_bindings.contains_key(&ident) {
+                                let span = seen_bindings.get(&ident).unwrap();
+                                let err = ResolutionError::NameAlreadyUsedInParameterList(
+                                    ident.name,
+                                    span,
+                                );
+                                resolve_error(self, param.ident.span, err);
+                            }
+                            seen_bindings.entry(ident).or_insert(param.ident.span);
+
+                            let def = Def::ConstParam(self.definitions.local_def_id(param.id));
                             function_type_rib.bindings.insert(ident, def);
                             self.record_def(param.id, PathResolution::new(def));
                         }

@@ -1856,9 +1856,9 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     }
 
     fn ty_infer_for_def(&self,
-                        ty_param_def: &ty::GenericParamDef,
+                        def: &ty::GenericParamDef,
                         span: Span) -> Ty<'tcx> {
-        if let UnpackedKind::Type(ty) = self.var_for_def(span, ty_param_def).unpack() {
+        if let UnpackedKind::Type(ty) = self.var_for_def(span, def).unpack() {
             return ty;
         }
         unreachable!()
@@ -5038,6 +5038,9 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                             self.var_for_def(span, param)
                         }
                     }
+                    GenericParamDefKind::Const { .. } => {
+                        // FIXME(varkor)
+                    }
                 }
             },
         );
@@ -5156,6 +5159,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
     }
 }
 
+//TODO: Const Params
 pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                        generics: &ty::Generics,
                                        ty: Ty<'tcx>) {

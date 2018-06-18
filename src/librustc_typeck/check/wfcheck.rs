@@ -446,6 +446,9 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
                 // Mark unwanted params as err.
                 fcx.tcx.types.err.into()
             }
+            GenericParamDefKind::Const => {
+                unimplemented!() //TODO(yodaldevoid)
+            }
         }
     });
     // Now we build the substituted predicates.
@@ -838,6 +841,7 @@ fn reject_shadowing_parameters(tcx: TyCtxt, def_id: DefId) {
     let parent = tcx.generics_of(generics.parent.unwrap());
     let impl_params: FxHashMap<_, _> = parent.params.iter().flat_map(|param| match param.kind {
         GenericParamDefKind::Lifetime => None,
+        GenericParamDefKind::Const |
         GenericParamDefKind::Type {..} => Some((param.name, param.def_id)),
     }).collect();
 

@@ -382,6 +382,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
         for param in generics.params.iter() {
             let value = match param.kind {
+                GenericParamDefKind::Const |
                 GenericParamDefKind::Type {..} => {
                     trait_ref.substs[param.index as usize].to_string()
                 },

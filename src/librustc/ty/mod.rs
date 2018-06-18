@@ -63,14 +63,14 @@ use hir;
 
 pub use self::sty::{Binder, CanonicalVar, DebruijnIndex, INNERMOST};
 pub use self::sty::{FnSig, GenSig, PolyFnSig, PolyGenSig};
-pub use self::sty::{InferTy, ParamTy, ProjectionTy, ExistentialPredicate};
+pub use self::sty::{InferTy, ParamTy, ParamConst, ProjectionTy, ExistentialPredicate};
 pub use self::sty::{ClosureSubsts, GeneratorSubsts, UpvarSubsts, TypeAndMut};
 pub use self::sty::{TraitRef, TyKind, PolyTraitRef};
 pub use self::sty::{ExistentialTraitRef, PolyExistentialTraitRef};
 pub use self::sty::{ExistentialProjection, PolyExistentialProjection, Const};
 pub use self::sty::{BoundRegion, EarlyBoundRegion, FreeRegion, Region};
 pub use self::sty::RegionKind;
-pub use self::sty::{TyVid, IntVid, FloatVid, RegionVid};
+pub use self::sty::{TyVid, IntVid, FloatVid, ConstVid, RegionVid};
 pub use self::sty::BoundRegion::*;
 pub use self::sty::InferTy::*;
 pub use self::sty::RegionKind::*;
@@ -814,6 +814,9 @@ pub struct ClosureUpvar<'tcx> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+pub struct ConstVarValue(pub ast::ConstTy);
+
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum IntVarValue {
     IntType(ast::IntTy),
     UintType(ast::UintTy),
@@ -841,7 +844,8 @@ pub enum GenericParamDefKind {
         has_default: bool,
         object_lifetime_default: ObjectLifetimeDefault,
         synthetic: Option<hir::SyntheticTyParamKind>,
-    }
+    },
+    Const,
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable)]
@@ -886,6 +890,7 @@ impl GenericParamDef {
 pub struct GenericParamCount {
     pub lifetimes: usize,
     pub types: usize,
+    pub consts: usize,
 }
 
 /// Information about the formal type/lifetime parameters associated
@@ -911,6 +916,7 @@ impl<'a, 'gcx, 'tcx> Generics {
         self.parent_count + self.params.len()
     }
 
+    //TODO(yodaldevoid): check uses for places where consts need to be taken into account
     pub fn own_counts(&self) -> GenericParamCount {
         // We could cache this as a property of `GenericParamCount`, but
         // the aim is to refactor this away entirely eventually and the
@@ -921,6 +927,7 @@ impl<'a, 'gcx, 'tcx> Generics {
             match param.kind {
                 GenericParamDefKind::Lifetime => own_counts.lifetimes += 1,
                 GenericParamDefKind::Type { .. } => own_counts.types += 1,
+                GenericParamDefKind::Const => own_counts.consts += 1,
             };
         }
 
@@ -930,7 +937,7 @@ impl<'a, 'gcx, 'tcx> Generics {
     pub fn requires_monomorphization(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> bool {
         for param in &self.params {
             match param.kind {
-                GenericParamDefKind::Type { .. } => return true,
+                GenericParamDefKind::Type { .. } | GenericParamDefKind::Const => return true,
                 GenericParamDefKind::Lifetime => {}
             }
         }
@@ -973,6 +980,23 @@ impl<'a, 'gcx, 'tcx> Generics {
         } else {
             tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))
                 .type_param(param, tcx)
+        }
+    }
+
+    /// Returns the `ConstParameterDef` associated with this `ParamConst`.
+    pub fn const_param(&'tcx self,
+                       param: &ParamConst,
+                       tcx: TyCtxt<'a, 'gcx, 'tcx>)
+                       -> &GenericParamDef {
+        if let Some(index) = param.idx.checked_sub(self.parent_count as u32) {
+            let param = &self.params[index as usize];
+            match param.kind {
+                ty::GenericParamDefKind::Const {..} => param,
+                _ => bug!("expected const parameter, but found another generic parameter")
+            }
+        } else {
+            tcx.generics_of(self.parent.expect("parent_count>0 but no parent?"))
+                .const_param(param, tcx)
         }
     }
 }

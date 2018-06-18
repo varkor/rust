@@ -178,7 +178,8 @@ impl_stable_hash_for!(struct hir::PathSegment {
 
 impl_stable_hash_for!(enum hir::GenericArg {
     Lifetime(lt),
-    Type(ty)
+    Type(ty),
+    Const(ct)
 });
 
 impl_stable_hash_for!(struct hir::GenericArgs {
@@ -219,6 +220,9 @@ impl<'a> HashStable<StableHashingContext<'a>> for hir::GenericParamKind {
             hir::GenericParamKind::Type { ref default, synthetic } => {
                 default.hash_stable(hcx, hasher);
                 synthetic.hash_stable(hcx, hasher);
+            }
+            hir::GenericParamKind::Const { ref ty } => {
+                ty.hash_stable(hcx, hasher);
             }
         }
     }
@@ -1011,6 +1015,7 @@ impl_stable_hash_for!(enum hir::def::Def {
     AssociatedExistential(def_id),
     PrimTy(prim_ty),
     TyParam(def_id),
+    ConstParam(def_id),
     SelfTy(trait_def_id, impl_def_id),
     ForeignTy(def_id),
     Fn(def_id),

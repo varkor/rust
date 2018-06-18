@@ -42,7 +42,7 @@ use ty::{TyS, TyKind, List};
 use ty::{AdtKind, AdtDef, ClosureSubsts, GeneratorSubsts, Region, Const};
 use ty::{PolyFnSig, InferTy, ParamTy, ProjectionTy, ExistentialPredicate, Predicate};
 use ty::RegionKind;
-use ty::{TyVar, TyVid, IntVar, IntVid, FloatVar, FloatVid};
+use ty::{TyVar, TyVid, IntVar, IntVid, FloatVar, FloatVid, ConstVid};
 use ty::TyKind::*;
 use ty::GenericParamDefKind;
 use ty::layout::{LayoutDetails, TargetDataLayout};
@@ -2344,6 +2344,10 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         CtxtInterners::intern_ty(&self.interners, &self.global_interners, st)
     }
 
+    pub fn mk_mach_const(self, _tm: ast::ConstTy) -> Ty<'tcx> {
+        unimplemented!() // TODO(yodaldevoid)
+    }
+
     pub fn mk_mach_int(self, tm: ast::IntTy) -> Ty<'tcx> {
         match tm {
             ast::IntTy::Isize   => self.types.isize,
@@ -2401,6 +2405,13 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                         ty.into()
                     } else {
                         assert!(has_default);
+                        self.type_of(param.def_id).subst(self, substs).into()
+                    }
+                }
+                GenericParamDefKind::Const => {
+                    if param.index == 0 {
+                        ty.into()
+                    } else {
                         self.type_of(param.def_id).subst(self, substs).into()
                     }
                 }
@@ -2513,8 +2524,12 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(GeneratorWitness(types))
     }
 
-    pub fn mk_var(self, v: TyVid) -> Ty<'tcx> {
+    pub fn mk_ty_var(self, v: TyVid) -> Ty<'tcx> {
         self.mk_infer(TyVar(v))
+    }
+
+    pub fn mk_const_var(self, v: ConstVid) -> Ty<'tcx> {
+        self.mk_infer(ConstVar(v))
     }
 
     pub fn mk_int_var(self, v: IntVid) -> Ty<'tcx> {
@@ -2535,6 +2550,15 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(Param(ParamTy { idx: index, name: name }))
     }
 
+    pub fn mk_const_param(self, _index: u32, _name: InternedString) -> &'tcx ty::Const<'tcx> {
+        //TODO(yodaldevoid):
+        //self.mk_const(ty::Const {
+        //    val: ConstVal::Param(ParamConst { index, name }),
+        //    ty,
+        //})
+        unimplemented!()
+    }
+
     pub fn mk_self_type(self) -> Ty<'tcx> {
         self.mk_ty_param(0, keywords::SelfType.name().as_interned_str())
     }
@@ -2545,6 +2569,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                 self.mk_region(ty::ReEarlyBound(param.to_early_bound_region_data())).into()
             }
             GenericParamDefKind::Type {..} => self.mk_ty_param(param.index, param.name).into(),
+            GenericParamDefKind::Const => self.mk_const_param(param.index, param.name).into(),
         }
     }
 

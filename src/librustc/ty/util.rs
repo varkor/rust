@@ -507,9 +507,17 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                     }) => {
                         !impl_generics.type_param(pt, self).pure_wrt_drop
                     }
-                    UnpackedKind::Lifetime(_) | UnpackedKind::Type(_) => {
-                        // not a type or region param - this should be reported
-                        // as an error.
+                    //TODO(yodaldevoid): need to figure out where ParamConst is going to live
+                    //UnpackedKind::Type(&ty::Const {
+                    //    val: ty::ConstVal::Param(ref pc), ..
+                    //}) => {
+                    //    !impl_generics.const_param(pc, self).pure_wrt_drop
+                    //}
+                    UnpackedKind::Lifetime(_) |
+                    UnpackedKind::Type(_) |
+                    UnpackedKind::Const(_) => {
+                        // not a type, const, or region param - this should be
+                        // reported as an error.
                         false
                     }
                 }
@@ -587,7 +595,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         Some(ty::Binder::bind(env_ty))
     }
 
-    /// Given the def-id of some item that has no type parameters, make
+    /// Given the def-id of some item that has no type or const parameters, make
     /// a suitable "empty substs" for it.
     pub fn empty_substs_for_def_id(self, item_def_id: DefId) -> &'tcx Substs<'tcx> {
         Substs::for_item(self, item_def_id, |param, _| {
@@ -595,6 +603,9 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                 GenericParamDefKind::Lifetime => self.types.re_erased.into(),
                 GenericParamDefKind::Type {..} => {
                     bug!("empty_substs_for_def_id: {:?} has type parameters", item_def_id)
+                }
+                GenericParamDefKind::Const => {
+                    bug!("empty_substs_for_def_id: {:?} has const parameters", item_def_id)
                 }
             }
         })
