@@ -1889,6 +1889,10 @@ pub enum GenericParamDefKind {
         default: Option<Type>,
         synthetic: Option<hir::SyntheticTyParamKind>,
     },
+    Const {
+        did: DefId,
+        ty: Type,
+    }
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
@@ -1901,6 +1905,7 @@ pub struct GenericParamDef {
 impl GenericParamDef {
     pub fn is_synthetic_type_param(&self) -> bool {
         match self.kind {
+            GenericParamDefKind::Const {..} |
             GenericParamDefKind::Lifetime => false,
             GenericParamDefKind::Type { ref synthetic, .. } => synthetic.is_some(),
         }
@@ -1926,6 +1931,12 @@ impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef<'tcx> {
                     bounds: vec![], // These are filled in from the where-clauses.
                     default,
                     synthetic: None,
+                })
+            }
+            ty::GenericParamDefKind::Const { ref ty } => {
+                (self.name.clean(cx), GenericParamDefKind::Const {
+                    did: self.def_id,
+                    ty: ty.clean(cx),
                 })
             }
         };
@@ -2939,10 +2950,12 @@ impl Clean<Type> for hir::Ty {
                     let provided_params = &path.segments.last().unwrap();
                     let mut ty_substs = FxHashMap();
                     let mut lt_substs = FxHashMap();
+                    let mut const_substs = FxHashMap();
                     provided_params.with_generic_args(|generic_args| {
                         let mut indices = ty::GenericParamCount {
                             lifetimes: 0,
-                            types: 0
+                            types: 0,
+                            consts: 0,
                         };
                         for param in generics.params.iter() {
                             match param.kind {
@@ -2993,10 +3006,31 @@ impl Clean<Type> for hir::Ty {
                                     }
                                     indices.types += 1;
                                 }
+                                hir::GenericParamKind::Const { .. } => {
+                                    let const_param_def = Def::ConstParam(cx.tcx.hir.local_def_id(param.id));
+                                    let mut j = 0;
+                                    let const_ = generic_args.args.iter().find_map(|arg| {
+                                        match arg {
+                                            GenericArg::Const(ct) => {
+                                                if indices.consts == j {
+                                                    return Some(ct);
+                                                }
+                                                j += 1;
+                                                None
+                                            }
+                                            _ => None,
+                                        }
+                                    });
+                                    if let Some(ct) = const_.cloned() {
+                                        const_substs.insert(const_param_def, ct.clean(cx));
+                                    }
+                                    //TODO(yodaldevoid): defaults
+                                    indices.consts += 1;
+                                }
                             }
                         }
                     });
-                    return cx.enter_alias(ty_substs, lt_substs, || ty.clean(cx));
+                    return cx.enter_alias(const_substs, ty_substs, lt_substs, || ty.clean(cx));
                 }
                 resolve_type(cx, path.clean(cx), self.id)
             }

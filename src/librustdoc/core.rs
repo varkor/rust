@@ -76,6 +76,8 @@ pub struct DocContext<'a, 'tcx: 'a, 'rcx: 'a> {
     pub ty_substs: RefCell<FxHashMap<Def, clean::Type>>,
     /// Table node id of lifetime parameter definition -> substituted lifetime
     pub lt_substs: RefCell<FxHashMap<DefId, clean::Lifetime>>,
+    /// Table const parameter definition -> substituted type
+    pub const_substs: RefCell<FxHashMap<Def, clean::Constant>>,
     /// Table DefId of `impl Trait` in argument position -> bounds
     pub impl_trait_bounds: RefCell<FxHashMap<DefId, Vec<clean::GenericBound>>>,
     pub send_trait: Option<DefId>,
@@ -95,14 +97,17 @@ impl<'a, 'tcx, 'rcx> DocContext<'a, 'tcx, 'rcx> {
     /// Call the closure with the given parameters set as
     /// the substitutions for a type alias' RHS.
     pub fn enter_alias<F, R>(&self,
+                             const_substs: FxHashMap<Def, clean::Constant>,
                              ty_substs: FxHashMap<Def, clean::Type>,
                              lt_substs: FxHashMap<DefId, clean::Lifetime>,
                              f: F) -> R
     where F: FnOnce() -> R {
-        let (old_tys, old_lts) =
-            (mem::replace(&mut *self.ty_substs.borrow_mut(), ty_substs),
+        let (old_consts, old_tys, old_lts) =
+            (mem::replace(&mut *self.const_substs.borrow_mut(), const_substs),
+             mem::replace(&mut *self.ty_substs.borrow_mut(), ty_substs),
              mem::replace(&mut *self.lt_substs.borrow_mut(), lt_substs));
         let r = f();
+        *self.const_substs.borrow_mut() = old_consts;
         *self.ty_substs.borrow_mut() = old_tys;
         *self.lt_substs.borrow_mut() = old_lts;
         r
@@ -380,6 +385,7 @@ pub fn run_core(search_paths: SearchPaths,
                 renderinfo: Default::default(),
                 ty_substs: Default::default(),
                 lt_substs: Default::default(),
+                const_substs: Default::default(),
                 impl_trait_bounds: Default::default(),
                 mod_ids: Default::default(),
                 send_trait: send_trait,
