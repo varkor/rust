@@ -107,7 +107,7 @@ pub enum CanonicalTyVarKind {
     /// General type variable `?T` that can be unified with arbitrary types.
     General,
 
-    //TODO(yodaldevoid): make the docs better
+    // TODO(const_generics): make the docs better
     /// Const type variable
     Const,
 
@@ -408,7 +408,7 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                         ty::Predicate::TypeOutlives(
                             ty::Binder::dummy(ty::OutlivesPredicate(t1, r2))),
                     ),
-                UnpackedKind::Const(_) => unimplemented!(), //TODO(yodaldevoid): does it even make sense to specify that a const outlives something?
+                UnpackedKind::Const(_) => unimplemented!(), // TODO(const_generics): does it even make sense to specify that a const outlives something?
             }
         })) as Box<dyn Iterator<Item = _>>
     }

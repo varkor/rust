@@ -163,7 +163,7 @@ impl GenericArgs {
 pub enum GenericArg {
     Lifetime(Lifetime),
     Type(P<Ty>),
-    Const(P<Expr>), //TODO(yodaldevoid):
+    Const(P<Expr>), // TODO(const_generics):
 }
 
 /// A path like `Foo<'a, T>`

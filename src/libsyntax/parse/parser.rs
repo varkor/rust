@@ -5034,7 +5034,7 @@ impl<'a> Parser<'a> {
         Ok((ident, TraitItemKind::Type(bounds, default), generics))
     }
 
-    //TODO(yodaldevoid): docs
+    // TODO(const_generics): docs
     fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, GenericParam> {
         self.expect_keyword(keywords::Const)?;
         let ident = self.parse_ident()?;
@@ -5079,7 +5079,7 @@ impl<'a> Parser<'a> {
                         "lifetime parameters must be declared prior to type and const parameters");
                 }
             } else if self.check_const() { //self.check_keyword(keywords::Const)
-                //TODO(yodaldevoid): should const parameters be forced to be after type parameters?
+                // TODO(const_generics): should const parameters be forced to be after type parameters?
                 params.push(self.parse_const_param(attrs)?);
                 seen_non_lifetime_param = true;
             } else if self.check_ident() {

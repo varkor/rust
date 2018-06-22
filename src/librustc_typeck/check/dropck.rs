@@ -306,7 +306,7 @@ pub fn check_safety_of_destructor_if_necessary<'a, 'gcx, 'tcx>(
         match kind.unpack() {
             UnpackedKind::Lifetime(r) => rcx.sub_regions(origin(), parent_scope, r),
             UnpackedKind::Type(ty) => rcx.type_must_outlive(origin(), ty, parent_scope),
-            UnpackedKind::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
+            UnpackedKind::Const(_ct) => unimplemented!(), // TODO(const_generics):
         }
     }
     Ok(())

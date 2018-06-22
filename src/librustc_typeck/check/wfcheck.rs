@@ -447,7 +447,7 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
                 fcx.tcx.types.err.into()
             }
             GenericParamDefKind::Const { .. } => {
-                unimplemented!() //TODO(yodaldevoid)
+                unimplemented!() // TODO(const_generics)
             }
         }
     });

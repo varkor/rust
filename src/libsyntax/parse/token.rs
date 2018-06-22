@@ -280,7 +280,7 @@ impl Token {
         }
     }
 
-    //TODO(yodaldevoid): completely wrong
+    // TODO(const_generics): completely wrong
     /// Returns `true` if the token can appear at the start of a const param.
     pub fn can_begin_const(&self) -> bool {
         match *self {

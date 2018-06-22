@@ -146,7 +146,7 @@ pub trait Folder : Sized {
         match arg {
             GenericArg::Lifetime(lt) => GenericArg::Lifetime(self.fold_lifetime(lt)),
             GenericArg::Type(ty) => GenericArg::Type(self.fold_ty(ty)),
-            GenericArg::Const(ct) => GenericArg::Const(self.fold_expr(ct)), //TODO(yodaldevoid):
+            GenericArg::Const(ct) => GenericArg::Const(self.fold_expr(ct)), // TODO(const_generics):
         }
     }
 

@@ -953,7 +953,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             i += 1;
             Some(ty_param)
         }
-        //TODO(yodaldevoid): should this be split out to put const parameters after type parameters?
+        // TODO(const_generics): should this be split out to put const parameters after type parameters?
         GenericParamKind::Const { ref ty } => {
             if param.name.name() == keywords::SelfType.name() {
                 span_bug!(param.span,  "`Self` should not be the name of a regular parameter");

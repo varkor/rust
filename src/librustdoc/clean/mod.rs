@@ -2538,7 +2538,7 @@ impl Clean<Type> for hir::Ty {
                                     if let Some(ct) = const_.cloned() {
                                         const_substs.insert(const_param_def, ct.clean(cx));
                                     }
-                                    //TODO(yodaldevoid): defaults
+                                    // TODO(const_generics): defaults
                                     indices.consts += 1;
                                 }
                             }

@@ -114,7 +114,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                         .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
                 GenericParamDefKind::Const { .. } => {
-                    unimplemented!() //TODO(yodaldevoid):
+                    unimplemented!() // TODO(const_generics):
                 }
             }
         });
