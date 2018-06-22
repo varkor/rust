@@ -76,7 +76,7 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
 
         match (&a.sty, &b.sty) {
             // Relate const parameter variables to other types
-            // TODO(yodaldevoid):
+            // TODO(const_generics):
 
             // Relate integral variables to other types
             (&ty::TyInfer(ty::IntVar(a_id)), &ty::TyInfer(ty::IntVar(b_id))) => {

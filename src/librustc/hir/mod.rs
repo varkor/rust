@@ -436,7 +436,7 @@ impl GenericArgs {
         if self.parenthesized {
             for arg in &self.args {
                 match arg {
-                    GenericArg::Const(_) | //TODO(yodaldevoid): is this right?
+                    GenericArg::Const(_) | // TODO(const_generics): is this right?
                     GenericArg::Lifetime(_) => {}
                     GenericArg::Type(ref ty) => {
                         if let TyKind::Tup(ref tys) = ty.node {

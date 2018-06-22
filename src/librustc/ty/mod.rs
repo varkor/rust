@@ -909,7 +909,7 @@ impl<'a, 'gcx, 'tcx> Generics<'tcx> {
         self.parent_count + self.params.len()
     }
 
-    //TODO(yodaldevoid): check uses for places where consts need to be taken into account
+    // TODO(const_generics): check uses for places where consts need to be taken into account
     pub fn own_counts(&self) -> GenericParamCount {
         // We could cache this as a property of `GenericParamCount`, but
         // the aim is to refactor this away entirely eventually and the

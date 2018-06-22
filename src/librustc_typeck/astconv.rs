@@ -353,10 +353,10 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                 GenericParamDefKind::Const { .. } => {
                     let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
                     if i < const_provided {
-                        unimplemented!() //TODO(yodaldevoid):
+                        unimplemented!() // TODO(const_generics):
                     } else {
                         // We've already errored above about the mismatch.
-                        //TODO(yodaldevoid): does this need to be changed?
+                        // TODO(const_generics): does this need to be changed?
                         tcx.types.err.into()
                     }
                 }
@@ -1025,7 +1025,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                              "type")
                         }
                         hir::GenericArg::Const(_ct) => {
-                            //TODO(yodaldevoid): just needs to be uncommented after impling GenericArg::Const
+                            // TODO(const_generics): just needs to be uncommented after impling GenericArg::Const
                             //if err_for_ct { continue }
                             //err_for_ct = true;
                             //(struct_span_err!(self.tcx().sess, ct.span, E0111,
@@ -1208,7 +1208,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             hir::TyKind::Array(ref ty, ref length) => {
                 let length_def_id = tcx.hir.local_def_id(length.id);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
-                //TODO(yodaldevoid): const param?
+                // TODO(const_generics): const param?
                 let length = ty::Const::unevaluated(tcx, length_def_id, substs, tcx.types.usize);
                 let array_ty = tcx.mk_ty(ty::TyArray(self.ast_ty_to_ty(&ty), length));
                 self.normalize_ty(ast_ty.span, array_ty)
@@ -1471,7 +1471,7 @@ fn check_type_argument_count(tcx: TyCtxt,
     }
 }
 
-//TODO(yodaldevoid): deduplicate this
+// TODO(const_generics): deduplicate this
 fn report_const_number_error(tcx: TyCtxt, span: Span, number: usize, expected: usize) {
     let label = if number < expected {
         if expected == 1 {

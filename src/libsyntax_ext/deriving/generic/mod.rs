@@ -570,7 +570,7 @@ impl<'a> TraitDef<'a> {
 
                 cx.typaram(self.span, param.ident, vec![], bounds, None)
             }
-            GenericParamKind::Const { .. } => unimplemented!() //TODO(yodaldevoid):
+            GenericParamKind::Const { .. } => unimplemented!() // TODO(const_generics):
         }));
 
         // and similarly for where clauses

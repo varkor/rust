@@ -1422,7 +1422,7 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
                     self.next_ty_var(TypeVariableOrigin::SubstitutionPlaceholder(
                         self.tcx.def_span(def_id))).into()
                 }
-                GenericParamDefKind::Const { .. } => unimplemented!(), //TODO(yodaldevoid):
+                GenericParamDefKind::Const { .. } => unimplemented!(), // TODO(const_generics):
             }
         })
     }

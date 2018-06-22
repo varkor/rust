@@ -936,7 +936,7 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                     }
                 }
                 GenericParamKind::Const { ref ty, .. } => {
-                    //TODO(yodaldevoid): should we be walking the bounds?
+                    // TODO(const_generics): should we be walking the bounds?
                     walk_list!(self, visit_param_bound, &param.bounds);
                     self.visit_ty(&ty);
                 }
@@ -1372,7 +1372,7 @@ fn object_lifetime_defaults_for_item(
             })
         }
         GenericParamKind::Const { .. } => {
-            unimplemented!() //TODO(yodaldevoid):
+            unimplemented!() // TODO(const_generics):
         }
     })
     .collect()
@@ -1841,7 +1841,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     }
                     i += 1;
                 }
-                GenericArg::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
+                GenericArg::Const(_ct) => unimplemented!(), // TODO(const_generics):
             }
         }
 

@@ -432,7 +432,7 @@ impl<'a, 'tcx> CloneShimBuilder<'a, 'tcx> {
             match param.kind {
                 GenericParamDefKind::Lifetime => tcx.types.re_erased.into(),
                 GenericParamDefKind::Type { .. } => ty.into(),
-                GenericParamDefKind::Const { .. } => unimplemented!(), //TODO(yodaldevoid):
+                GenericParamDefKind::Const { .. } => unimplemented!(), // TODO(const_generics):
             }
         });
 

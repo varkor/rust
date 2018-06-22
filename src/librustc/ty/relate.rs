@@ -646,7 +646,7 @@ impl<'tcx> Relate<'tcx> for &'tcx ty::Const<'tcx> {
                            -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>
         where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
     {
-        unimplemented!() // TODO(yodaldevoid)
+        unimplemented!() // TODO(const_generics)
     }
 }
 

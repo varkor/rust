@@ -1066,7 +1066,7 @@ fn main() {
 }
 ```
 
-//TODO(yodaldevoid): example of inferring const parameter
+// TODO(const_generics): example of inferring const parameter
 "##,
 
 E0087: r##"

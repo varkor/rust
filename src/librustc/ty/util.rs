@@ -507,7 +507,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                     }) => {
                         !impl_generics.type_param(pt, self).pure_wrt_drop
                     }
-                    //TODO(yodaldevoid): need to figure out where ParamConst is going to live
+                    // TODO(const_generics): need to figure out where ParamConst is going to live
                     //UnpackedKind::Type(&ty::Const {
                     //    val: ty::ConstVal::Param(ref pc), ..
                     //}) => {

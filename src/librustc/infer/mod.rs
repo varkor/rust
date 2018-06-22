@@ -564,7 +564,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         use ty::error::UnconstrainedNumeric::Neither;
         use ty::error::UnconstrainedNumeric::{UnconstrainedInt, UnconstrainedFloat};
         match ty.sty {
-            // TODO(yodaldevoid): Necessary to consider ConstVar here?
+            // TODO(const_generics): Necessary to consider ConstVar here?
             ty::TyInfer(ty::IntVar(vid)) => {
                 if self.int_unification_table.borrow_mut().probe_value(vid).is_some() {
                     Neither

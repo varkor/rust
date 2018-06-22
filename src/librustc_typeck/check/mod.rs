@@ -5008,7 +5008,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     }
                 }
                 GenericParamDefKind::Const { .. } => {
-                    unimplemented!() //TODO(yodaldevoid):
+                    unimplemented!() // TODO(const_generics):
                 }
             }
         });
@@ -5088,7 +5088,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                       directly, not through a function pointer");
     }
 
-    //TODO(yodaldevoid): this is a lot of duplication from create_substs_for_ast_path in librustc_typeck/astconv.rs
+    // TODO(const_generics): this is a lot of duplication from create_substs_for_ast_path in librustc_typeck/astconv.rs
     /// Report errors if the provided parameters are too few or too many.
     fn check_generic_arg_count(&self,
                                span: Span,
@@ -5219,7 +5219,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             err.span_label(span, format!("expected {}", expected_text)).emit();
         }
 
-        //TODO(yodaldevoid): uncomment once GenericArg::Const has been impl
+        // TODO(const_generics): uncomment once GenericArg::Const has been impl
         //let count_const_params = |n| {
         //    format!("{} const parameter{}", n, if n == 1 { "" } else { "s" })
         //};

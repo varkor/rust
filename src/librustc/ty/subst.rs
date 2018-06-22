@@ -148,7 +148,7 @@ impl<'tcx> fmt::Display for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => write!(f, "{}", lt),
             UnpackedKind::Type(ty) => write!(f, "{}", ty),
-            UnpackedKind::Const(ct) => write!(f, "{:?}", ct), //TODO(yodaldevoid): impl display for Const
+            UnpackedKind::Const(ct) => write!(f, "{:?}", ct), // TODO(const_generics): impl display for Const
         }
     }
 }
@@ -506,7 +506,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for SubstFolder<'a, 'gcx, 'tcx> {
         return t1;
     }
 
-    //TODO(yodaldevoid): fold const?
+    // TODO(const_generics): fold const?
 }
 
 impl<'a, 'gcx, 'tcx> SubstFolder<'a, 'gcx, 'tcx> {

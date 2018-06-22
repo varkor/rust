@@ -402,7 +402,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
     }
 
     fn const_ident(&self, _span: Span, _ident: ast::Ident) -> P<ast::Expr> {
-        unimplemented!() // TODO(yodaldevoid)
+        unimplemented!() // TODO(const_generics)
     }
 
     fn ty_rptr(&self,

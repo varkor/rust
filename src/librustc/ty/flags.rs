@@ -235,6 +235,7 @@ impl FlagComputation {
 
     fn add_const(&mut self, constant: &ty::Const) {
         self.add_ty(constant.ty);
+        // TODO(const_generics): `Param`
         if let ConstValue::Unevaluated(_, substs) = constant.val {
             self.add_flags(TypeFlags::HAS_PROJECTION);
             self.add_substs(substs);

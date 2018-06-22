@@ -116,7 +116,7 @@ fn inferred_outlives_crate<'tcx>(
                         UnpackedKind::Lifetime(region1) => ty::Predicate::RegionOutlives(
                             ty::Binder::bind(ty::OutlivesPredicate(region1, region2)),
                         ),
-                        UnpackedKind::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
+                        UnpackedKind::Const(_ct) => unimplemented!(), // TODO(const_generics):
                     },
                 )
                 .collect();

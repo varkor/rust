@@ -2354,7 +2354,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn mk_mach_const(self, _tm: ast::ConstTy) -> Ty<'tcx> {
-        unimplemented!() // TODO(yodaldevoid)
+        unimplemented!() // TODO(const_generics)
     }
 
     pub fn mk_mach_int(self, tm: ast::IntTy) -> Ty<'tcx> {

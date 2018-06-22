@@ -851,7 +851,7 @@ impl<'a, 'tcx> Visitor<'tcx> for Resolver<'a> {
 
                     self.visit_ty(ty);
 
-                    //TODO(yodaldevoid): do we need to do thing banning here too?
+                    // TODO(const_generics): do we need to do thing banning here too?
                 }
             }
         }

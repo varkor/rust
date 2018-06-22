@@ -390,7 +390,7 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
                 UnpackedKind::Type(ty) => {
                     self.add_constraints_from_ty(current, ty, variance_i)
                 }
-                UnpackedKind::Const(_ct) => unimplemented!(), //TODO(yodaldevoid):
+                UnpackedKind::Const(_ct) => unimplemented!(), // TODO(const_generics):
             }
         }
     }
