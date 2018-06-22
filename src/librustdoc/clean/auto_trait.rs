@@ -385,6 +385,9 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                 ty::GenericParamDefKind::Type { .. } => {
                     args.push(hir::GenericArg::Type(self.ty_param_to_ty(param.clone())));
                 }
+                ty::GenericParamDefKind::Const { .. } => {
+                    unimplemented!() // TODO(const_generics)
+                }
             }
         }
 
@@ -989,6 +992,7 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
 
         for param in generic_params.iter_mut() {
             match param.kind {
+                GenericParamDefKind::Lifetime => {}
                 GenericParamDefKind::Type { ref mut default, ref mut bounds, .. } => {
                     // We never want something like `impl<T=Foo>`.
                     default.take();
@@ -997,7 +1001,9 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                         bounds.insert(0, GenericBound::maybe_sized(self.cx));
                     }
                 }
-                GenericParamDefKind::Lifetime => {}
+                GenericParamDefKind::Const { .. } => {
+                    unimplemented!() // TODO(const_generics)
+                }
             }
         }
 

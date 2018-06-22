@@ -262,6 +262,12 @@ impl fmt::Display for clean::Lifetime {
     }
 }
 
+impl fmt::Display for clean::Constant {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}: {}", self.expr, self.type_)
+    }
+}
+
 impl fmt::Display for clean::PolyTrait {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.generic_params.is_empty() {
@@ -304,9 +310,16 @@ impl fmt::Display for clean::GenericArgs {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             clean::GenericArgs::AngleBracketed {
-                ref lifetimes, ref types, ref bindings
+                ref lifetimes,
+                ref types,
+                ref consts,
+                ref bindings,
             } => {
-                if !lifetimes.is_empty() || !types.is_empty() || !bindings.is_empty() {
+                // TODO(varkor): clean this up
+                if !lifetimes.is_empty() ||
+                   !types.is_empty() ||
+                   !consts.is_empty() ||
+                   !bindings.is_empty() {
                     if f.alternate() {
                         f.write_str("<")?;
                     } else {
@@ -329,6 +342,17 @@ impl fmt::Display for clean::GenericArgs {
                             write!(f, "{:#}", *ty)?;
                         } else {
                             write!(f, "{}", *ty)?;
+                        }
+                    }
+                    for ct in consts {
+                        if comma {
+                            f.write_str(", ")?;
+                        }
+                        comma = true;
+                        if f.alternate() {
+                            write!(f, "{:#}", *ct)?;
+                        } else {
+                            write!(f, "{}", *ct)?;
                         }
                     }
                     for binding in bindings {
