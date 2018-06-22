@@ -14,6 +14,7 @@ use mir::interpret::ConstValue;
 use middle::region::{self, BlockRemainder};
 use ty::subst::{self, Subst};
 use ty::{BrAnon, BrEnv, BrFresh, BrNamed};
+use ty::ParamConst;
 use ty::{TyBool, TyChar, TyAdt};
 use ty::{TyError, TyStr, TyArray, TySlice, TyFloat, TyFnDef, TyFnPtr};
 use ty::{TyParam, TyRawPtr, TyRef, TyNever, TyTuple};
@@ -1263,6 +1264,7 @@ define_print! {
                             write!(f, "_")?;
                         }
                         _ => ty::tls::with(|tcx| {
+                            // TODO(const_generics): check wrt `Param`
                             write!(f, "{}", sz.unwrap_usize(tcx))
                         })?,
                     }

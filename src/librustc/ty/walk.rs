@@ -141,6 +141,7 @@ fn push_subtypes<'tcx>(stack: &mut TypeWalkerStack<'tcx>, parent_ty: Ty<'tcx>) {
 }
 
 fn push_const<'tcx>(stack: &mut TypeWalkerStack<'tcx>, constant: &'tcx ty::Const<'tcx>) {
+    // TODO(const_generics): double-check wrt `Param`
     if let ConstValue::Unevaluated(_, substs) = constant.val {
         stack.extend(substs.types().rev());
     }

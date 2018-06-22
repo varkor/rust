@@ -152,6 +152,7 @@ impl<'a, 'tcx> FunctionCx<'a, 'tcx> {
                 };
                 tcx.const_eval(param_env.and(cid))
             },
+            // TODO(const_generics): check wrt `Param`
             _ => Ok(constant),
         }
     }

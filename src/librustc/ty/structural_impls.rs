@@ -1139,6 +1139,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
             ConstValue::Unevaluated(def_id, substs) => {
                 ConstValue::Unevaluated(def_id, substs.fold_with(folder))
             }
+            ConstVal::Param(_) => unimplemented!(), //TODO(yodaldevoid):
         }
     }
 
@@ -1146,6 +1147,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
         match *self {
             ConstValue::Scalar(_) |
             ConstValue::ScalarPair(_, _) |
+            ConstVal::Param(_) | //TODO(yodaldevoid)
             ConstValue::ByRef(_, _) => false,
             ConstValue::Unevaluated(_, substs) => substs.visit_with(visitor),
         }

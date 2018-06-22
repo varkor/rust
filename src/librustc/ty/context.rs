@@ -26,7 +26,7 @@ use lint::{self, Lint};
 use ich::{StableHashingContext, NodeIdHashingMode};
 use infer::canonical::{CanonicalVarInfo, CanonicalVarInfos};
 use infer::outlives::free_region_map::FreeRegionMap;
-//use middle::const_val::ConstVal;
+use middle::const_val::ConstVal;
 use middle::cstore::{CrateStoreDyn, LinkMeta};
 use middle::cstore::EncodedMetadata;
 use middle::lang_items;
@@ -44,7 +44,7 @@ use ty::{AdtKind, AdtDef, ClosureSubsts, GeneratorSubsts, Region, Const};
 use ty::{PolyFnSig, InferTy, ParamTy, ProjectionTy, ExistentialPredicate, Predicate};
 use ty::RegionKind;
 use ty::{TyVar, TyVid, IntVar, IntVid, FloatVar, FloatVid, ConstVar, ConstVid};
-//use ty::ParamConst;
+use ty::ParamConst;
 use ty::TypeVariants::*;
 use ty::GenericParamDefKind;
 use ty::layout::{LayoutDetails, TargetDataLayout};
@@ -2559,13 +2559,12 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(TyParam(ParamTy { idx: index, name: name }))
     }
 
-    pub fn mk_const_param(self, _index: u32, _name: InternedString, _ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
-        //TODO(yodaldevoid):
-        //self.mk_const(ty::Const {
-        //    val: ConstVal::Param(ParamConst { index, name }),
-        //    ty,
-        //})
-        unimplemented!()
+    pub fn mk_const_param(self, index: u32, name: InternedString, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        debug!("mk_const_param: index={} name={:?} ty={:?}", index, name, ty);
+        self.mk_const(ty::Const {
+            val: ConstVal::Param(ParamConst { index, name }),
+            ty,
+        })
     }
 
     pub fn mk_self_type(self) -> Ty<'tcx> {

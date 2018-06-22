@@ -149,6 +149,7 @@ pub struct Verify<'tcx> {
     pub bound: VerifyBound<'tcx>,
 }
 
+//TODO:const generics?
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum GenericKind<'tcx> {
     Param(ty::ParamTy),
