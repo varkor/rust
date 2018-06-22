@@ -275,7 +275,7 @@ impl<'tcx> Constructor<'tcx> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Usefulness<'tcx> {
     Useful,
     UsefulWithWitness(Vec<Witness<'tcx>>),
@@ -291,7 +291,7 @@ impl<'tcx> Usefulness<'tcx> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum WitnessPreference {
     ConstructWitness,
     LeaveOutWitness
@@ -304,7 +304,7 @@ struct PatternContext<'tcx> {
 }
 
 /// A stack of patterns in reverse order of construction
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Witness<'tcx>(Vec<Pattern<'tcx>>);
 
 impl<'tcx> Witness<'tcx> {
@@ -824,33 +824,32 @@ pub fn is_useful<'p, 'a: 'p, 'tcx: 'a>(cx: &mut MatchCheckCtxt<'a, 'tcx>,
         // as patterns in the `match` expression, but did not.
         let mut missing_ctors = vec![];
         for req_ctor in &all_ctors {
-            if consider_value_constructors {
-                let mut refined_ctors = vec![req_ctor.clone()];
-                for used_ctor in &used_ctors {
-                    // Refine the required constructors for the type by subtracting
-                    // the range defined by the current constructor pattern.
-                    refined_ctors = match IntRange::from_ctor(cx.tcx, used_ctor) {
-                        Some(interval) => interval.subtract_from(cx.tcx, refined_ctors),
-                        None => refined_ctors,
-                    };
-                    // If the constructor patterns that have been considered so far
-                    // already cover the entire range of values, then we the
-                    // constructor is not missing, and we can move on to the next one.
-                    if refined_ctors.is_empty() {
-                        break;
+            let mut refined_ctors = vec![req_ctor.clone()];
+            for used_ctor in &used_ctors {
+                if used_ctor == req_ctor {
+                    // If a constructor appears in a `match` arm, we can
+                    // eliminate it straight away.
+                    refined_ctors = vec![]
+                } else if exhaustive_integer_patterns {
+                    if let Some(interval) = IntRange::from_ctor(cx.tcx, used_ctor) {
+                        // Refine the required constructors for the type by subtracting
+                        // the range defined by the current constructor pattern.
+                        refined_ctors = interval.subtract_from(cx.tcx, refined_ctors);
                     }
                 }
-                // If a constructor has not been matched, then it is missing.
-                // We add `refined_ctors` instead of `req_ctor`, because then we can
-                // provide more detailed error information about precisely which
-                // ranges have been omitted.
-                missing_ctors.extend(refined_ctors);
-            } else {
-                // A constructor is missing if it never appears in a `match` arm.
-                if !used_ctors.iter().any(|used_ctor| used_ctor == req_ctor) {
-                    missing_ctors.push(req_ctor.clone());
+
+                // If the constructor patterns that have been considered so far
+                // already cover the entire range of values, then we the
+                // constructor is not missing, and we can move on to the next one.
+                if refined_ctors.is_empty() {
+                    break;
                 }
             }
+            // If a constructor has not been matched, then it is missing.
+            // We add `refined_ctors` instead of `req_ctor`, because then we can
+            // provide more detailed error information about precisely which
+            // ranges have been omitted.
+            missing_ctors.extend(refined_ctors);
         }
 
         // `missing_ctors` is the set of constructors from the same type as the
