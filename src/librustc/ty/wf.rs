@@ -216,6 +216,7 @@ impl<'a, 'gcx, 'tcx> WfPredicates<'a, 'gcx, 'tcx> {
     /// into `self.out`.
     fn compute_const(&mut self, constant: &'tcx ty::Const<'tcx>) {
         self.require_sized(constant.ty, traits::ConstSized);
+        // TODO(const_generics): `Param` case
         if let ConstValue::Unevaluated(def_id, substs) = constant.val {
             let obligations = self.nominal_obligations(def_id, substs);
             self.out.extend(obligations);

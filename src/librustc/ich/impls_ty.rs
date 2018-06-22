@@ -398,6 +398,9 @@ for ::mir::interpret::ConstValue<'gcx> {
                 alloc.hash_stable(hcx, hasher);
                 offset.hash_stable(hcx, hasher);
             }
+            Param(ref param) => {
+                param.hash_stable(hcx, hasher);
+            }
         }
     }
 }

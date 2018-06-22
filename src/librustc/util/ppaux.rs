@@ -14,11 +14,10 @@ use mir::interpret::ConstValue;
 use middle::region::{self, BlockRemainder};
 use ty::subst::{self, Subst};
 use ty::{BrAnon, BrEnv, BrFresh, BrNamed};
-use ty::{Bool, Char, Adt};
-use ty::{Error, Str, Array, Slice, Float, FnDef, FnPtr};
-use ty::{Param, RawPtr, Ref, Never, Tuple};
-use ty::{Closure, Generator, GeneratorWitness, Foreign, Projection, Anon};
-use ty::{Dynamic, Int, Uint, Infer};
+use ty::ParamConst;
+use ty::{Bool, Char, Adt, Error, Str, Array, Slice, Float, FnDef, FnPtr, Param, RawPtr, Ref, Never};
+use ty::{Tuple, Closure, Generator, GeneratorWitness, Foreign, Projection, Anon, Dynamic, Int};
+use ty::{Uint, Infer};
 use ty::{self, RegionVid, Ty, TyCtxt, TypeFoldable, GenericParamCount, GenericParamDefKind};
 use util::nodemap::FxHashSet;
 
@@ -1259,6 +1258,7 @@ define_print! {
                             write!(f, "_")?;
                         }
                         _ => ty::tls::with(|tcx| {
+                            // TODO(const_generics): check wrt `Param`
                             write!(f, "{}", sz.unwrap_usize(tcx))
                         })?,
                     }

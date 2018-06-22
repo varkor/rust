@@ -8,6 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+use rustc::middle::const_val::ConstVal;
 use rustc::ty::{self, Ty, TyCtxt};
 use rustc::ty::fold::{TypeFoldable, TypeVisitor};
 use rustc::util::nodemap::FxHashSet;
@@ -21,6 +22,10 @@ impl From<ty::ParamTy> for Parameter {
 
 impl From<ty::EarlyBoundRegion> for Parameter {
     fn from(param: ty::EarlyBoundRegion) -> Self { Parameter(param.index) }
+}
+
+impl From<ty::ParamConst> for Parameter {
+    fn from(param: ty::ParamConst) -> Self { Parameter(param.index) }
 }
 
 /// Return the set of parameters constrained by the impl header.
@@ -78,6 +83,17 @@ impl<'tcx> TypeVisitor<'tcx> for ParameterCollector {
     fn visit_region(&mut self, r: ty::Region<'tcx>) -> bool {
         match *r {
             ty::ReEarlyBound(data) => {
+                self.parameters.push(Parameter::from(data));
+            }
+            _ => {}
+        }
+        false
+    }
+
+    fn visit_const(&mut self, c: &'tcx ty::Const<'tcx>) -> bool {
+        match c.val {
+            ConstVal::Param(data) => {
+                debug!("ParameterCollector::visit_const: visit const param: {}", data);
                 self.parameters.push(Parameter::from(data));
             }
             _ => {}
