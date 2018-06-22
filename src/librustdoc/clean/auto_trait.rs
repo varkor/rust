@@ -770,6 +770,7 @@ impl<'a, 'tcx, 'rcx, 'cstore> AutoTraitFinder<'a, 'tcx, 'rcx, 'cstore> {
 
         for param in generic_params.iter_mut() {
             match param.kind {
+                GenericParamDefKind::Lifetime => {}
                 GenericParamDefKind::Type { ref mut default, ref mut bounds, .. } => {
                     // We never want something like `impl<T=Foo>`.
                     default.take();
@@ -778,7 +779,9 @@ impl<'a, 'tcx, 'rcx, 'cstore> AutoTraitFinder<'a, 'tcx, 'rcx, 'cstore> {
                         bounds.insert(0, GenericBound::maybe_sized(self.cx));
                     }
                 }
-                GenericParamDefKind::Lifetime => {}
+                GenericParamDefKind::Const { .. } => {
+                    unimplemented!() // TODO(const_generics)
+                }
             }
         }
 
