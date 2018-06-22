@@ -1405,7 +1405,7 @@ pub struct GenericParamDef {
 impl GenericParamDef {
     pub fn is_synthetic_type_param(&self) -> bool {
         match self.kind {
-            GenericParamDefKind::Const {..} |
+            GenericParamDefKind::Const { .. } |
             GenericParamDefKind::Lifetime => false,
             GenericParamDefKind::Type { ref synthetic, .. } => synthetic.is_some(),
         }

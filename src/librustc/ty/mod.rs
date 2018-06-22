@@ -976,7 +976,7 @@ impl<'a, 'gcx, 'tcx> Generics<'tcx> {
         if let Some(index) = param.idx.checked_sub(self.parent_count as u32) {
             let param = &self.params[index as usize];
             match param.kind {
-                ty::GenericParamDefKind::Type {..} => param,
+                ty::GenericParamDefKind::Type { .. } => param,
                 _ => bug!("expected type parameter, but found another generic parameter")
             }
         } else {
@@ -993,7 +993,7 @@ impl<'a, 'gcx, 'tcx> Generics<'tcx> {
         if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
             let param = &self.params[index as usize];
             match param.kind {
-                ty::GenericParamDefKind::Const {..} => param,
+                ty::GenericParamDefKind::Const { .. } => param,
                 _ => bug!("expected const parameter, but found another generic parameter")
             }
         } else {

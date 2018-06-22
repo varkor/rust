@@ -958,7 +958,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                 // region parameter definition.
                 self.next_region_var(EarlyBoundRegion(span, param.name)).into()
             }
-            GenericParamDefKind::Type {..} => {
+            GenericParamDefKind::Type { .. } => {
                 // Create a type inference variable for the given
                 // type parameter definition. The substitutions are
                 // for actual parameters that may be referred to by
@@ -976,7 +976,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
                 self.tcx.mk_ty_var(ty_var_id).into()
             }
-            GenericParamDefKind::Const {..} => {
+            GenericParamDefKind::Const { .. } => {
                 let _ty_var_id =
                     self.type_variables
                         .borrow_mut()
@@ -992,7 +992,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     }
 
     /// Given a set of generics defined on a type or impl, returns a substitution mapping each
-    /// type/const/region parameter to a fresh inference variable.
+    /// type/const/lifetime parameter to a fresh inference variable.
     pub fn fresh_substs_for_item(&self,
                                  span: Span,
                                  def_id: DefId)

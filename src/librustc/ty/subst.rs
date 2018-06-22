@@ -81,27 +81,15 @@ impl<'tcx> UnpackedKind<'tcx> {
 impl<'tcx> Ord for Kind<'tcx> {
     fn cmp(&self, other: &Kind) -> Ordering {
         match (self.unpack(), other.unpack()) {
-            (UnpackedKind::Type(ty1), UnpackedKind::Type(ty2)) => {
-                ty1.sty.cmp(&ty2.sty)
-            }
+            (UnpackedKind::Lifetime(lt1), UnpackedKind::Lifetime(lt2)) => lt1.cmp(lt2),
+            (UnpackedKind::Type(ty1), UnpackedKind::Type(ty2)) => ty1.sty.cmp(&ty2.sty),
+            (UnpackedKind::Const(ct1), UnpackedKind::Const(ct2)) => ct1.cmp(&ct2),
 
-            (UnpackedKind::Const(ct1), UnpackedKind::Const(ct2)) => {
-                ct1.cmp(&ct2)
-            }
+            (UnpackedKind::Type(_), _) => Ordering::Greater,
+            (_, UnpackedKind::Type(_)) => Ordering::Less,
 
-            (UnpackedKind::Lifetime(reg1), UnpackedKind::Lifetime(reg2)) => reg1.cmp(reg2),
-
-            (UnpackedKind::Type(_), UnpackedKind::Lifetime(_)) => Ordering::Greater,
-
-            (UnpackedKind::Type(_), UnpackedKind::Const(_)) => Ordering::Greater,
-
-            (UnpackedKind::Lifetime(_), UnpackedKind::Type(_))  => Ordering::Less,
-
-            (UnpackedKind::Lifetime(_), UnpackedKind::Const(_))  => Ordering::Greater,
-
-            (UnpackedKind::Const(_), UnpackedKind::Type(_))  => Ordering::Less,
-
-            (UnpackedKind::Const(_), UnpackedKind::Lifetime(_))  => Ordering::Less,
+            (UnpackedKind::Lifetime(_), _) => Ordering::Greater,
+            (_, UnpackedKind::Lifetime(_)) => Ordering::Less,
         }
     }
 }

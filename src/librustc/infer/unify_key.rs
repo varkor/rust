@@ -22,8 +22,7 @@ impl UnifyKey for ty::ConstVid {
     fn tag() -> &'static str { "ConstVid" }
 }
 
-impl EqUnifyValue for ConstVarValue {
-}
+impl EqUnifyValue for ConstVarValue {}
 
 impl ToType for ConstVarValue {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {

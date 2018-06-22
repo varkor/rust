@@ -2410,7 +2410,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                         self.type_of(param.def_id).subst(self, substs).into()
                     }
                 }
-                GenericParamDefKind::Const {..} => {
+                GenericParamDefKind::Const { .. } => {
                     if param.index == 0 {
                         ty.into()
                     } else {
@@ -2569,7 +2569,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
             GenericParamDefKind::Lifetime => {
                 self.mk_region(ty::ReEarlyBound(param.to_early_bound_region_data())).into()
             }
-            GenericParamDefKind::Type {..} => self.mk_ty_param(param.index, param.name).into(),
+            GenericParamDefKind::Type { .. } => self.mk_ty_param(param.index, param.name).into(),
             GenericParamDefKind::Const { ty } => self.mk_const_param(param.index, param.name, ty).into(),
         }
     }
