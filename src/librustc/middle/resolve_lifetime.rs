@@ -1800,7 +1800,7 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                                 GenericParamDefKind::Type { object_lifetime_default, .. } => {
                                     Some(object_lifetime_default)
                                 }
-                                GenericParamDefKind::Const {..} |
+                                GenericParamDefKind::Const { .. } |
                                 GenericParamDefKind::Lifetime => None,
                             }
                         }).collect()

@@ -234,6 +234,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         let decl_generics = tcx.generics_of(def_id);
         let mut lt_accepted = 0;
         let mut ty_params = ParamRange { required: 0, accepted: 0 };
+        // TODO(const_generics): accept defaults.
         let mut const_accepted = 0;
         for param in &decl_generics.params {
             match param.kind {
@@ -246,7 +247,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         ty_params.required += 1;
                     }
                 }
-                GenericParamDefKind::Const {..} => const_accepted += 1,
+                GenericParamDefKind::Const { .. } => const_accepted += 1,
             };
         }
         if self_ty.is_some() {
@@ -349,7 +350,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         tcx.types.err.into()
                     }
                 }
-                GenericParamDefKind::Const {..} => {
+                GenericParamDefKind::Const { .. } => {
                     let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
                     if i < const_provided {
                         unimplemented!() //TODO(yodaldevoid):

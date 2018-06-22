@@ -22,6 +22,4 @@ impl<T, const N: usize> Trait for [T; N] {
     }
 }
 
-fn main() {
-    /* empty */
-}
+fn main() {}

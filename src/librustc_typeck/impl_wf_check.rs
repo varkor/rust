@@ -116,7 +116,7 @@ fn enforce_impl_params_are_constrained<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     for param in &impl_generics.params {
         match param.kind {
             // Disallow ANY unconstrained type parameters.
-            ty::GenericParamDefKind::Type {..} => {
+            ty::GenericParamDefKind::Type { .. } => {
                 let param_ty = ty::ParamTy::for_def(param);
                 if !input_parameters.contains(&ctp::Parameter::from(param_ty)) {
                     report_unused_parameter(tcx,
@@ -135,7 +135,7 @@ fn enforce_impl_params_are_constrained<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                             &param.name.to_string());
                 }
             }
-            ty::GenericParamDefKind::Const {..} => {
+            ty::GenericParamDefKind::Const { .. } => {
                 //TODO(yodaldevoid): This is all right, but the collection of const params in input_parameters is wrong
                 //let param_ct = ty::ParamConst::for_def(param);
                 //if !input_parameters.contains(&ctp::Parameter::from(param_ct)) {

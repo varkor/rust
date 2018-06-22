@@ -109,11 +109,11 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 GenericParamDefKind::Lifetime => {
                     span_bug!(expr.span, "closure has region param")
                 }
-                GenericParamDefKind::Type {..} => {
+                GenericParamDefKind::Type { .. } => {
                     self.infcx
                         .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
-                GenericParamDefKind::Const {..} => {
+                GenericParamDefKind::Const { .. } => {
                     unimplemented!() //TODO(yodaldevoid):
                 }
             }

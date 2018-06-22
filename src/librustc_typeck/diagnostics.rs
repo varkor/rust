@@ -1047,7 +1047,7 @@ Too many const parameters were supplied for a function. For example:
 fn foo<const T: u8>() {}
 
 fn main() {
-    foo::<1, 2>(); // error, expected 1 parameter, found 2 parameters
+    foo::<1, 2>(); // error: expected 1 parameter, found 2 parameters
 }
 ```
 
@@ -1062,11 +1062,11 @@ Not enough const parameters were supplied for a function. For example:
 fn foo<const T: u8, const U: i32>() {}
 
 fn main() {
-    foo::<1>(); // error, expected 2 parameters, found 1 parameter
+    foo::<1>(); // error: expected 2 parameters, found 1 parameter
 }
 ```
 
-//TODO(yodaldevoid): example of infering const parameter
+//TODO(yodaldevoid): example of inferring const parameter
 "##,
 
 E0087: r##"

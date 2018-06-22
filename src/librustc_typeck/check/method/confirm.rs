@@ -331,8 +331,8 @@ impl<'a, 'gcx, 'tcx> ConfirmContext<'a, 'gcx, 'tcx> {
             } else {
                 let (is_lt, is_ty, is_ct) = match param.kind {
                     GenericParamDefKind::Lifetime => (true, false, false),
-                    GenericParamDefKind::Type {..} => (false, true, false),
-                    GenericParamDefKind::Const {..} => (false, false, true),
+                    GenericParamDefKind::Type { .. } => (false, true, false),
+                    GenericParamDefKind::Const { .. } => (false, false, true),
                 };
                 provided.as_ref().and_then(|data| {
                     for arg in &data.args {

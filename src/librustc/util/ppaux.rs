@@ -350,7 +350,7 @@ impl PrintContext {
                         GenericParamDefKind::Type { has_default, .. } => {
                             Some((param.def_id, has_default))
                         }
-                        GenericParamDefKind::Const {..} => unimplemented!(), //TODO(yodaldevoid):
+                        GenericParamDefKind::Const { .. } => unimplemented!(), //TODO(yodaldevoid):
                     }).peekable();
                 let has_default = {
                     let has_default = type_params.peek().map(|(_, has_default)| has_default);
@@ -628,8 +628,8 @@ impl<'tcx> fmt::Debug for ty::GenericParamDef<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let type_name = match self.kind {
             ty::GenericParamDefKind::Lifetime => "Lifetime",
-            ty::GenericParamDefKind::Type {..} => "Type",
-            ty::GenericParamDefKind::Const {..} => "Const",
+            ty::GenericParamDefKind::Type { .. } => "Type",
+            ty::GenericParamDefKind::Const { .. } => "Const",
         };
         write!(f, "{}({}, {:?}, {})",
                type_name,
