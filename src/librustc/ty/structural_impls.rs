@@ -1139,7 +1139,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
             ConstValue::Unevaluated(def_id, substs) => {
                 ConstValue::Unevaluated(def_id, substs.fold_with(folder))
             }
-            ConstVal::Param(_) => unimplemented!(), // TODO(const_generics):
+            ConstVal::Param(param) => ConstVal::Param(param),
         }
     }
 
