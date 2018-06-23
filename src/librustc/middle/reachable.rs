@@ -126,7 +126,7 @@ impl<'a, 'tcx> Visitor<'tcx> for ReachableContext<'a, 'tcx> {
                             // If this path leads to a constant, then we need to
                             // recurse into the constant to continue finding
                             // items that are reachable.
-                            Def::Const(..) | Def::AssociatedConst(..) => {
+                            Def::Const(..) | Def::ConstParam(..) | Def::AssociatedConst(..) => {
                                 self.worklist.push(node_id);
                             }
 

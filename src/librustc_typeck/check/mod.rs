@@ -4861,6 +4861,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             }
 
             // Case 3. Reference to a method or associated const.
+            Def::ConstParam(def_id) |
             Def::Method(def_id) |
             Def::AssociatedConst(def_id) => {
                 if segments.len() >= 2 {
