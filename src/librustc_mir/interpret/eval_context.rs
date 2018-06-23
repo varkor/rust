@@ -518,7 +518,8 @@ impl<'a, 'mir, 'tcx: 'mir, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M
             let mut locals = IndexVec::from_elem(Some(Value::Scalar(Scalar::undef())), &mir.local_decls);
             match self.tcx.describe_def(instance.def_id()) {
                 // statics and constants don't have `Storage*` statements, no need to look for them
-                Some(Def::Static(..)) | Some(Def::Const(..)) | Some(Def::AssociatedConst(..)) => {},
+                Some(Def::Static(..)) | Some(Def::ConstParam(..)) |
+                Some(Def::Const(..)) | Some(Def::AssociatedConst(..)) => {},
                 _ => {
                     trace!("push_stack_frame: {:?}: num_bbs: {}", span, mir.basic_blocks().len());
                     for block in mir.basic_blocks() {

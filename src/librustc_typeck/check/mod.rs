@@ -4825,7 +4825,6 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         let mut ufcs_associated = None;
         let mut type_segment = None;
         let mut fn_segment = None;
-        //TODO: Const Params
         match def {
             // Case 1. Reference to a struct/variant constructor.
             Def::StructCtor(def_id, ..) |
@@ -4849,6 +4848,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             }
 
             // Case 3. Reference to a method or associated const.
+            Def::ConstParam(def_id) |
             Def::Method(def_id) |
             Def::AssociatedConst(def_id) => {
                 let container = self.tcx.associated_item(def_id).container;

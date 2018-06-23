@@ -2798,6 +2798,7 @@ impl<'a> Resolver<'a> {
                         match def {
                             Def::StructCtor(_, CtorKind::Const) |
                             Def::VariantCtor(_, CtorKind::Const) |
+                            Def::ConstParam(..) |
                             Def::Const(..) if is_syntactic_ambiguity => {
                                 // Disambiguate in favor of a unit struct/variant
                                 // or constant pattern.
@@ -2805,7 +2806,7 @@ impl<'a> Resolver<'a> {
                                 Some(PathResolution::new(def))
                             }
                             Def::StructCtor(..) | Def::VariantCtor(..) |
-                            Def::Const(..) | Def::Static(..) => {
+                            Def::ConstParam(..) | Def::Const(..) | Def::Static(..) => {
                                 // This is unambiguously a fresh binding, either syntactically
                                 // (e.g. `IDENT @ PAT` or `ref IDENT`) or because `IDENT` resolves
                                 // to something unusable as a pattern (e.g. constructor function),
