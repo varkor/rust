@@ -4856,12 +4856,12 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             // Case 2. Reference to a top-level value.
             Def::Fn(def_id) |
             Def::Const(def_id) |
+            Def::ConstParam(def_id) |
             Def::Static(def_id, _) => {
                 path_segs.push(PathSeg(def_id, last));
             }
 
             // Case 3. Reference to a method or associated const.
-            Def::ConstParam(def_id) |
             Def::Method(def_id) |
             Def::AssociatedConst(def_id) => {
                 if segments.len() >= 2 {
