@@ -4843,12 +4843,12 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             // Case 2. Reference to a top-level value.
             Def::Fn(def_id) |
             Def::Const(def_id) |
+            Def::ConstParam(def_id) |
             Def::Static(def_id, _) => {
                 fn_segment = Some((segments.last().unwrap(), self.tcx.generics_of(def_id)));
             }
 
             // Case 3. Reference to a method or associated const.
-            Def::ConstParam(def_id) |
             Def::Method(def_id) |
             Def::AssociatedConst(def_id) => {
                 let container = self.tcx.associated_item(def_id).container;
