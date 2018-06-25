@@ -280,13 +280,11 @@ impl Token {
         }
     }
 
-    // TODO(const_generics): completely wrong
     /// Returns `true` if the token can appear at the start of a const param.
-    pub fn can_begin_const(&self) -> bool {
-        match *self {
-            OpenDelim(Brace) |
-            Literal(..) => true,
-            _ => false
+    pub fn can_begin_const_arg(&self) -> bool {
+        match self {
+            OpenDelim(Brace) => true,
+            _ => self.can_begin_literal_or_bool(),
         }
     }
 

@@ -904,9 +904,18 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn check_const(&mut self) -> bool {
+    fn check_const_param(&mut self) -> bool {
         self.expected_tokens.push(TokenType::Const);
         self.check_keyword(keywords::Const)
+    }
+
+    fn check_const_arg(&mut self) -> bool {
+        if self.token.can_begin_const_arg() {
+            true
+        } else {
+            self.expected_tokens.push(TokenType::Const);
+            false
+        }
     }
 
     /// Expect and consume a `+`. if `+=` is seen, replace it with a `=`
@@ -5078,7 +5087,7 @@ impl<'a> Parser<'a> {
                     self.span_err(self.prev_span,
                         "lifetime parameters must be declared prior to type and const parameters");
                 }
-            } else if self.check_const() { //self.check_keyword(keywords::Const)
+            } else if self.check_const_param() {
                 // TODO(const_generics): should const parameters be forced to be after type parameters?
                 params.push(self.parse_const_param(attrs)?);
                 seen_non_lifetime_param = true;
@@ -5141,15 +5150,15 @@ impl<'a> Parser<'a> {
                           -> PResult<'a, (Vec<GenericArg>, Vec<TypeBinding>)> {
         let mut args = Vec::new();
         let mut bindings = Vec::new();
-        let mut seen_type = false;
+        let mut seen_type_or_const = false;
         let mut seen_binding = false;
         loop {
             if self.check_lifetime() && self.look_ahead(1, |t| !t.is_like_plus()) {
                 // Parse lifetime argument.
                 args.push(GenericArg::Lifetime(self.expect_lifetime()));
-                if seen_type || seen_binding {
+                if seen_type_or_const || seen_binding {
                     self.span_err(self.prev_span,
-                        "lifetime parameters must be declared prior to type parameters");
+                        "lifetime parameters must be declared prior to type and const parameters");
                 }
             } else if self.check_ident() && self.look_ahead(1, |t| t == &token::Eq) {
                 // Parse associated type binding.
@@ -5164,6 +5173,30 @@ impl<'a> Parser<'a> {
                     span: lo.to(self.prev_span),
                 });
                 seen_binding = true;
+            } else if self.check_const_arg() {
+                // TODO(const_generics): Numbers and expressions in braces are
+                // easy to check for, but bare Idents for `const`s or const
+                // params are indistinguishable from Idents for type params.
+                // There are two possibilities I can see to resolving the
+                // parsing problem. Either mark all const args with const (or
+                // something else, it doesn't really matter) or merge const args
+                // and type args together at the AST level and separate them
+                // later on, probably when lowering to the HIR.
+                //
+                // For now we just ignore Idents pointing to consts so we can
+                // get everything else working.
+                let expr = if let token::OpenDelim(token::Brace) = self.token {
+                    let body_lo = self.span;
+                    self.parse_block_expr(None, body_lo, BlockCheckMode::Default, ThinVec::new())?
+                } else if self.token.can_begin_literal_or_bool() {
+                    let lit = self.parse_lit()?;
+                    self.mk_expr(lit.span, ExprKind::Lit(P(lit)), ThinVec::new())
+                } else {
+                    unreachable!()
+                };
+                debug!("const arg: expr={:?}", expr);
+                args.push(GenericArg::Const(expr));
+                seen_type_or_const = true;
             } else if self.check_type() {
                 // Parse type argument.
                 let ty_param = self.parse_ty()?;
@@ -5172,7 +5205,7 @@ impl<'a> Parser<'a> {
                         "type parameters must be declared prior to associated type bindings");
                 }
                 args.push(GenericArg::Type(ty_param));
-                seen_type = true;
+                seen_type_or_const = true;
             } else {
                 break
             }
@@ -5780,6 +5813,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    // TODO(const_generics): const generics introduces expressions to the list of things we can see after '<'
     fn choose_generics_over_qpath(&self) -> bool {
         // There's an ambiguity between generic parameters and qualified paths in impls.
         // If we see `<` it may start both, so we have to inspect some following tokens.
