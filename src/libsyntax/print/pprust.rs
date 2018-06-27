@@ -1019,7 +1019,7 @@ impl<'a> State<'a> {
         match generic_arg {
             GenericArg::Lifetime(lt) => self.print_lifetime(*lt),
             GenericArg::Type(ty) => self.print_type(ty),
-            GenericArg::Const(ct) => self.print_expr(ct),
+            GenericArg::Const(ct) => self.print_expr(&ct.value),
         }
     }
 

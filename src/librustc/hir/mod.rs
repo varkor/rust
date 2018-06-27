@@ -390,10 +390,16 @@ impl PathSegment {
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
+pub struct ConstArg {
+    pub value: AnonConst,
+    pub span: Span,
+}
+
+#[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
 pub enum GenericArg {
     Lifetime(Lifetime),
     Type(Ty),
-    Const(Expr),
+    Const(ConstArg),
 }
 
 impl GenericArg {
@@ -436,7 +442,7 @@ impl GenericArgs {
         if self.parenthesized {
             for arg in &self.args {
                 match arg {
-                    GenericArg::Const(_) | // TODO(const_generics): is this right?
+                    GenericArg::Const(_) |
                     GenericArg::Lifetime(_) => {}
                     GenericArg::Type(ref ty) => {
                         if let TyKind::Tup(ref tys) = ty.node {

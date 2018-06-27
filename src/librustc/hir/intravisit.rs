@@ -348,7 +348,7 @@ pub trait Visitor<'v> : Sized {
         match generic_arg {
             GenericArg::Lifetime(lt) => self.visit_lifetime(lt),
             GenericArg::Type(ty) => self.visit_ty(ty),
-            GenericArg::Const(ct) => self.visit_expr(ct),
+            GenericArg::Const(ct) => self.visit_anon_const(&ct.value),
         }
     }
     fn visit_lifetime(&mut self, lifetime: &'v Lifetime) {

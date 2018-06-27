@@ -5130,7 +5130,11 @@ impl<'a> Parser<'a> {
                     unreachable!()
                 };
                 debug!("const arg: expr={:?}", expr);
-                args.push(GenericArg::Const(expr));
+                let value = AnonConst {
+                    id: ast::DUMMY_NODE_ID,
+                    value: expr,
+                };
+                args.push(GenericArg::Const(value));
                 seen_type_or_const = true;
             } else if self.check_type() {
                 // Parse type argument.

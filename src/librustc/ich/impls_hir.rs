@@ -176,6 +176,11 @@ impl_stable_hash_for!(struct hir::PathSegment {
     args
 });
 
+impl_stable_hash_for!(struct hir::ConstArg {
+    value,
+    span
+});
+
 impl_stable_hash_for!(enum hir::GenericArg {
     Lifetime(lt),
     Type(ty),

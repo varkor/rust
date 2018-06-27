@@ -5095,7 +5095,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                                segment: &mut Option<(&hir::PathSegment, &ty::Generics)>,
                                is_method_call: bool,
                                supress_mismatch_error: bool) {
-        let (lifetimes, types, _consts, infer_types, bindings) = segment.map_or(
+        let (lifetimes, types, consts, infer_types, bindings) = segment.map_or(
             (vec![], vec![], vec![], true, &[][..]),
             |(s, _)| {
                 s.args.as_ref().map_or(
@@ -5113,7 +5113,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             });
 
         // Check provided parameters.
-        let ((ty_required, ty_accepted), lt_accepted, _const_accepted) =
+        let ((ty_required, ty_accepted), lt_accepted, const_accepted) =
             segment.map_or(((0, 0), 0, 0), |(_, generics)| {
                 struct ParamRange {
                     required: usize,
@@ -5219,28 +5219,27 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             err.span_label(span, format!("expected {}", expected_text)).emit();
         }
 
-        // TODO(const_generics): uncomment once GenericArg::Const has been impl
-        //let count_const_params = |n| {
-        //    format!("{} const parameter{}", n, if n == 1 { "" } else { "s" })
-        //};
-        //let expected_text = count_const_params(const_accepted);
-        //let actual_text = count_const_params(consts.len());
-        //if let Some((mut err, span)) = if consts.len() > const_accepted {
-        //    let span = consts[const_accepted].span;
-        //    Some((struct_span_err!(self.tcx.sess, span, E0085,
-        //                          "too many const parameters provided: \
-        //                          expected at most {}, found {}",
-        //                          expected_text, actual_text), span))
-        //} else if consts.len() < const_accepted {
-        //    Some((struct_span_err!(self.tcx.sess, span, E0086,
-        //                          "too few const parameters provided: \
-        //                          expected {}, found {}",
-        //                          expected_text, actual_text), span))
-        //} else {
-        //    None
-        //} {
-        //    err.span_label(span, format!("expected {}", expected_text)).emit();
-        //}
+        let count_const_params = |n| {
+            format!("{} const parameter{}", n, if n == 1 { "" } else { "s" })
+        };
+        let expected_text = count_const_params(const_accepted);
+        let actual_text = count_const_params(consts.len());
+        if let Some((mut err, span)) = if consts.len() > const_accepted {
+            let span = consts[const_accepted].span;
+            Some((struct_span_err!(self.tcx.sess, span, E0085,
+                                  "too many const parameters provided: \
+                                  expected at most {}, found {}",
+                                  expected_text, actual_text), span))
+        } else if consts.len() < const_accepted {
+            Some((struct_span_err!(self.tcx.sess, span, E0086,
+                                  "too few const parameters provided: \
+                                  expected {}, found {}",
+                                  expected_text, actual_text), span))
+        } else {
+            None
+        } {
+            err.span_label(span, format!("expected {}", expected_text)).emit();
+        }
     }
 
     /// Report error if there is an explicit type parameter when using `impl Trait`.

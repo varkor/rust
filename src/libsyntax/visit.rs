@@ -135,7 +135,7 @@ pub trait Visitor<'ast>: Sized {
         match generic_arg {
             GenericArg::Lifetime(lt) => self.visit_lifetime(lt),
             GenericArg::Type(ty) => self.visit_ty(ty),
-            GenericArg::Const(ct) => self.visit_expr(ct),
+            GenericArg::Const(ct) => self.visit_anon_const(ct),
         }
     }
     fn visit_assoc_type_binding(&mut self, type_binding: &'ast TypeBinding) {

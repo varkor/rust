@@ -356,7 +356,6 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         unimplemented!() // TODO(const_generics):
                     } else {
                         // We've already errored above about the mismatch.
-                        // TODO(const_generics): does this need to be changed?
                         tcx.types.err.into()
                     }
                 }
@@ -1004,7 +1003,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
     pub fn prohibit_generics(&self, segments: &[hir::PathSegment]) {
         for segment in segments {
             segment.with_generic_args(|generic_args| {
-                let (mut err_for_lt, mut err_for_ty, _err_for_ct) = (false, false, false);
+                let (mut err_for_lt, mut err_for_ty, mut err_for_ct) = (false, false, false);
                 for arg in &generic_args.args {
                     let (mut span_err, span, kind) = match arg {
                         hir::GenericArg::Lifetime(lt) => {
@@ -1024,20 +1023,18 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                              ty.span,
                              "type")
                         }
-                        hir::GenericArg::Const(_ct) => {
-                            // TODO(const_generics): just needs to be uncommented after impling GenericArg::Const
-                            //if err_for_ct { continue }
-                            //err_for_ct = true;
-                            //(struct_span_err!(self.tcx().sess, ct.span, E0111,
-                            //                "const parameters are not allowed on this type"),
-                            // ct.span,
-                            // "const")
-                            unimplemented!()
+                        hir::GenericArg::Const(ct) => {
+                            if err_for_ct { continue }
+                            err_for_ct = true;
+                            (struct_span_err!(self.tcx().sess, ct.span, E0111,
+                                            "const parameters are not allowed on this type"),
+                             ct.span,
+                             "const")
                         }
                     };
                     span_err.span_label(span, format!("{} parameter not allowed", kind))
                             .emit();
-                    if err_for_lt && err_for_ty && _err_for_ct {
+                    if err_for_lt && err_for_ty && err_for_ct {
                         break;
                     }
                 }
