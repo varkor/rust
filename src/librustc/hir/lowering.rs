@@ -46,9 +46,8 @@ use hir::HirVec;
 use hir::map::{DefKey, DefPathData, Definitions};
 use hir::def_id::{DefId, DefIndex, DefIndexAddressSpace, CRATE_DEF_INDEX};
 use hir::def::{Def, PathResolution, PerNS};
-use hir::GenericArg;
-use lint::builtin::{self, PARENTHESIZED_PARAMS_IN_TYPES_AND_MODULES,
-                    ELIDED_LIFETIMES_IN_PATHS};
+use hir::{GenericArg, ConstArg};
+use lint::builtin::{self, PARENTHESIZED_PARAMS_IN_TYPES_AND_MODULES, ELIDED_LIFETIMES_IN_PATHS};
 use middle::cstore::CrateStore;
 use rustc_data_structures::indexed_vec::IndexVec;
 use rustc_data_structures::small_vec::OneVector;
@@ -1074,7 +1073,12 @@ impl<'a> LoweringContext<'a> {
         match arg {
             ast::GenericArg::Lifetime(lt) => GenericArg::Lifetime(self.lower_lifetime(&lt)),
             ast::GenericArg::Type(ty) => GenericArg::Type(self.lower_ty_direct(&ty, itctx)),
-            ast::GenericArg::Const(ct) => GenericArg::Const(self.lower_expr(&ct)),
+            ast::GenericArg::Const(ct) => {
+                GenericArg::Const(ConstArg {
+                    value: self.lower_anon_const(&ct),
+                    span: ct.value.span,
+                })
+            }
         }
     }
 

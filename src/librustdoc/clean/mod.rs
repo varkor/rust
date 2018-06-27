@@ -1251,7 +1251,7 @@ impl<'tcx> Clean<Lifetime> for ty::GenericParamDef<'tcx> {
     }
 }
 
-impl Clean<Constant> for hir::Expr {
+impl Clean<Constant> for hir::ConstArg {
     fn clean(&self, _cx: &DocContext) -> Constant {
         unimplemented!() // TODO(const_generics)
     }

@@ -1837,7 +1837,9 @@ impl<'a, 'tcx> LifetimeContext<'a, 'tcx> {
                     }
                     i += 1;
                 }
-                GenericArg::Const(_ct) => unimplemented!(), // TODO(const_generics):
+                GenericArg::Const(ct) => {
+                    self.visit_anon_const(&ct.value);
+                }
             }
         }
 

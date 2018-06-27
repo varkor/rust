@@ -1354,6 +1354,27 @@ type X = u32; // ok!
 ```
 "##,
 
+E0111: r##"
+You tried to give a const parameter to a type which doesn't need it. Erroneous
+code example:
+
+```compile_fail,E0111
+type X = u32<2>; // error: type parameters are not allowed on this type
+```
+
+Please check that you used the correct type and recheck its definition. Perhaps
+it doesn't need the const parameter.
+
+Example:
+
+```
+type X = u32; // this compiles
+```
+
+Note that const parameters for enum-variant constructors go after the variant,
+not after the enum (`Option::None::<2>`, not `Option::<2>::None`).
+"##,
+
 E0116: r##"
 You can only define an inherent implementation for a type in the same crate
 where the type was defined. For example, an `impl` block as below is not allowed
