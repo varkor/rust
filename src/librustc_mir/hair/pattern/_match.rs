@@ -883,15 +883,15 @@ pub fn is_useful<'p, 'a: 'p, 'tcx: 'a>(cx: &mut MatchCheckCtxt<'a, 'tcx>,
         let is_non_exhaustive = is_privately_empty || is_declared_nonexhaustive;
 
         if missing_ctors.is_empty() && !is_non_exhaustive {
-            if consider_value_constructors {
+            // if consider_value_constructors {
                 // If we've successfully matched every value
                 // of the type, then we're done.
-                NotUseful
-            } else {
+                // NotUseful
+            // } else {
                 all_ctors.into_iter().map(|c| {
                     is_useful_specialized(cx, matrix, v, c.clone(), pcx.ty, witness)
                 }).find(|result| result.is_useful()).unwrap_or(NotUseful)
-            }
+            // }
         } else {
             let matrix = rows.iter().filter_map(|r| {
                 if r[0].is_wildcard() {
