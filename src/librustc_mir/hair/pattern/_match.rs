@@ -1012,7 +1012,8 @@ fn is_useful_specialized<'p, 'a:'p, 'tcx: 'a>(
     lty: Ty<'tcx>,
     witness: WitnessPreference) -> Usefulness<'tcx>
 {
-    debug!("is_useful_specialized({:#?}, {:#?}, {:?})", v, ctor, lty);
+    eprintln!("is_useful_specialized({:#?}, {:#?}, {:?})", v, ctor, lty);
+    eprintln!("matrix before {:?}", m);
     let sub_pat_tys = constructor_sub_pattern_tys(cx, &ctor, lty);
     let wild_patterns_owned: Vec<_> = sub_pat_tys.iter().map(|ty| {
         Pattern {
@@ -1025,6 +1026,7 @@ fn is_useful_specialized<'p, 'a:'p, 'tcx: 'a>(
     let matrix = Matrix(m.iter().flat_map(|r| {
         specialize(cx, &r, &ctor, &wild_patterns)
     }).collect());
+    eprintln!("matrix after {:?}", matrix);
     match specialize(cx, v, &ctor, &wild_patterns) {
         Some(v) => match is_useful(cx, &matrix, &v, witness) {
             UsefulWithWitness(witnesses) => UsefulWithWitness(
