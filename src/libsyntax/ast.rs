@@ -298,6 +298,26 @@ impl GenericBound {
 
 pub type GenericBounds = Vec<GenericBound>;
 
+/// Specifies the enforced ordering for generic parameters. In the future,
+/// if we wanted to relax this order, we could override `PartialEq`/`PartialOrd`,
+/// to allow the kinds to be equal.
+#[derive(PartialEq, PartialOrd)]
+pub enum ParamKindOrd {
+    Lifetime,
+    Type,
+    Const,
+}
+
+impl fmt::Display for ParamKindOrd {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ParamKindOrd::Lifetime => "lifetime".fmt(f),
+            ParamKindOrd::Type => "type".fmt(f),
+            ParamKindOrd::Const => "const".fmt(f),
+        }
+    }
+}
+
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]
 pub enum GenericParamKind {
     /// A lifetime definition, e.g. `'a: 'b+'c+'d`.
@@ -1413,7 +1433,7 @@ impl fmt::Debug for ConstTy {
 
 impl fmt::Display for ConstTy {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self) // TODO(varkor)
+        write!(f, "{:?}", self) // TODO(const_generics)
     }
 }
 
