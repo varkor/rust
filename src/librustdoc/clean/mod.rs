@@ -3120,7 +3120,7 @@ impl Clean<Path> for hir::Path {
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Debug, Hash)]
 pub enum GenericArgs {
     AngleBracketed {
-        // TODO(varkor): clean this up
+        // TODO(const_generics): clean this up
         lifetimes: Vec<Lifetime>,
         types: Vec<Type>,
         consts: Vec<Constant>,

@@ -41,6 +41,7 @@ use ast::{Visibility, VisibilityKind, WhereClause, CrateSugar};
 use ast::{UseTree, UseTreeKind};
 use ast::{BinOpKind, UnOp};
 use ast::{RangeEnd, RangeSyntax};
+use ast::ParamKindOrd;
 use {ast, attr};
 use source_map::{self, SourceMap, Spanned, respan};
 use syntax_pos::{self, Span, MultiSpan, BytePos, FileName, edition::Edition};
@@ -5064,17 +5065,29 @@ impl<'a> Parser<'a> {
     /// Parses (possibly empty) list of lifetime, const, and type parameters, possibly including
     /// trailing comma and erroneous trailing attributes.
     crate fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
-        let mut params = Vec::new();
-        let mut seen_non_lifetime_param = false;
+        let mut params = vec![];
+        let mut max_param = None;
+        fn enforce_param_order(parser: &Parser,
+                               max_param: &mut Option<ParamKindOrd>,
+                               param_ord: ParamKindOrd) {
+            match max_param {
+                Some(max_param) if *max_param > param_ord => {
+                    parser.span_err(parser.prev_span,
+                        &format!("{} parameters must be declared prior to {} parameters",
+                            param_ord, max_param));
+                }
+                Some(_) | None => *max_param = Some(param_ord),
+            }
+        }
         loop {
             let attrs = self.parse_outer_attributes()?;
             if self.check_lifetime() {
-                let lifetime = self.expect_lifetime();
                 // Parse lifetime parameter.
+                let lifetime = self.expect_lifetime();
                 let bounds = if self.eat(&token::Colon) {
                     self.parse_lt_param_bounds()
                 } else {
-                    Vec::new()
+                    vec![]
                 };
                 params.push(ast::GenericParam {
                     ident: lifetime.ident,
@@ -5083,28 +5096,25 @@ impl<'a> Parser<'a> {
                     bounds,
                     kind: ast::GenericParamKind::Lifetime,
                 });
-                if seen_non_lifetime_param {
-                    self.span_err(self.prev_span,
-                        "lifetime parameters must be declared prior to type and const parameters");
-                }
-            } else if self.check_const_param() {
-                // TODO(const_generics): should const parameters be forced to be after type parameters?
-                params.push(self.parse_const_param(attrs)?);
-                seen_non_lifetime_param = true;
+                enforce_param_order(&self, &mut max_param, ParamKindOrd::Lifetime);
             } else if self.check_ident() {
                 // Parse type parameter.
                 params.push(self.parse_ty_param(attrs)?);
-                seen_non_lifetime_param = true;
+                enforce_param_order(&self, &mut max_param, ParamKindOrd::Type);
+            } else if self.check_const_param() {
+                // Parse const parameter.
+                params.push(self.parse_const_param(attrs)?);
+                enforce_param_order(&self, &mut max_param, ParamKindOrd::Const);
             } else {
                 // Check for trailing attributes and stop parsing.
                 if !attrs.is_empty() {
-                    let param_kind = if seen_non_lifetime_param {
-                        "type and const"
+                    if let Some(max_param) = max_param {
+                        self.span_err(attrs[0].span,
+                            &format!("trailing attribute after {} parameters", max_param));
                     } else {
-                        "lifetime"
-                    };
-                    self.span_err(attrs[0].span,
-                        &format!("trailing attribute after {} parameters", param_kind));
+                        self.span_err(attrs[0].span,
+                            "leading attribute before generic parameters");
+                    }
                 }
                 break
             }

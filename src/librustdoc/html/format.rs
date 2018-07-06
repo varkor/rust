@@ -315,7 +315,7 @@ impl fmt::Display for clean::GenericArgs {
                 ref consts,
                 ref bindings,
             } => {
-                // TODO(varkor): clean this up
+                // TODO(const_generics): clean this up
                 if !lifetimes.is_empty() ||
                    !types.is_empty() ||
                    !consts.is_empty() ||

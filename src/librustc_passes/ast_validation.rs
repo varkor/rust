@@ -429,30 +429,32 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
     }
 
     fn visit_generics(&mut self, generics: &'a Generics) {
-        let mut seen_non_lifetime_param = false;
-        let mut seen_default = None;
+        let mut max_param: Option<ParamKindOrd> = None;
+        let mut prev_ty_default = None;
         for param in &generics.params {
-            match (&param.kind, seen_non_lifetime_param) {
-                (GenericParamKind::Lifetime { .. }, true) => {
-                    self.err_handler()
-                        .span_err(param.ident.span, "lifetime parameters must be leading");
-                },
-                (GenericParamKind::Lifetime { .. }, false) => {}
-                (GenericParamKind::Type { ref default, .. }, _) => {
-                    seen_non_lifetime_param = true;
+            let param_ord = match param.kind {
+                GenericParamKind::Lifetime { .. } => ParamKindOrd::Lifetime,
+                GenericParamKind::Type { ref default, .. } => {
                     if default.is_some() {
-                        seen_default = Some(param.ident.span);
-                    } else if let Some(span) = seen_default {
+                        prev_ty_default = Some(param.ident.span);
+                    } else if let Some(span) = prev_ty_default {
                         self.err_handler()
                             .span_err(span, "type parameters with a default must be trailing");
                         break;
                     }
+                    ParamKindOrd::Type
                 }
-                (GenericParamKind::Const { .. }, _) => {
-                    seen_non_lifetime_param = true;
-                    // TODO(const_generics): defaults
+                GenericParamKind::Const { .. } => ParamKindOrd::Const,
+            };
+            let max_param = &mut max_param;
+            match max_param {
+                Some(max_param) if *max_param > param_ord => {
+                    self.err_handler().span_err(param.ident.span,
+                        &format!("{} parameters must be placed before {} parameters",
+                            param_ord, max_param));
                 }
-            }
+                Some(_) | None => *max_param = Some(param_ord),
+            };
         }
         for predicate in &generics.where_clause.predicates {
             if let WherePredicate::EqPredicate(ref predicate) = *predicate {
