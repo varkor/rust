@@ -1722,33 +1722,20 @@ impl<'a> State<'a> {
                 }
             };
 
-            let mut types = vec![];
-            let mut elide_lifetimes = true;
-            for arg in &generic_args.args {
-                match arg {
-                    GenericArg::Lifetime(lt) => {
-                        if !lt.is_elided() {
-                            elide_lifetimes = false;
-                        }
-                    }
-                    GenericArg::Type(ty) => {
-                        types.push(ty);
-                    }
-                    GenericArg::Const(_ct) => unimplemented!(), // TODO(const_generics):
-                }
-            }
+            let elide_lifetimes = generic_args.args.iter().all(|arg| match arg {
+                GenericArg::Lifetime(lt) => lt.is_elided(),
+                _ => true,
+            });
             if !elide_lifetimes {
                 start_or_comma(self)?;
                 self.commasep(Inconsistent, &generic_args.args, |s, generic_arg| {
                     match generic_arg {
-                        GenericArg::Lifetime(lt) => s.print_lifetime(lt),
+                        GenericArg::Lifetime(lt) if !elide_lifetimes => s.print_lifetime(lt),
+                        GenericArg::Lifetime(_) => Ok(()),
                         GenericArg::Type(ty) => s.print_type(ty),
-                        GenericArg::Const(_ct) => unimplemented!(), // TODO(const_generics):
+                        GenericArg::Const(ct) => s.print_anon_const(&ct.value),
                     }
                 })?;
-            } else if !types.is_empty() {
-                start_or_comma(self)?;
-                self.commasep(Inconsistent, &types, |s, ty| s.print_type(&ty))?;
             }
 
             // FIXME(eddyb) This would leak into error messages, e.g.:
