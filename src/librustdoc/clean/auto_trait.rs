@@ -452,7 +452,13 @@ impl<'a, 'tcx, 'rcx, 'cstore> AutoTraitFinder<'a, 'tcx, 'rcx, 'cstore> {
                                                                 .expect("segments were empty");
 
                             let (old_input, old_output) = match last_segment.args {
-                                GenericArgs::AngleBracketed { types, .. } => (types, None),
+                                GenericArgs::AngleBracketed { args, .. } => {
+                                    let types = args.iter().filter_map(|arg| match arg {
+                                        GenericArg::Type(ty) => Some(ty.clone()),
+                                        _ => None,
+                                    }).collect();
+                                    (types, None)
+                                }
                                 GenericArgs::Parenthesized { inputs, output, .. } => {
                                     (inputs, output)
                                 }
