@@ -1290,6 +1290,26 @@ define_print! {
 }
 
 define_print! {
+    ('tcx) ConstVal<'tcx>, (self, f, cx) {
+        display {
+            match self {
+                ConstVal::Value(value) => write!(f, "{:?}", value), // TODO(const_generics)
+                ConstVal::Unevaluated(..) => write!(f, "_"),
+                ConstVal::Param(ParamConst { name, .. }) => write!(f, "{}", name),
+            }
+        }
+    }
+}
+
+define_print! {
+    ('tcx) ty::Const<'tcx>, (self, f, cx) {
+        display {
+            write!(f, "{} : {}", self.val, self.ty)
+        }
+    }
+}
+
+define_print! {
     () ty::ParamTy, (self, f, cx) {
         display {
             write!(f, "{}", self.name)
