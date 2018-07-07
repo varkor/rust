@@ -52,6 +52,7 @@ pub trait AstBuilder {
     fn ty(&self, span: Span, ty: ast::TyKind) -> P<ast::Ty>;
     fn ty_path(&self, path: ast::Path) -> P<ast::Ty>;
     fn ty_ident(&self, span: Span, idents: ast::Ident) -> P<ast::Ty>;
+    fn anon_const(&self, span: Span, expr: ast::ExprKind) -> ast::AnonConst;
     fn const_ident(&self, span: Span, idents: ast::Ident) -> ast::AnonConst;
 
     fn ty_rptr(&self, span: Span,
@@ -401,8 +402,20 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
         self.ty_path(self.path_ident(span, ident))
     }
 
-    fn const_ident(&self, _span: Span, _ident: ast::Ident) -> ast::AnonConst {
-        unimplemented!() // TODO(const_generics)
+    fn anon_const(&self, span: Span, expr: ast::ExprKind) -> ast::AnonConst {
+        ast::AnonConst {
+            id: ast::DUMMY_NODE_ID,
+            value: P(ast::Expr {
+                id: ast::DUMMY_NODE_ID,
+                node: expr,
+                span,
+                attrs: ast::ThinVec::new(),
+            })
+        }
+    }
+
+    fn const_ident(&self, span: Span, ident: ast::Ident) -> ast::AnonConst {
+        self.anon_const(span, ast::ExprKind::Path(None, self.path_ident(span, ident)))
     }
 
     fn ty_rptr(&self,
