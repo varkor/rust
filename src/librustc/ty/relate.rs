@@ -476,7 +476,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                 }
                 match x.val {
                     ConstValue::Unevaluated(def_id, substs) => {
-                        // TODO(const_generics): this case should be entirely removed.
+                        // TODO(const_generics)
                         // FIXME(eddyb) get the right param_env.
                         let param_env = ty::ParamEnv::empty();
                         match tcx.lift_to_global(&substs) {
