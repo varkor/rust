@@ -110,8 +110,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     span_bug!(expr.span, "closure has region param")
                 }
                 GenericParamDefKind::Type { .. } => {
-                    self.infcx
-                        .next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
+                    self.infcx.next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
                 GenericParamDefKind::Const { .. } => {
                     unimplemented!() // TODO(const_generics):

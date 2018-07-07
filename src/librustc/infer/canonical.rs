@@ -107,8 +107,7 @@ pub enum CanonicalTyVarKind {
     /// General type variable `?T` that can be unified with arbitrary types.
     General,
 
-    // TODO(const_generics): make the docs better
-    /// Const type variable
+    /// Const type variable `?C` that can be unified with const expressions.
     Const,
 
     /// Integral type variable `?I` (that can only be unified with integral types).
@@ -393,22 +392,24 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
             let k1 = substitute_value(self.tcx, result_subst, k1);
             let r2 = substitute_value(self.tcx, result_subst, r2);
             match k1.unpack() {
-                UnpackedKind::Lifetime(r1) =>
+                UnpackedKind::Lifetime(r1) => {
                     Obligation::new(
                         cause.clone(),
                         param_env,
                         ty::Predicate::RegionOutlives(
                             ty::Binder::dummy(ty::OutlivesPredicate(r1, r2))),
-                    ),
-
-                UnpackedKind::Type(t1) =>
+                    )
+                }
+                UnpackedKind::Type(t1) => {
                     Obligation::new(
                         cause.clone(),
                         param_env,
                         ty::Predicate::TypeOutlives(
                             ty::Binder::dummy(ty::OutlivesPredicate(t1, r2))),
-                    ),
-                UnpackedKind::Const(_) => unimplemented!(), // TODO(const_generics): does it even make sense to specify that a const outlives something?
+                    )
+                }
+                // TODO(const_generics): does it even make sense to specify that a const outlives something?
+                UnpackedKind::Const(_) => unimplemented!(),
             }
         })) as Box<dyn Iterator<Item = _>>
     }
