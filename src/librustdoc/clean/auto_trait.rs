@@ -677,7 +677,13 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                             let last_segment = new_path.segments.pop().unwrap();
 
                             let (old_input, old_output) = match last_segment.args {
-                                GenericArgs::AngleBracketed { types, .. } => (types, None),
+                                GenericArgs::AngleBracketed { args, .. } => {
+                                    let types = args.iter().filter_map(|arg| match arg {
+                                        GenericArg::Type(ty) => Some(ty.clone()),
+                                        _ => None,
+                                    }).collect();
+                                    (types, None)
+                                }
                                 GenericArgs::Parenthesized { inputs, output, .. } => {
                                     (inputs, output)
                                 }
