@@ -27,7 +27,7 @@ use std::mem;
 use std::num::NonZeroUsize;
 
 /// An entity in the Rust typesystem, which can be one of
-/// several kinds (only types, lifetimes, and const generics for now).
+/// several kinds (types, lifetimes, and consts).
 /// To reduce memory usage, a `Kind` is a interned pointer,
 /// with the lowest 2 bits being reserved for a tag to
 /// indicate the type (`Ty`, `Region`, or `Const`) it points to.
@@ -148,7 +148,7 @@ impl<'tcx> fmt::Display for Kind<'tcx> {
         match self.unpack() {
             UnpackedKind::Lifetime(lt) => write!(f, "{}", lt),
             UnpackedKind::Type(ty) => write!(f, "{}", ty),
-            UnpackedKind::Const(ct) => write!(f, "{:?}", ct), // TODO(const_generics): impl display for Const
+            UnpackedKind::Const(ct) => write!(f, "{}", ct),
         }
     }
 }

@@ -810,6 +810,7 @@ impl<'a, 'tcx, 'cl> Visitor<'tcx> for Resolver<'a, 'cl> {
         self.label_ribs.pop();
         self.ribs[ValueNS].pop();
     }
+
     fn visit_generics(&mut self, generics: &'tcx Generics) {
         // For type parameter defaults, we have to ban access
         // to following type parameters, as the Substs can only

@@ -1919,9 +1919,8 @@ impl<'a, 'gcx, 'tcx> TyS<'tcx> {
 /// Typed constant value.
 #[derive(Copy, Clone, Debug, Hash, RustcEncodable, RustcDecodable, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Const<'tcx> {
-    pub ty: Ty<'tcx>,
-
     pub val: ConstValue<'tcx>,
+    pub ty: Ty<'tcx>,
 }
 
 impl<'tcx> Const<'tcx> {
