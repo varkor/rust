@@ -240,7 +240,7 @@ impl FlagComputation {
                 self.add_flags(TypeFlags::HAS_PROJECTION);
                 self.add_substs(substs);
             }
-            ConstVal::Param(_) => {
+            ConstValue::Param(_) => {
                 self.add_flags(TypeFlags::HAS_FREE_LOCAL_NAMES);
                 self.add_flags(TypeFlags::HAS_PARAMS);
             }
