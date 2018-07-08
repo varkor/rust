@@ -1368,7 +1368,8 @@ fn object_lifetime_defaults_for_item(
             })
         }
         GenericParamKind::Const { .. } => {
-            unimplemented!() // TODO(const_generics):
+            // TODO(const_generics):
+            None
         }
     })
     .collect()

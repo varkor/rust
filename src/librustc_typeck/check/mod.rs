@@ -1332,10 +1332,11 @@ pub fn check_item_type<'a,'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, it: &'tcx hir::Item
                 let generics = tcx.generics_of(tcx.hir.local_def_id(item.id));
                 if generics.params.len() - generics.own_counts().lifetimes != 0 {
                     let mut err = struct_span_err!(tcx.sess, item.span, E0044,
-                        "foreign items may not have type parameters");
-                    err.span_label(item.span, "can't have type parameters");
+                        "foreign items may not have type or const parameters");
+                    err.span_label(item.span, "can't have type or const parameters");
                     // FIXME: once we start storing spans for type arguments, turn this into a
                     // suggestion.
+                    // TODO(const_generics): help message
                     err.help("use specialization instead of type parameters by replacing them \
                               with concrete types like `u32`");
                     err.emit();
@@ -5161,14 +5162,17 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
     }
 }
 
-//TODO: Const Params
 pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                        generics: &ty::Generics,
                                        ty: Ty<'tcx>) {
     let own_counts = generics.own_counts();
-    debug!("check_bounds_are_used(n_tps={}, ty={:?})", own_counts.types, ty);
+    debug!("check_bounds_are_used(n_tps={}, n_cts={}, ty={:?})",
+        own_counts.types,
+        own_counts.consts,
+        ty
+    );
 
-    if own_counts.types == 0 {
+    if own_counts.types + own_counts.consts == 0 {
         return;
     }
     // Make a vector of booleans initially false, set to true when used.
@@ -5199,6 +5203,24 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 .emit();
         }
     }
+
+    // TODO(const_generics): is there even a way to walk all consts?
+    //let mut consts_used = vec![false; own_counts.types];
+    //
+    //let consts = generics.params.iter().filter(|param| match param.kind {
+    //    ty::GenericParamDefKind::Const { .. } => true,
+    //    _ => false,
+    //});
+    //for (&used, param) in consts_used.iter().zip(consts) {
+    //    if !used {
+    //        let id = tcx.hir.as_local_node_id(param.def_id).unwrap();
+    //        let span = tcx.hir.span(id);
+    //        // TODO(const_generics): new error code
+    //        struct_span_err!(tcx.sess, span, E0091, "const parameter `{}` is unused", param.name)
+    //            .span_label(span, "unused const parameter")
+    //            .emit();
+    //    }
+    //}
 }
 
 fn fatally_break_rust(sess: &Session) {

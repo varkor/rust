@@ -241,6 +241,11 @@ impl<'hir> MapEntry<'hir> {
                 }
             }
 
+            EntryGenericParam(_, _, _) => {
+                // TODO(const_generics): defaults
+                None
+            }
+
             _ => None
         }
     }

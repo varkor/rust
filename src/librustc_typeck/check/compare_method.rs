@@ -641,6 +641,61 @@ fn compare_number_of_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         return Err(ErrorReported);
     }
 
+    let num_impl_m_const_params = impl_m_generics.own_counts().consts;
+    let num_trait_m_const_params = trait_m_generics.own_counts().consts;
+
+    if num_impl_m_const_params != num_trait_m_const_params {
+        let impl_m_node_id = tcx.hir.as_local_node_id(impl_m.def_id).unwrap();
+        let impl_m_item = tcx.hir.expect_impl_item(impl_m_node_id);
+        let span = if impl_m_item.generics.params.is_empty() {
+            impl_m_span
+        } else {
+            impl_m_item.generics.span
+        };
+
+        let mut err = struct_span_err!(tcx.sess,
+                                       span,
+                                       E0049, // TDOO(const_generics): new error code?
+                                       "method `{}` has {} const parameter{} but its trait \
+                                        declaration has {} const parameter{}",
+                                       trait_m.name,
+                                       num_impl_m_const_params,
+                                       if num_impl_m_const_params == 1 { "" } else { "s" },
+                                       num_trait_m_const_params,
+                                       if num_trait_m_const_params == 1 {
+                                           ""
+                                       } else {
+                                           "s"
+                                       });
+
+        let mut suffix = None;
+
+        if let Some(span) = trait_item_span {
+            err.span_label(span,
+                           format!("expected {}",
+                                    &if num_trait_m_const_params != 1 {
+                                        format!("{} const parameters", num_trait_m_const_params)
+                                    } else {
+                                        format!("{} const parameter", num_trait_m_const_params)
+                                    }));
+        } else {
+            suffix = Some(format!(", expected {}", num_trait_m_const_params));
+        }
+
+        err.span_label(span,
+                       format!("found {}{}",
+                                &if num_impl_m_const_params != 1 {
+                                    format!("{} const parameters", num_impl_m_const_params)
+                                } else {
+                                    format!("1 const parameter")
+                                },
+                                suffix.as_ref().map(|s| &s[..]).unwrap_or("")));
+
+        err.emit();
+
+        return Err(ErrorReported);
+    }
+
     Ok(())
 }
 
