@@ -431,7 +431,7 @@ impl Foo for Bar {
 
 E0049: r##"
 This error indicates that an attempted implementation of a trait method
-has the wrong number of type parameters.
+has the wrong number of type or const parameters.
 
 For example, the trait below has a method `foo` with a type parameter `T`,
 but the implementation of `foo` for the type `Bar` is missing this parameter:
