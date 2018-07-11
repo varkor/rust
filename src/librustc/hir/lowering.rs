@@ -2327,11 +2327,9 @@ impl<'a> LoweringContext<'a> {
                 }
             }
             GenericParamKind::Const { ref ty } => {
-                let mut name = self.lower_ident(param.ident);
-
                 hir::GenericParam {
                     id: self.lower_node_id(param.id).node_id,
-                    name: hir::ParamName::Plain(name),
+                    name: hir::ParamName::Plain(param.ident),
                     span: param.ident.span,
                     pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
                     attrs: self.lower_attrs(&param.attrs),

@@ -1488,7 +1488,7 @@ impl Clean<GenericParamDef> for hir::GenericParam {
                 })
             }
             hir::GenericParamKind::Const { ref ty } => {
-                (self.name.name().clean(cx), GenericParamDefKind::Const {
+                (self.name.ident().name.clean(cx), GenericParamDefKind::Const {
                     did: cx.tcx.hir.local_def_id(self.id),
                     ty: ty.clean(cx),
                 })
@@ -3754,6 +3754,9 @@ fn print_const(cx: &DocContext, n: &ty::Const) -> String {
                 inline::print_inlined_const(cx, def_id)
             }
         },
+        ConstValue::Param(..) => {
+            unimplemented!() // TODO(const_generics)
+        }
         _ => {
             let mut s = String::new();
             ::rustc::mir::fmt_const_val(&mut s, n).expect("fmt_const_val failed");
@@ -3764,9 +3767,6 @@ fn print_const(cx: &DocContext, n: &ty::Const) -> String {
             }
             s
         },
-        ConstVal::Param(..) => {
-            unimplemented!() // TODO(const_generics)
-        }
     }
 }
 

@@ -645,6 +645,7 @@ fn compare_number_of_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let num_trait_m_const_params = trait_m_generics.own_counts().consts;
 
     if num_impl_m_const_params != num_trait_m_const_params {
+        /*
         let impl_m_node_id = tcx.hir.as_local_node_id(impl_m.def_id).unwrap();
         let impl_m_item = tcx.hir.expect_impl_item(impl_m_node_id);
         let span = if impl_m_item.generics.params.is_empty() {
@@ -655,7 +656,7 @@ fn compare_number_of_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
         let mut err = struct_span_err!(tcx.sess,
                                        span,
-                                       E0049, // TDOO(const_generics): new error code?
+                                       E0049, // TODO(const_generics): new error code?
                                        "method `{}` has {} const parameter{} but its trait \
                                         declaration has {} const parameter{}",
                                        trait_m.name,
@@ -692,7 +693,7 @@ fn compare_number_of_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                 suffix.as_ref().map(|s| &s[..]).unwrap_or("")));
 
         err.emit();
-
+        */
         return Err(ErrorReported);
     }
 

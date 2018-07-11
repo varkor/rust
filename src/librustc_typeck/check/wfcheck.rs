@@ -17,7 +17,7 @@ use rustc::ty::{self, Lift, Ty, TyCtxt, GenericParamDefKind, TypeFoldable};
 use rustc::ty::subst::{Subst, Substs};
 use rustc::ty::util::ExplicitSelf;
 use rustc::util::nodemap::{FxHashSet, FxHashMap};
-use rustc::middle::const_val::ConstVal;
+use rustc::mir::interpret::ConstValue;
 use rustc::middle::lang_items;
 use rustc::infer::anon_types::may_define_existential_type;
 
@@ -472,13 +472,10 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
             }
 
             fn visit_const(&mut self, c: &'tcx ty::Const<'tcx>) -> bool {
-                match c.val {
-                    ConstVal::Param(p) => {
-                        self.params.insert(p.index);
-                        c.super_visit_with(self)
-                    }
-                    _ => c.super_visit_with(self)
+                if let ConstValue::Param(param) = c.val {
+                    self.params.insert(param.index);
                 }
+                c.super_visit_with(self)
             }
         }
         let mut param_count = CountParams { params: FxHashSet() };

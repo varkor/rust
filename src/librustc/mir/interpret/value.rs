@@ -14,6 +14,8 @@ pub enum ConstValue<'tcx> {
     /// to allow HIR creation to happen for everything before needing to be able to run constant
     /// evaluation
     Unevaluated(DefId, &'tcx Substs<'tcx>),
+    /// A const generic parameter.
+    Param(ty::ParamConst),
     /// Used only for types with layout::abi::Scalar ABI and ZSTs
     ///
     /// Not using the enum `Value` to encode that this must not be `Undef`
@@ -33,6 +35,7 @@ impl<'tcx> ConstValue<'tcx> {
             ConstValue::Unevaluated(..) |
             ConstValue::ByRef(..) |
             ConstValue::ScalarPair(..) => None,
+            ConstValue::Param(_) => unimplemented!(), // TODO(const_generics)
             ConstValue::Scalar(val) => Some(val),
         }
     }

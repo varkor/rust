@@ -27,13 +27,12 @@ use ich::{StableHashingContext, NodeIdHashingMode};
 use infer::canonical::{CanonicalVarInfo, CanonicalVarInfos};
 use infer::outlives::free_region_map::FreeRegionMap;
 use middle::cstore::CrateStoreDyn;
-use middle::const_val::ConstVal;
 use middle::cstore::EncodedMetadata;
 use middle::lang_items;
 use middle::resolve_lifetime::{self, ObjectLifetimeDefault};
 use middle::stability;
 use mir::{self, Mir, interpret};
-use mir::interpret::Allocation;
+use mir::interpret::{Allocation, ConstValue};
 use ty::subst::{Kind, Substs, Subst};
 use ty::ReprOptions;
 use traits;
@@ -2555,7 +2554,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     pub fn mk_const_param(self, index: u32, name: InternedString, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
         debug!("mk_const_param: index={} name={:?} ty={:?}", index, name, ty);
         self.mk_const(ty::Const {
-            val: ConstVal::Param(ParamConst { index, name }),
+            val: ConstValue::Param(ParamConst { index, name }),
             ty,
         })
     }

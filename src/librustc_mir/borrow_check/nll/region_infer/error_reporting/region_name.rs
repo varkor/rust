@@ -513,7 +513,13 @@ impl<'tcx> RegionInferenceContext<'tcx> {
                     search_stack.push((ty, hir_ty));
                 }
 
-                (UnpackedKind::Lifetime(_), _) | (UnpackedKind::Type(_), _) => {
+                (UnpackedKind::Const(_ct), hir::GenericArg::Const(_hir_ct)) => {
+                    unimplemented!() // TODO(const_generics)
+                }
+
+                (UnpackedKind::Lifetime(_), _)
+                | (UnpackedKind::Type(_), _)
+                | (UnpackedKind::Const(_), _) => {
                     // I *think* that HIR lowering should ensure this
                     // doesn't happen, even in erroneous
                     // programs. Else we should use delay-span-bug.

@@ -1284,12 +1284,12 @@ define_print! {
 }
 
 define_print! {
-    ('tcx) ConstVal<'tcx>, (self, f, cx) {
+    ('tcx) ConstValue<'tcx>, (self, f, cx) {
         display {
             match self {
-                ConstVal::Value(value) => write!(f, "{:?}", value), // TODO(const_generics)
-                ConstVal::Unevaluated(..) => write!(f, "_"),
-                ConstVal::Param(ParamConst { name, .. }) => write!(f, "{}", name),
+                ConstValue::Unevaluated(..) => write!(f, "_"),
+                ConstValue::Param(ParamConst { name, .. }) => write!(f, "{}", name),
+                _ => write!(f, "{:?}", self), // TODO(const_generics)
             }
         }
     }
