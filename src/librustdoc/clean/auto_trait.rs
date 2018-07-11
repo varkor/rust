@@ -386,12 +386,13 @@ impl<'a, 'tcx, 'rcx> AutoTraitFinder<'a, 'tcx, 'rcx> {
                     args.push(hir::GenericArg::Type(self.ty_param_to_ty(param.clone())));
                 }
                 ty::GenericParamDefKind::Const { .. } => {
-                    let dummy_body_id = ObligationCause::dummy().body_id;
                     args.push(hir::GenericArg::Const(hir::ConstArg {
                         value: hir::AnonConst {
                             id: ast::DUMMY_NODE_ID,
                             hir_id: hir::DUMMY_HIR_ID,
-                            body: dummy_body_id,
+                            body: hir::BodyId {
+                                node_id: ast::DUMMY_NODE_ID
+                            }
                         },
                         span: DUMMY_SP,
                     }));

@@ -129,6 +129,10 @@ impl<'a, 'gcx, 'tcx> ConstraintConversion<'a, 'gcx, 'tcx> {
                     param_env,
                 ).type_must_outlive(origin, t1, r2);
             }
+
+            UnpackedKind::Const(_c1) => {
+                unimplemented!() // TODO(const_generics)
+            }
         }
     }
 

@@ -252,9 +252,12 @@ impl<'cx, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for Canonicalizer<'cx, 'gcx, 'tcx> 
 
             ty::TyInfer(ty::FloatVar(_)) => self.canonicalize_ty_var(CanonicalTyVarKind::Float, t),
 
+            ty::TyInfer(ty::ConstVar(_)) => self.canonicalize_ty_var(CanonicalTyVarKind::Const, t),
+
             ty::TyInfer(ty::FreshTy(_))
             | ty::TyInfer(ty::FreshIntTy(_))
-            | ty::TyInfer(ty::FreshFloatTy(_)) => {
+            | ty::TyInfer(ty::FreshFloatTy(_))
+            | ty::TyInfer(ty::FreshConstTy(_)) => {
                 bug!("encountered a fresh type during canonicalization")
             }
 

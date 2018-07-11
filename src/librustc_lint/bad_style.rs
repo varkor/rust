@@ -423,7 +423,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for NonUpperCaseGlobals {
                 NonUpperCaseGlobals::check_upper_case(
                     cx,
                     "const parameter",
-                    param.name.name(),
+                    param.name.ident().name,
                     param.span
                 );
             }

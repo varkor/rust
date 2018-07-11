@@ -104,6 +104,7 @@ impl<'a, 'tcx> OperandRef<'tcx> {
 
         let val = match val.val {
             ConstValue::Unevaluated(..) => bug!(),
+            ConstValue::Param(_) => unimplemented!(), // TODO(const_generics)
             ConstValue::Scalar(x) => {
                 let scalar = match layout.abi {
                     layout::Abi::Scalar(ref x) => x,

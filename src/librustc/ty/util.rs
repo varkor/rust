@@ -21,8 +21,8 @@ use ty::subst::{Substs, UnpackedKind};
 use ty::query::TyCtxtAt;
 use ty::TypeVariants::*;
 use ty::layout::{Integer, IntegerExt};
+use mir::interpret::ConstValue;
 use util::common::ErrorReported;
-use middle::const_val::ConstVal;
 use middle::lang_items;
 
 use rustc_data_structures::stable_hasher::{StableHasher, HashStable};
@@ -508,9 +508,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                     }) => {
                         !impl_generics.type_param(pt, self).pure_wrt_drop
                     }
-                    UnpackedKind::Const(&ty::Const {
-                        val: ConstVal::Param(ref pc), ..
-                    }) => {
+                    UnpackedKind::Const(&ty::Const { val: ConstValue::Param(ref pc), .. }) => {
                         !impl_generics.const_param(pc, self).pure_wrt_drop
                     }
                     UnpackedKind::Lifetime(_) |

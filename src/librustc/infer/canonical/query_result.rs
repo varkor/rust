@@ -433,6 +433,9 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                         opt_values[index] = Some(*original_value);
                     }
                 }
+                UnpackedKind::Const(_) => {
+                    unimplemented!() // TODO(const_generics)
+                }
             }
         }
 
@@ -516,6 +519,9 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                                 t1, r2,
                             ))),
                         ),
+
+                        // TODO(const_generics): does it even make sense to specify that a const outlives something?
+                        UnpackedKind::Const(_) => unimplemented!(),
                     }
                 }),
         ) as Box<dyn Iterator<Item = _>>

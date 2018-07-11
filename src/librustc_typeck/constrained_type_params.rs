@@ -8,9 +8,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use rustc::middle::const_val::ConstVal;
 use rustc::ty::{self, Ty, TyCtxt};
 use rustc::ty::fold::{TypeFoldable, TypeVisitor};
+use rustc::mir::interpret::ConstValue;
 use rustc::util::nodemap::FxHashSet;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
@@ -92,7 +92,7 @@ impl<'tcx> TypeVisitor<'tcx> for ParameterCollector {
 
     fn visit_const(&mut self, c: &'tcx ty::Const<'tcx>) -> bool {
         match c.val {
-            ConstVal::Param(data) => {
+            ConstValue::Param(data) => {
                 debug!("ParameterCollector::visit_const: visit const param: {}", data);
                 self.parameters.push(Parameter::from(data));
             }

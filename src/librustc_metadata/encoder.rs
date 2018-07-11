@@ -1349,6 +1349,7 @@ impl<'a, 'b: 'a, 'tcx: 'b> IsolatedEncoder<'a, 'b, 'tcx> {
             variances: LazySeq::empty(),
             generics: None,
             predicates: None,
+            predicates_defined_on: None,
 
             mir: None,
         }
