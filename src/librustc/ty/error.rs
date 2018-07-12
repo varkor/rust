@@ -215,7 +215,6 @@ impl<'a, 'gcx, 'lcx, 'tcx> ty::TyS<'tcx> {
             ty::TyGeneratorWitness(..) => "generator witness".to_string(),
             ty::TyTuple(..) => "tuple".to_string(),
             ty::TyInfer(ty::TyVar(_)) => "inferred type".to_string(),
-            ty::TyInfer(ty::ConstVar(_)) => "const parameter variable".to_string(),
             ty::TyInfer(ty::IntVar(_)) => "integral variable".to_string(),
             ty::TyInfer(ty::FloatVar(_)) => "floating-point variable".to_string(),
             ty::TyInfer(ty::CanonicalTy(_)) |

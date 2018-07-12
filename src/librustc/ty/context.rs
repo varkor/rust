@@ -42,7 +42,7 @@ use ty::{TyS, TypeVariants, Slice};
 use ty::{AdtKind, AdtDef, ClosureSubsts, GeneratorSubsts, Region, Const};
 use ty::{PolyFnSig, InferTy, ParamTy, ProjectionTy, ExistentialPredicate, Predicate};
 use ty::RegionKind;
-use ty::{TyVar, TyVid, IntVar, IntVid, FloatVar, FloatVid, ConstVar, ConstVid};
+use ty::{TyVar, TyVid, IntVar, IntVid, FloatVar, FloatVid, ConstVid};
 use ty::ParamConst;
 use ty::TypeVariants::*;
 use ty::GenericParamDefKind;
@@ -2536,8 +2536,11 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_infer(TyVar(v))
     }
 
-    pub fn mk_const_var(self, v: ConstVid) -> Ty<'tcx> {
-        self.mk_infer(ConstVar(v))
+    pub fn mk_const_var(self, v: ConstVid, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        self.mk_const(ty::Const {
+            val: ConstValue::InferVar(v),
+            ty,
+        })
     }
 
     pub fn mk_int_var(self, v: IntVid) -> Ty<'tcx> {

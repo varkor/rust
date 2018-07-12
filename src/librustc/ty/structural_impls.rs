@@ -1140,6 +1140,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
                 ConstValue::Unevaluated(def_id, substs.fold_with(folder))
             }
             ConstValue::Param(param) => ConstValue::Param(param),
+            ConstValue::InferVar(vid) => ConstValue::InferVar(vid),
         }
     }
 
@@ -1148,6 +1149,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
             ConstValue::Scalar(_) |
             ConstValue::ScalarPair(_, _) |
             ConstValue::Param(_) | // TODO(const_generics)
+            ConstValue::InferVar(_) | // TODO(const_generics)
             ConstValue::ByRef(_, _) => false,
             ConstValue::Unevaluated(_, substs) => substs.visit_with(visitor),
         }

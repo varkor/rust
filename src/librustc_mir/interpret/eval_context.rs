@@ -367,6 +367,7 @@ impl<'a, 'mir, 'tcx: 'mir, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M
                 })
             }
             ConstValue::Param(_) => unimplemented!(), // TODO(const_generics)
+            ConstValue::InferVar(_) => unimplemented!(), // TODO(const_generics)
             ConstValue::ByRef(alloc, offset) => {
                 // FIXME: Allocate new AllocId for all constants inside
                 let id = self.memory.allocate_value(alloc.clone(), MemoryKind::Stack)?;
