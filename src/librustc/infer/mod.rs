@@ -902,8 +902,9 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_ty_var(self.next_ty_var_id(true, origin))
     }
 
-    pub fn next_const_var(&self) -> Ty<'tcx> {
-        self.tcx.mk_const_var(self.next_const_var_id())
+    pub fn next_const_var(&self, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        // TODO(const_generics): do we need this function?
+        self.tcx.mk_const_var(self.next_const_var_id(), ty)
     }
 
     pub fn next_const_var_id(&self) -> ConstVid {
@@ -950,7 +951,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
     pub fn var_for_def(&self,
                        span: Span,
-                       param: &ty::GenericParamDef)
+                       param: &ty::GenericParamDef<'tcx>)
                        -> Kind<'tcx> {
         match param.kind {
             GenericParamDefKind::Lifetime => {
@@ -971,22 +972,17 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
                     self.type_variables
                         .borrow_mut()
                         .new_var(self.universe(),
-                                    false,
-                                    TypeVariableOrigin::TypeParameterDefinition(span, param.name));
+                                 false,
+                                 TypeVariableOrigin::TypeParameterDefinition(span, param.name));
 
                 self.tcx.mk_ty_var(ty_var_id).into()
             }
-            GenericParamDefKind::Const { .. } => {
-                let _ty_var_id =
-                    self.type_variables
+            GenericParamDefKind::Const { ty } => {
+                let const_var_id =
+                    self.const_unification_table
                         .borrow_mut()
-                        .new_var(
-                            self.universe(),
-                            false,
-                            TypeVariableOrigin::ConstParameterDefinition(span, param.name)
-                        );
-                //self.tcx.mk_const(ty_var_id).into()
-                unimplemented!()
+                        .new_key(None);
+                 self.tcx.mk_const_var(const_var_id, ty).into()
             }
         }
     }

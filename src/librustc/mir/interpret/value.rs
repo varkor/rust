@@ -16,6 +16,8 @@ pub enum ConstValue<'tcx> {
     Unevaluated(DefId, &'tcx Substs<'tcx>),
     /// A const generic parameter.
     Param(ty::ParamConst),
+    /// Infer the value of the const.
+    InferVar(ty::ConstVid),
     /// Used only for types with layout::abi::Scalar ABI and ZSTs
     ///
     /// Not using the enum `Value` to encode that this must not be `Undef`
@@ -36,6 +38,7 @@ impl<'tcx> ConstValue<'tcx> {
             ConstValue::ByRef(..) |
             ConstValue::ScalarPair(..) => None,
             ConstValue::Param(_) => unimplemented!(), // TODO(const_generics)
+            ConstValue::InferVar(_) => unimplemented!(), // TODO(const_generics)
             ConstValue::Scalar(val) => Some(val),
         }
     }

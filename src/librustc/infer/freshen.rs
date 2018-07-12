@@ -141,17 +141,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for TypeFreshener<'a, 'gcx, 'tcx> {
                     ty::FreshTy)
             }
 
-            ty::Infer(ty::ConstVar(v)) => {
-                self.freshen(
-                    self.infcx.const_unification_table.borrow_mut()
-                        .probe_value(v)
-                        .map(|v| v.to_type(tcx)),
-                    ty::ConstVar(v),
-                    ty::FreshIntTy
-                )
-            }
-
-            ty::Infer(ty::IntVar(v)) => {
+            ty::TyInfer(ty::IntVar(v)) => {
                 self.freshen(
                     self.infcx.int_unification_table.borrow_mut()
                                                     .probe_value(v)

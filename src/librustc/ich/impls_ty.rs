@@ -401,6 +401,9 @@ for ::mir::interpret::ConstValue<'gcx> {
             Param(ref param) => {
                 param.hash_stable(hcx, hasher);
             }
+            InferVar(vid) => {
+                vid.hash_stable(hcx, hasher);
+            }
         }
     }
 }
@@ -910,7 +913,6 @@ for ty::TyKind<'gcx>
 
 impl_stable_hash_for!(enum ty::InferTy {
     TyVar(a),
-    ConstVar(a),
     IntVar(a),
     FloatVar(a),
     FreshTy(a),
@@ -1298,7 +1300,6 @@ impl_stable_hash_for!(enum infer::canonical::CanonicalVarKind {
 
 impl_stable_hash_for!(enum infer::canonical::CanonicalTyVarKind {
     General,
-    Const,
     Int,
     Float
 });

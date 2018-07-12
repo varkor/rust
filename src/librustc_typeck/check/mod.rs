@@ -1857,7 +1857,7 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     }
 
     fn ty_infer_for_def(&self,
-                        def: &ty::GenericParamDef,
+                        def: &ty::GenericParamDef<'tcx>,
                         span: Span) -> Ty<'tcx> {
         if let UnpackedKind::Type(ty) = self.var_for_def(span, def).unpack() {
             return ty;
@@ -2230,6 +2230,10 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         let t = AstConv::ast_ty_to_ty(self, ast_t);
         self.register_wf_obligation(t, ast_t.span, traits::MiscObligation);
         t
+    }
+
+    pub fn to_const(&self, ast_c: &hir::ConstArg, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        AstConv::ast_const_to_const(self, ast_c, ty)
     }
 
     pub fn node_ty(&self, id: hir::HirId) -> Ty<'tcx> {
@@ -5042,7 +5046,19 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     }
                     GenericParamDefKind::Const { .. } => {
                         // FIXME(varkor)
-                        unimplemented!()
+                        if let Some((_, generics)) = segment {
+                            let own_counts = generics.own_counts();
+                            i -= own_counts.lifetimes + own_counts.types;
+                        }
+
+                        if let Some(ct) = consts.get(i) {
+                            // A provided const parameter.
+                            self.to_const(ct, ty).into()
+                        } else {
+                            // FIXME(const_generics:defaults)
+                            // No const parameters were provided, we can infer all.
+                            self.var_for_def(span, param)
+                        }
                     }
                 }
             },

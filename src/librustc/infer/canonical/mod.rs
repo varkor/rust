@@ -110,9 +110,6 @@ pub enum CanonicalTyVarKind {
     /// General type variable `?T` that can be unified with arbitrary types.
     General,
 
-    /// Const type variable `?C` that can be unified with const expressions.
-    Const,
-
     /// Integral type variable `?I` (that can only be unified with integral types).
     Int,
 
@@ -247,7 +244,6 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                     CanonicalTyVarKind::General => {
                         self.next_ty_var(TypeVariableOrigin::MiscVariable(span))
                     }
-                    CanonicalTyVarKind::Const => self.tcx.mk_const_var(self.next_const_var_id()),
                     CanonicalTyVarKind::Int => self.tcx.mk_int_var(self.next_int_var_id()),
                     CanonicalTyVarKind::Float => self.tcx.mk_float_var(self.next_float_var_id()),
                 };

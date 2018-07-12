@@ -1228,7 +1228,6 @@ impl From<RegionVid> for usize {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
 pub enum InferTy {
     TyVar(TyVid),
-    ConstVar(ConstVid),
     IntVar(IntVid),
     FloatVar(FloatVid),
 

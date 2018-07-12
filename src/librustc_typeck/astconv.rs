@@ -56,7 +56,7 @@ pub trait AstConv<'gcx, 'tcx> {
 
     /// Same as ty_infer, but with a known type parameter definition.
     fn ty_infer_for_def(&self,
-                        _def: &ty::GenericParamDef,
+                        _def: &ty::GenericParamDef<'tcx>,
                         span: Span) -> Ty<'tcx> {
         self.ty_infer(span)
     }
@@ -1557,6 +1557,10 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
 
         self.record_ty(ast_ty.hir_id, result_ty, ast_ty.span);
         result_ty
+    }
+
+    pub fn ast_const_to_const(&self, _ct: &hir::ConstArg, _ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+        unimplemented!() // TODO(const_generics)
     }
 
     pub fn impl_trait_ty_to_ty(

@@ -130,7 +130,6 @@ impl FlagComputation {
                     }
 
                     ty::TyVar(_) |
-                    ty::ConstVar(_) |
                     ty::IntVar(_) |
                     ty::FloatVar(_) => {
                         self.add_flags(TypeFlags::KEEP_IN_LOCAL_TCX)
