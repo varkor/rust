@@ -1652,6 +1652,17 @@ fn main() {
 ```
 "##,
 
+E0668: r##"
+Const parameters cannot depend on type parameters.
+The following is therefore invalid:
+
+```
+fn const_id<T, const N: T>() -> T {
+    N
+}
+```
+"##,
+
 }
 
 register_diagnostics! {
