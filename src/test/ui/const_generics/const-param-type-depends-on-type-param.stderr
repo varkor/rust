@@ -1,0 +1,9 @@
+error[E0668]: const parameters cannot depend on type parameters
+  --> $DIR/const-param-type-depends-on-type-param.rs:13:34
+   |
+LL | pub struct Dependent<T, const X: T>([(); X]); //~ ERROR const parameters
+   |                                  ^ const parameter depends on type parameter
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0668`.
