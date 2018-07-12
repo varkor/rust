@@ -5032,14 +5032,14 @@ impl<'a> Parser<'a> {
                     kind: ast::GenericParamKind::Lifetime,
                 });
                 enforce_param_order(&self, &mut max_param, ParamKindOrd::Lifetime);
-            } else if self.check_ident() {
-                // Parse type parameter.
-                params.push(self.parse_ty_param(attrs)?);
-                enforce_param_order(&self, &mut max_param, ParamKindOrd::Type);
             } else if self.check_const_param() {
                 // Parse const parameter.
                 params.push(self.parse_const_param(attrs)?);
                 enforce_param_order(&self, &mut max_param, ParamKindOrd::Const);
+            } else if self.check_ident() {
+                // Parse type parameter.
+                params.push(self.parse_ty_param(attrs)?);
+                enforce_param_order(&self, &mut max_param, ParamKindOrd::Type);
             } else {
                 // Check for trailing attributes and stop parsing.
                 if !attrs.is_empty() {
