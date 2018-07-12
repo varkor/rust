@@ -1,0 +1,16 @@
+error[E0086]: too few const parameters provided: expected 1 const parameter, found 0 const parameters
+  --> $DIR/incorrect-number-of-const-args.rs:14:5
+   |
+LL |     foo(); //~ ERROR too few const parameters provided
+   |     ^^^ expected 1 const parameter
+
+error[E0085]: too many const parameters provided: expected at most 1 const parameter, found 2 const parameters
+  --> $DIR/incorrect-number-of-const-args.rs:15:14
+   |
+LL |     foo::<0, 0>(); //~ ERROR too many const parameters provided
+   |              ^ expected 1 const parameter
+
+error: aborting due to 2 previous errors
+
+Some errors occurred: E0085, E0086.
+For more information about an error, try `rustc --explain E0085`.
