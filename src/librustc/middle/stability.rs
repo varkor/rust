@@ -828,7 +828,7 @@ pub fn check_unused_or_stable_features<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>) {
     }
 
     // FIXME(#44232) the `used_features` table no longer exists, so we don't
-    //               lint about unknown or unused features. We should reenable
+    //               lint about unused features. We should reenable
     //               this one day!
     //
     // let index = tcx.stability();
@@ -840,7 +840,7 @@ pub fn check_unused_or_stable_features<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>) {
     //     tcx.lint_node(lint::builtin::UNUSED_FEATURES,
     //                   ast::CRATE_NODE_ID,
     //                   span,
-    //                   "unused or unknown feature");
+    //                   "unused feature");
     // }
 }
 
