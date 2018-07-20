@@ -2094,7 +2094,9 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
             }
         };
 
-        for mi in list {
+        let mut stable_feature_warnings = vec![];
+
+        for mi in &list {
             let name = if let Some(word) = mi.word() {
                 word.name()
             } else {
@@ -2142,14 +2144,29 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
             if LIB_UNSTABLE_FEATURES.iter().any(|f| name == f.0) {
                 features.declared_lib_features.push((name, mi.span));
             } else if LIB_STABLE_FEATURES.iter().any(|f| name == f.0) {
-                // FIXME(varkor): handle multiple features well.
-                let warning = format!("`#![feature({})]` is not needed because it is stable", name);
-                let mut err = span_handler.struct_span_warn(attr.span, &warning);
-                err.span_suggestion_short(attr.span,
-                    "remove this feature attribute", "".into());
-                err.emit();
+                stable_feature_warnings.push((mi.span, name));
             } else {
                 span_err!(span_handler, mi.span, E0635, "unknown feature `{}`", name);
+            }
+        }
+
+        if stable_feature_warnings.len() == list.len() {
+            let desc = if list.len() == 1 {
+                "this feature attribute is not needed because it is stable"
+            } else {
+                "this feature attribute is not needed because these features are \
+                 stable"
+            };
+            let mut err = span_handler.struct_span_warn(attr.span, &desc);
+            err.span_suggestion_short(attr.span,
+                "remove this feature attribute", "".into());
+            err.emit();
+        } else {
+            for (span, name) in stable_feature_warnings {
+                let desc = format!("`{}` is not needed because it is stable", name);
+                let mut err = span_handler.struct_span_warn(span, &desc);
+                err.span_suggestion_short(span, "remove this feature", "".into());
+                err.emit();
             }
         }
     }
