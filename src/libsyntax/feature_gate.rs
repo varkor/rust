@@ -769,25 +769,6 @@ declare_features! (
     (lib, wrapping_int_impl, Some(32463), None, None),
     (lib, wrapping_next_power_of_two, Some(32463), Some("needs decision on wrapping behaviour"), None),
 
-    // Unused features
-    (lib, core_float, Some(0), None, None),
-    (lib, core_slice_ext, Some(0), None, None),
-    (lib, core_str_ext, Some(0), None, None),
-    (lib, char_internals, Some(0), None, None),
-    (lib, float_from_str_radix, Some(0), None, None),
-    (lib, into_cow, Some(0), None, None),
-    (lib, num_bits_bytes, Some(0), None, None),
-    (lib, old_wrapping, Some(0), None, None),
-    (lib, oom, Some(0), None, None),
-    (lib, placement_new_protocol, Some(0), None, None),
-    (lib, rand, Some(0), None, None),
-    (lib, slice_bytes, Some(0), None, None),
-    (lib, str_char, Some(0), None, None),
-    (lib, str_utf16, Some(0), None, None),
-    (lib, vec_push_all, Some(0), None, None),
-    (lib, float_internals, Some(0), None, None),
-    (lib, const_atomic_usize_new, Some(0), None, None),
-
     // Stable features
     (lib, inclusive_range_methods, Some(0), None, None),
     (lib, from_ref, Some(0), None, None),
