@@ -37,6 +37,7 @@ use parse::ParseSess;
 use symbol::{keywords, Symbol};
 
 use std::{env, path};
+use std::collections::HashSet;
 
 macro_rules! set {
     ($field: ident) => {{
@@ -2069,6 +2070,19 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
     }
 
     let mut features = Features::new();
+    let mut feature_set = HashSet::new();
+
+    // Warn if the user declares a feature multiple times.
+    let mut declare_feature = |name, span| {
+        if feature_set.contains(&name) {
+            let desc = format!("the `{}` feature has already been declared", name);
+            let mut err = span_handler.struct_span_warn(span, &desc);
+            err.span_suggestion_short(span, "remove this feature", "".into());
+            err.emit();
+        } else {
+            feature_set.insert(name);
+        }
+    };
 
     let mut feature_checker = FeatureChecker::default();
 
@@ -2108,6 +2122,7 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
             if let Some((.., set)) = ACTIVE_FEATURES.iter().find(|f| name == f.0) {
                 set(&mut features, mi.span);
                 feature_checker.collect(&features, mi.span);
+                declare_feature(name, mi.span);
                 continue
             }
 
@@ -2115,11 +2130,13 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
             let stable_removed = STABLE_REMOVED_FEATURES.iter().find(|f| name == f.0);
             if let Some((.., reason)) = removed.or(stable_removed) {
                 feature_removed(span_handler, mi.span, *reason);
+                declare_feature(name, mi.span);
                 continue
             }
 
             if ACCEPTED_FEATURES.iter().any(|f| name == f.0) {
                 features.declared_stable_lang_features.push((name, mi.span));
+                declare_feature(name, mi.span);
                 continue
             }
 
@@ -2143,8 +2160,9 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
 
             if LIB_UNSTABLE_FEATURES.iter().any(|f| name == f.0) {
                 features.declared_lib_features.push((name, mi.span));
+                declare_feature(name, mi.span);
             } else if LIB_STABLE_FEATURES.iter().any(|f| name == f.0) {
-                stable_feature_warnings.push((mi.span, name));
+                stable_feature_warnings.push((name, mi.span));
             } else {
                 span_err!(span_handler, mi.span, E0635, "unknown feature `{}`", name);
             }
@@ -2162,7 +2180,7 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
                 "remove this feature attribute", "".into());
             err.emit();
         } else {
-            for (span, name) in stable_feature_warnings {
+            for (name, span) in stable_feature_warnings {
                 let desc = format!("`{}` is not needed because it is stable", name);
                 let mut err = span_handler.struct_span_warn(span, &desc);
                 err.span_suggestion_short(span, "remove this feature", "".into());
