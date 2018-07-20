@@ -90,6 +90,13 @@ macro_rules! declare_features {
         ];
     };
 
+    ($((accepted, $feature: ident, $ver: expr, $issue: expr, None),)+) => {
+        /// Those language feature has since been Accepted (it was once Active)
+        const ACCEPTED_FEATURES: &[(&str, &str, Option<u32>, Option<&str>)] = &[
+            $((stringify!($feature), $ver, $issue, None)),+
+        ];
+    };
+
     ($((stable_removed, $feature: ident, $ver: expr, $issue: expr, None),)+) => {
         /// Represents stable features which have since been removed (it was once Accepted)
         const STABLE_REMOVED_FEATURES: &[(&str, &str, Option<u32>, Option<&str>)] = &[
@@ -97,12 +104,11 @@ macro_rules! declare_features {
         ];
     };
 
-    ($((accepted, $feature: ident, $ver: expr, $issue: expr, None),)+) => {
-        /// Those language feature has since been Accepted (it was once Active)
-        const ACCEPTED_FEATURES: &[(&str, &str, Option<u32>, Option<&str>)] = &[
-            $((stringify!($feature), $ver, $issue, None)),+
+    ($((lib, $feature: ident, $issue: expr, $reason: expr, None),)+) => {
+        const LIB_FEATURES: &[(&str, Option<u32>, Option<&str>, Option<&str>)] = &[
+            $((stringify!($feature), $issue, $reason, None)),+
         ];
-    }
+    };
 }
 
 // If you change this, please modify src/doc/unstable-book as well.
@@ -616,6 +622,8 @@ declare_features! (
     // Defining procedural macros in `proc-macro` crates
     (accepted, proc_macro, "1.29.0", Some(38356), None),
 );
+
+declare_features! ();
 
 // If you change this, please modify src/doc/unstable-book as well. You must
 // move that documentation into the relevant place in the other docs, and
@@ -1969,7 +1977,11 @@ pub fn get_features(span_handler: &Handler, krate_attrs: &[ast::Attribute],
                 continue
             }
 
-            features.declared_lib_features.push((name, mi.span));
+            if LIB_FEATURES.iter().any(|f| name == f.0) {
+                features.declared_lib_features.push((name, mi.span));
+            } else {
+                span_err!(span_handler, mi.span, E0635, "unknown feature `{}`", name);
+            }
         }
     }
 
