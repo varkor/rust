@@ -16,7 +16,6 @@
       html_favicon_url = "https://doc.rust-lang.org/favicon.ico",
       html_root_url = "https://doc.rust-lang.org/nightly/")]
 
-#![feature(fs_read_write)]
 #![feature(specialization)]
 
 #![recursion_limit="256"]

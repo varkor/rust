@@ -21,7 +21,6 @@
 #![feature(box_patterns)]
 #![feature(box_syntax)]
 #![feature(custom_attribute)]
-#![feature(fs_read_write)]
 #![allow(unused_attributes)]
 #![deny(bare_trait_objects)]
 #![feature(libc)]

@@ -47,8 +47,6 @@
 #![feature(const_fn)]
 #![feature(core_intrinsics)]
 #![feature(drain_filter)]
-#![feature(from_ref)]
-#![feature(fs_read_write)]
 #![feature(iterator_find_map)]
 #![cfg_attr(windows, feature(libc))]
 #![feature(macro_vis_matcher)]
@@ -73,7 +71,6 @@
 #![feature(test)]
 #![feature(in_band_lifetimes)]
 #![feature(macro_at_most_once_rep)]
-#![feature(inclusive_range_methods)]
 
 #![recursion_limit="512"]
 
