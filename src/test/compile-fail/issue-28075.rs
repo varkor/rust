@@ -16,7 +16,8 @@
 
 extern crate lint_stability;
 
-use lint_stability::{unstable, deprecated}; //~ ERROR use of unstable library feature 'test_feature'
+use lint_stability::{unstable, deprecated};
+//~^ ERROR use of unstable library feature 'test_unstable_feature'
 
 fn main() {
 }
