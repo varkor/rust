@@ -1,3 +1,9 @@
+warning: this feature attribute is not needed because it is stable
+  --> $DIR/issue-43106-gating-of-builtin-attrs.rs:102:1
+   |
+LL | #![feature                     (rust1)]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: remove this feature attribute
+
 warning: unknown lint: `x5400`
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:49:33
    |
@@ -956,73 +962,73 @@ LL | #[crate_type = "0800"]
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:728:17
    |
-LL |     mod inner { #![feature(x0600)] }
+LL |     mod inner { #![feature(rust1)] }
    |                 ^^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be in the root module
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:728:17
    |
-LL |     mod inner { #![feature(x0600)] }
+LL |     mod inner { #![feature(rust1)] }
    |                 ^^^^^^^^^^^^^^^^^^
 
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:732:5
    |
-LL |     #[feature(x0600)] fn f() { }
+LL |     #[feature(rust1)] fn f() { }
    |     ^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be an inner attribute: add an exclamation mark: #![foo]
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:732:5
    |
-LL |     #[feature(x0600)] fn f() { }
+LL |     #[feature(rust1)] fn f() { }
    |     ^^^^^^^^^^^^^^^^^
 
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:736:5
    |
-LL |     #[feature(x0600)] struct S;
+LL |     #[feature(rust1)] struct S;
    |     ^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be an inner attribute: add an exclamation mark: #![foo]
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:736:5
    |
-LL |     #[feature(x0600)] struct S;
+LL |     #[feature(rust1)] struct S;
    |     ^^^^^^^^^^^^^^^^^
 
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:740:5
    |
-LL |     #[feature(x0600)] type T = S;
+LL |     #[feature(rust1)] type T = S;
    |     ^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be an inner attribute: add an exclamation mark: #![foo]
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:740:5
    |
-LL |     #[feature(x0600)] type T = S;
+LL |     #[feature(rust1)] type T = S;
    |     ^^^^^^^^^^^^^^^^^
 
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:744:5
    |
-LL |     #[feature(x0600)] impl S { }
+LL |     #[feature(rust1)] impl S { }
    |     ^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be an inner attribute: add an exclamation mark: #![foo]
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:744:5
    |
-LL |     #[feature(x0600)] impl S { }
+LL |     #[feature(rust1)] impl S { }
    |     ^^^^^^^^^^^^^^^^^
 
 warning: unused attribute
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:724:1
    |
-LL | #[feature(x0600)]
+LL | #[feature(rust1)]
    | ^^^^^^^^^^^^^^^^^
 
 warning: crate-level attribute should be an inner attribute: add an exclamation mark: #![foo]
   --> $DIR/issue-43106-gating-of-builtin-attrs.rs:724:1
    |
-LL | #[feature(x0600)]
+LL | #[feature(rust1)]
    | ^^^^^^^^^^^^^^^^^
 
 warning: unused attribute

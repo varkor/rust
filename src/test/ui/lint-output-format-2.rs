@@ -10,8 +10,8 @@
 
 // aux-build:lint_output_format.rs
 
-// FIXME(#44232) we should warn that this isn't used.
-#![feature(foo)]
+#![feature(rust1)]
+//~^ WARN this feature attribute is not needed because it is stable
 
 #![feature(test_feature)]
 #![feature(rustc_attrs)]

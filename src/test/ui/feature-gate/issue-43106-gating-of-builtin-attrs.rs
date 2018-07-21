@@ -99,8 +99,8 @@
 
 // For #![crate_id], see issue #43142. (I cannot bear to enshrine current behavior in a test)
 
-// FIXME(#44232) we should warn that this isn't used.
-#![feature                    ( x0600)]
+#![feature                     (rust1)]
+//~^ WARN this feature attribute is not needed because it is stable
 
 // For #![no_start], see issue #43144. (I cannot bear to enshrine current behavior in a test)
 
@@ -721,27 +721,27 @@ mod crate_type {
     //~| WARN crate-level attribute should be an inner attribute
 }
 
-#[feature(x0600)]
+#[feature(rust1)]
 //~^ WARN unused attribute
 //~| WARN crate-level attribute should be an inner attribute
 mod feature {
-    mod inner { #![feature(x0600)] }
+    mod inner { #![feature(rust1)] }
     //~^ WARN unused attribute
     //~| WARN crate-level attribute should be in the root module
 
-    #[feature(x0600)] fn f() { }
+    #[feature(rust1)] fn f() { }
     //~^ WARN unused attribute
     //~| WARN crate-level attribute should be an inner attribute
 
-    #[feature(x0600)] struct S;
+    #[feature(rust1)] struct S;
     //~^ WARN unused attribute
     //~| WARN crate-level attribute should be an inner attribute
 
-    #[feature(x0600)] type T = S;
+    #[feature(rust1)] type T = S;
     //~^ WARN unused attribute
     //~| WARN crate-level attribute should be an inner attribute
 
-    #[feature(x0600)] impl S { }
+    #[feature(rust1)] impl S { }
     //~^ WARN unused attribute
     //~| WARN crate-level attribute should be an inner attribute
 }

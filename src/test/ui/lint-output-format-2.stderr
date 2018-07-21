@@ -1,3 +1,9 @@
+warning: this feature attribute is not needed because it is stable
+  --> $DIR/lint-output-format-2.rs:13:1
+   |
+LL | #![feature(rust1)]
+   | ^^^^^^^^^^^^^^^^^^ help: remove this feature attribute
+
 warning: use of deprecated item 'lint_output_format::foo': text
   --> $DIR/lint-output-format-2.rs:20:26
    |
