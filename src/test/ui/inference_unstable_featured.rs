@@ -14,7 +14,7 @@
 // aux-build:inference_unstable_iterator.rs
 // aux-build:inference_unstable_itertools.rs
 
-#![feature(ipu_flatten)]
+#![feature(test_unstable_feature)]
 
 extern crate inference_unstable_iterator;
 extern crate inference_unstable_itertools;

@@ -1,10 +1,10 @@
-error[E0658]: use of unstable library feature 'ipu_flatten' (see issue #99999)
+error[E0658]: use of unstable library feature 'test_unstable_feature' (see issue #99999)
   --> $DIR/inference_unstable_forced.rs:21:20
    |
 LL |     assert_eq!('x'.ipu_flatten(), 0);   //~ ERROR E0658
    |                    ^^^^^^^^^^^
    |
-   = help: add #![feature(ipu_flatten)] to the crate attributes to enable
+   = help: add #![feature(test_unstable_feature)] to the crate attributes to enable
 
 error: aborting due to previous error
 

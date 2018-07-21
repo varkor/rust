@@ -13,7 +13,7 @@
 #![feature(rust1)]
 //~^ WARN this feature attribute is not needed because it is stable
 
-#![feature(test_feature)]
+#![feature(test_unstable_feature)]
 #![feature(rustc_attrs)]
 
 extern crate lint_output_format;
