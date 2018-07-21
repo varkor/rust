@@ -206,7 +206,8 @@ impl<'a, 'tcx: 'a> Annotator<'a, 'tcx> {
             // Emit errors for non-staged-api crates.
             for attr in attrs {
                 let tag = attr.name();
-                if tag == "unstable" || tag == "stable" || tag == "rustc_deprecated" {
+                if tag == "stability" || tag == "unstable" || tag == "stable"
+                    || tag == "rustc_deprecated" {
                     attr::mark_used(attr);
                     self.tcx.sess.span_err(attr.span(), "stability attributes may not be used \
                                                          outside of the standard library");
@@ -411,7 +412,7 @@ impl<'a, 'tcx> Index<'tcx> {
         let ref active_lib_features = tcx.features().declared_lib_features;
 
         // Put the active features into a map for quick lookup
-        index.active_features = active_lib_features.iter().map(|&(ref s, _)| s.clone()).collect();
+        index.active_features = active_lib_features.iter().cloned().collect();
 
         {
             let krate = tcx.hir.krate();
@@ -813,10 +814,11 @@ pub fn check_unused_or_stable_features<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>) {
         krate.visit_all_item_likes(&mut missing.as_deep_visitor());
     }
 
-    let ref declared_lib_features = tcx.features().declared_lib_features;
-    let mut remaining_lib_features: FxHashMap<Symbol, Span>
-        = declared_lib_features.clone().into_iter().collect();
-    remaining_lib_features.remove(&Symbol::intern("proc_macro"));
+    // FIXME(#44232): see below.
+    // let ref declared_lib_features = tcx.features().declared_lib_features;
+    // let mut remaining_lib_features: FxHashMap<Symbol, Span>
+    //     = declared_lib_features.clone().into_iter().collect();
+    // remaining_lib_features.remove(&Symbol::intern("proc_macro"));
 
     for &(ref stable_lang_feature, span) in &tcx.features().declared_stable_lang_features {
         let version = find_lang_feature_accepted_version(&stable_lang_feature.as_str())

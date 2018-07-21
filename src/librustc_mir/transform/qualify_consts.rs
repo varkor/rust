@@ -911,10 +911,7 @@ This does not pose a problem by itself because they can't be accessed directly."
                 .. }) = self.tcx.lookup_stability(def_id) {
                     if
                         // feature-gate is not enabled,
-                        !self.tcx.features()
-                            .declared_lib_features
-                            .iter()
-                            .any(|&(ref sym, _)| sym == feature_name) &&
+                        !self.tcx.features().declared_lib_features.contains(feature_name) &&
 
                         // this doesn't come from a crate with the feature-gate enabled,
                         self.def_id.is_local() &&

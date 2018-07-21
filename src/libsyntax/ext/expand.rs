@@ -709,7 +709,7 @@ impl<'a, 'b> MacroExpander<'a, 'b> {
                 if def_site_span.map_or(false, |def_span| !crate_span.contains(def_span))
                     && !span.allows_unstable() && this.cx.ecfg.features.map_or(true, |feats| {
                     // macro features will count as lib features
-                    !feats.declared_lib_features.iter().any(|&(feat, _)| feat == feature)
+                    !feats.declared_lib_features.contains(&feature)
                 }) {
                     let explain = format!("macro {}! is unstable", path);
                     emit_feature_err(this.cx.parse_sess, &*feature.as_str(), span,

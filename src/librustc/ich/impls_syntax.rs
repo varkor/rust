@@ -513,6 +513,7 @@ impl<'gcx> HashStable<StableHashingContext<'gcx>> for feature_gate::Features {
         // struct is macro generated.
         self.declared_stable_lang_features.hash_stable(hcx, hasher);
         self.declared_lib_features.hash_stable(hcx, hasher);
+        self.declared_stable_lib_features.hash_stable(hcx, hasher);
 
         self.walk_feature_fields(|feature_name, value| {
             feature_name.hash_stable(hcx, hasher);

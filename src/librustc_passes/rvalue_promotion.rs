@@ -184,10 +184,7 @@ impl<'a, 'gcx> CheckCrateVisitor<'a, 'gcx> {
             .. }) = self.tcx.lookup_stability(def_id) {
             let stable_check =
                 // feature-gate is enabled,
-                self.tcx.features()
-                    .declared_lib_features
-                    .iter()
-                    .any(|&(ref sym, _)| sym == feature_name) ||
+                self.tcx.features().declared_lib_features.contains(feature_name) ||
 
                     // this comes from a crate with the feature-gate enabled,
                     !def_id.is_local() ||

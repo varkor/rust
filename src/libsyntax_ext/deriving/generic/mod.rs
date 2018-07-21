@@ -473,7 +473,8 @@ impl<'a> TraitDef<'a> {
                     .iter()
                     .filter(|a| {
                         match &*a.name().as_str() {
-                            "allow" | "warn" | "deny" | "forbid" | "stable" | "unstable" => true,
+                            "allow" | "warn" | "deny" | "forbid" | "stable" | "unstable"
+                            | "stability" => true,
                             _ => false,
                         }
                     })

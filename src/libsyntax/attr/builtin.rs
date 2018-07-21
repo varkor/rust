@@ -12,7 +12,7 @@
 
 use ast::{self, Attribute, MetaItem, Name, NestedMetaItemKind};
 use errors::{Applicability, Handler};
-use feature_gate::{Features, GatedCfg};
+use feature_gate::{Features, GatedCfg, LIB_UNSTABLE_FEATURES, LIB_STABLE_FEATURES};
 use parse::ParseSess;
 use syntax_pos::{symbol::Symbol, Span};
 
@@ -24,7 +24,8 @@ enum AttrError {
     MissingSince,
     MissingFeature,
     MultipleStabilityLevels,
-    UnsupportedLiteral
+    UnsupportedLiteral,
+    UnknownStability(Name),
 }
 
 fn handle_errors(diag: &Handler, span: Span, error: AttrError) {
@@ -45,6 +46,9 @@ fn handle_errors(diag: &Handler, span: Span, error: AttrError) {
         AttrError::MultipleStabilityLevels => span_err!(diag, span, E0544,
                                                         "multiple stability levels"),
         AttrError::UnsupportedLiteral => span_err!(diag, span, E0565, "unsupported literal"),
+        AttrError::UnknownStability(name) => {
+            span_err!(diag, span, E0705, "unsupported lib feature `{}`", name)
+        }
     }
 }
 
@@ -114,7 +118,7 @@ pub struct Stability {
 #[derive(RustcEncodable, RustcDecodable, PartialEq, PartialOrd, Clone, Debug, Eq, Hash)]
 pub enum StabilityLevel {
     // Reason for the current stability level and the relevant rust-lang issue
-    Unstable { reason: Option<Symbol>, issue: u32 },
+    Unstable { reason: Option<Symbol>, issue: u32 }, // FIXME: make `issue` an `Option<u32>`
     Stable { since: Symbol },
 }
 
@@ -161,8 +165,8 @@ pub fn contains_feature_attr(attrs: &[Attribute], feature_name: &str) -> bool {
 }
 
 /// Find the first stability attribute. `None` if none exists.
-pub fn find_stability(diagnostic: &Handler, attrs: &[Attribute],
-                      item_sp: Span) -> Option<Stability> {
+pub fn find_stability(diagnostic: &Handler, attrs: &[Attribute], item_sp: Span)
+    -> Option<Stability> {
     find_stability_generic(diagnostic, attrs.iter(), item_sp)
 }
 
@@ -184,6 +188,7 @@ fn find_stability_generic<'a, I>(diagnostic: &Handler,
             "rustc_const_unstable",
             "unstable",
             "stable",
+            "stability",
         ].iter().any(|&s| attr.path == s) {
             continue // not a stability level
         }
@@ -360,7 +365,9 @@ fn find_stability_generic<'a, I>(diagnostic: &Handler,
                                     handle_errors(
                                         diagnostic,
                                         meta.span,
-                                        AttrError::UnknownMetaItem(mi.name(), &["since", "note"]),
+                                        AttrError::UnknownMetaItem(
+                                            mi.name(),
+                                            &["feature", "since"]),
                                     );
                                     continue 'outer
                                 }
@@ -390,6 +397,68 @@ fn find_stability_generic<'a, I>(diagnostic: &Handler,
                             handle_errors(diagnostic, attr.span(), AttrError::MissingSince);
                             continue
                         }
+                    }
+                }
+                "stability" => {
+                    if stab.is_some() {
+                        handle_errors(diagnostic, attr.span(), AttrError::MultipleStabilityLevels);
+                        break
+                    }
+
+                    let mut name = None;
+                    for meta in metas {
+                        if let NestedMetaItemKind::MetaItem(ref mi) = meta.node {
+                            match &*mi.name().as_str() {
+                                "feature" => if !get(mi, &mut name) { continue 'outer },
+                                _ => {
+                                    handle_errors(
+                                        diagnostic,
+                                        meta.span,
+                                        AttrError::UnknownMetaItem(mi.name(), &["feature"]),
+                                    );
+                                    continue 'outer
+                                }
+                            }
+                        } else {
+                            handle_errors(diagnostic, meta.span, AttrError::UnsupportedLiteral);
+                            continue 'outer
+                        }
+                    }
+
+                    if let Some(name) = name {
+                        let level = if let Some((_, issue, reason, _)) =
+                            LIB_UNSTABLE_FEATURES.iter().find(|f| name == f.0) {
+                            let issue = if let Some(issue) = issue {
+                                issue
+                            } else {
+                                &0
+                            };
+                            Unstable {
+                                issue: *issue,
+                                reason: reason.map(|reason| Symbol::intern(reason))
+                            }
+                        } else if let Some((_, since, _)) =
+                            LIB_STABLE_FEATURES.iter().find(|f| name == f.0) {
+                            Stable { since: Symbol::intern(since) }
+                        } else {
+                            eprintln!("VK_DEBUG--{:?}--{:?}--{:?}",
+                                name,
+                                LIB_UNSTABLE_FEATURES,
+                                LIB_STABLE_FEATURES);
+                            handle_errors(diagnostic, meta.span,
+                                AttrError::UnknownStability(name));
+                            continue
+                        };
+
+                        stab = Some(Stability {
+                            level,
+                            feature: name,
+                            rustc_depr: None,
+                            rustc_const_unstable: None,
+                        })
+                    } else {
+                        handle_errors(diagnostic, attr.span(), AttrError::MissingSince);
+                        continue
                     }
                 }
                 _ => unreachable!()
