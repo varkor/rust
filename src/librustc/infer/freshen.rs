@@ -53,7 +53,7 @@ use super::unify_key::ToType;
 pub struct TypeFreshener<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     infcx: &'a InferCtxt<'a, 'gcx, 'tcx>,
     freshen_count: u32,
-    freshen_map: FxHashMap<ty::InferTy, Ty<'tcx>>,
+    freshen_map: FxHashMap<ty::InferTy<'tcx>, Ty<'tcx>>,
 }
 
 impl<'a, 'gcx, 'tcx> TypeFreshener<'a, 'gcx, 'tcx> {
@@ -68,10 +68,10 @@ impl<'a, 'gcx, 'tcx> TypeFreshener<'a, 'gcx, 'tcx> {
 
     fn freshen<F>(&mut self,
                   opt_ty: Option<Ty<'tcx>>,
-                  key: ty::InferTy,
+                  key: ty::InferTy<'tcx>,
                   freshener: F)
                   -> Ty<'tcx> where
-        F: FnOnce(u32) -> ty::InferTy,
+        F: FnOnce(u32) -> ty::InferTy<'tcx>,
     {
         if let Some(ty) = opt_ty {
             return ty.fold_with(self);

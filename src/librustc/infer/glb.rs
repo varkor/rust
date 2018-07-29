@@ -60,6 +60,11 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         lattice::super_lattice_tys(self, a, b)
     }
 
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        unimplemented!() // TODO(const_generics)
+    }
+
     fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)
                -> RelateResult<'tcx, ty::Region<'tcx>> {
         debug!("{}.regions({:?}, {:?})",

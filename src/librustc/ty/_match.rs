@@ -88,6 +88,11 @@ impl<'a, 'gcx, 'tcx> TypeRelation<'a, 'gcx, 'tcx> for Match<'a, 'gcx, 'tcx> {
         }
     }
 
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        unimplemented!() // TODO(const_generics)
+    }
+
     fn binders<T>(&mut self, a: &ty::Binder<T>, b: &ty::Binder<T>)
                   -> RelateResult<'tcx, ty::Binder<T>>
         where T: Relate<'tcx>

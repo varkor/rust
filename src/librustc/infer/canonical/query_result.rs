@@ -520,7 +520,8 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                             ))),
                         ),
 
-                        // TODO(const_generics): does it even make sense to specify that a const outlives something?
+                        // TODO(const_generics): does it even make sense to specify
+                        // that a const outlives something?
                         UnpackedKind::Const(_) => unimplemented!(),
                     }
                 }),

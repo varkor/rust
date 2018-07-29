@@ -915,7 +915,7 @@ impl fmt::Debug for ty::TyVid {
     }
 }
 
-impl fmt::Debug for ty::ConstVid {
+impl<'tcx> fmt::Debug for ty::ConstVid<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "_#{}f", self.index)
     }
@@ -949,7 +949,7 @@ impl fmt::Debug for ty::RegionVid {
 }
 
 define_print! {
-    () ty::InferTy, (self, f, cx) {
+    ('tcx) ty::InferTy<'tcx>, (self, f, cx) {
         display {
             if cx.is_verbose {
                 print!(f, cx, print_debug(self))
@@ -981,7 +981,7 @@ define_print! {
     }
 }
 
-impl fmt::Debug for ty::ConstVarValue {
+impl<'tcx> fmt::Debug for ty::ConstVarValue<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }

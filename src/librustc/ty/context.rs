@@ -2352,7 +2352,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         CtxtInterners::intern_ty(&self.interners, &self.global_interners, st)
     }
 
-    pub fn mk_mach_const(self, _tm: ast::ConstTy) -> Ty<'tcx> {
+    pub fn mk_mach_const(self, _cn: ty::Const<'tcx>) -> Ty<'tcx> {
         unimplemented!() // TODO(const_generics)
     }
 
@@ -2551,7 +2551,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_infer(FloatVar(v))
     }
 
-    pub fn mk_infer(self, it: InferTy) -> Ty<'tcx> {
+    pub fn mk_infer(self, it: InferTy<'tcx>) -> Ty<'tcx> {
         self.mk_ty(TyInfer(it))
     }
 

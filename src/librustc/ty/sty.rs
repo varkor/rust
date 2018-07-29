@@ -24,6 +24,7 @@ use mir::interpret::{Scalar, Pointer, Value};
 
 use std::iter;
 use std::cmp::Ordering;
+use core::marker::PhantomData;
 use rustc_target::spec::abi;
 use syntax::ast::{self, Ident};
 use syntax::symbol::{keywords, InternedString};
@@ -169,7 +170,7 @@ pub enum TypeVariants<'tcx> {
     TyParam(ParamTy),
 
     /// A type variable used during type-checking.
-    TyInfer(InferTy),
+    TyInfer(InferTy<'tcx>),
 
     /// A placeholder for a type which could not be computed; this is
     /// propagated to avoid useless error messages.
@@ -1186,9 +1187,11 @@ pub struct TyVid {
     pub index: u32,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
-pub struct ConstVid {
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ConstVid<'tcx> {
     pub index: u32,
+
+    pub phantom: PhantomData<&'tcx ()>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
@@ -1226,8 +1229,12 @@ impl From<RegionVid> for usize {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
-pub enum InferTy {
+pub enum InferTy<'tcx> {
     TyVar(TyVid),
+<<<<<<< Updated upstream
+=======
+    ConstVar(ConstVid<'tcx>),
+>>>>>>> Stashed changes
     IntVar(IntVid),
     FloatVar(FloatVid),
 

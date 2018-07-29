@@ -32,6 +32,7 @@ use rustc_data_structures::unify as ut;
 use std::cell::{Cell, RefCell, Ref, RefMut};
 use std::collections::BTreeMap;
 use std::fmt;
+use core::marker::PhantomData;
 use syntax::ast;
 use errors::DiagnosticBuilder;
 use syntax_pos::{self, Span};
@@ -101,7 +102,7 @@ pub struct InferCtxt<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     pub type_variables: RefCell<type_variable::TypeVariableTable<'tcx>>,
 
     // Map from const parameter variable to the kind of const it represents
-    const_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::ConstVid>>>,
+    const_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::ConstVid<'tcx>>>>,
 
     // Map from integral variable to the kind of integer it represents
     int_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::IntVid>>>,
@@ -530,7 +531,7 @@ impl<'tcx> InferOk<'tcx, ()> {
 pub struct CombinedSnapshot<'a, 'tcx:'a> {
     projection_cache_snapshot: traits::ProjectionCacheSnapshot,
     type_snapshot: type_variable::Snapshot<'tcx>,
-    const_snapshot: ut::Snapshot<ut::InPlace<ty::ConstVid>>,
+    const_snapshot: ut::Snapshot<ut::InPlace<ty::ConstVid<'tcx>>>,
     int_snapshot: ut::Snapshot<ut::InPlace<ty::IntVid>>,
     float_snapshot: ut::Snapshot<ut::InPlace<ty::FloatVid>>,
     region_constraints_snapshot: RegionSnapshot,
@@ -907,7 +908,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_const_var(self.next_const_var_id(), ty)
     }
 
-    pub fn next_const_var_id(&self) -> ConstVid {
+    pub fn next_const_var_id(&self) -> ConstVid<'tcx> {
         self.const_unification_table
             .borrow_mut()
             .new_key(None)

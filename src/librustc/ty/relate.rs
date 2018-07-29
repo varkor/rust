@@ -17,7 +17,8 @@ use hir::def_id::DefId;
 use mir::interpret::ConstValue;
 use ty::subst::{Kind, UnpackedKind, Substs};
 use ty::{self, Ty, TyCtxt, TypeFoldable};
-use ty::error::{ExpectedFound, TypeError};
+use ty::error::{ExpectedFound, TypeError, ConstError};
+use ty::Const;
 use mir::interpret::GlobalId;
 use util::common::ErrorReported;
 use syntax_pos::DUMMY_SP;
@@ -86,10 +87,13 @@ pub trait TypeRelation<'a, 'gcx: 'a+'tcx, 'tcx: 'a> : Sized {
     // without making older code, which called `relate`, obsolete.
 
     fn tys(&mut self, a: Ty<'tcx>, b: Ty<'tcx>)
-           -> RelateResult<'tcx, Ty<'tcx>>;
+        -> RelateResult<'tcx, Ty<'tcx>>;
 
     fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)
-               -> RelateResult<'tcx, ty::Region<'tcx>>;
+        -> RelateResult<'tcx, ty::Region<'tcx>>;
+
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>;
 
     fn binders<T>(&mut self, a: &ty::Binder<T>, b: &ty::Binder<T>)
                   -> RelateResult<'tcx, ty::Binder<T>>
@@ -639,14 +643,65 @@ impl<'tcx> Relate<'tcx> for &'tcx Substs<'tcx> {
     }
 }
 
-impl<'tcx> Relate<'tcx> for &'tcx ty::Const<'tcx> {
-    fn relate<'a, 'gcx, R>(_relation: &mut R,
-                           _a: &&'tcx ty::Const<'tcx>,
-                           _b: &&'tcx ty::Const<'tcx>)
-                           -> RelateResult<'tcx, &'tcx ty::Const<'tcx>>
+/// The main "const relation" routine.
+impl<'tcx> Relate<'tcx> for &'tcx Const<'tcx> {
+    fn relate<'a, 'gcx, R>(relation: &mut R,
+                           a: &&'tcx Const<'tcx>,
+                           b: &&'tcx Const<'tcx>)
+                           -> RelateResult<'tcx, &'tcx Const<'tcx>>
         where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
     {
-        unimplemented!() // TODO(const_generics)
+        relation.consts(&a, &b)
+    }
+}
+
+pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
+                                              a: &&'tcx Const<'tcx>,
+                                              b: &&'tcx Const<'tcx>)
+                                              -> RelateResult<'tcx, &'tcx Const<'tcx>>
+    where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
+{
+    if a.ty != b.ty {
+        return Err(TypeError::ConstError(
+            ConstError::Types(expected_found(relation, &a, &b))
+        ));
+    }
+    let tcx = relation.tcx();
+    // Currently, the values that can be unified are those that
+    // implement both `PartialEq` and `Eq`, corresponding to
+    // `structural_match` types.
+    match (&a.val, &b.val) {
+        (&ConstValue::InferVar(_), _) | (_, &ConstValue::InferVar(_)) => {
+            // The caller should handle these cases!
+            bug!("var types encountered in super_relate_consts")
+        }
+
+        (&ConstValue::Scalar(_), _) |
+        (&ConstValue::ScalarPair(..), _) |
+        (&ConstValue::ByRef(..), _)
+            if a == b => {
+            Ok(a)
+        }
+
+        (&ConstValue::Unevaluated(a_def_id, a_substs), &ConstValue::Unevaluated(b_def_id, b_substs))
+            if a_def_id == b_def_id =>
+        {
+            let substs = relation.relate_item_substs(a_def_id, a_substs, b_substs)?;
+            Ok(tcx.mk_const(ty::Const {
+                val: ConstValue::Unevaluated(a_def_id, substs),
+                ty: a.ty,
+            }))
+        }
+
+        (&ConstValue::Param(ref a_p), &ConstValue::Param(ref b_p)) if a_p.index == b_p.index => {
+            Ok(a)
+        }
+
+        _ => {
+            Err(TypeError::ConstError(
+                ConstError::Types(expected_found(relation, &a, &b))
+            ))
+        }
     }
 }
 

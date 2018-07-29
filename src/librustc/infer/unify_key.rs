@@ -10,21 +10,22 @@
 
 use ty::{self, ConstVarValue, FloatVarValue, IntVarValue, Ty, TyCtxt};
 use rustc_data_structures::unify::{NoError, EqUnifyValue, UnifyKey, UnifyValue};
+use core::marker::PhantomData;
 
 pub trait ToType {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx>;
 }
 
-impl UnifyKey for ty::ConstVid {
-    type Value = Option<ConstVarValue>;
+impl<'tcx> UnifyKey for ty::ConstVid<'tcx> {
+    type Value = Option<ConstVarValue<'tcx>>;
     fn index(&self) -> u32 { self.index }
-    fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
+    fn from_index(i: u32) -> ty::ConstVid<'tcx> { ty::ConstVid { index: i, phantom: PhantomData } }
     fn tag() -> &'static str { "ConstVid" }
 }
 
-impl EqUnifyValue for ConstVarValue {}
+impl<'tcx> EqUnifyValue for ConstVarValue<'tcx> {}
 
-impl ToType for ConstVarValue {
+impl<'c> ToType for ConstVarValue<'c> {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {
         tcx.mk_mach_const(self.0)
     }
@@ -37,8 +38,7 @@ impl UnifyKey for ty::IntVid {
     fn tag() -> &'static str { "IntVid" }
 }
 
-impl EqUnifyValue for IntVarValue {
-}
+impl EqUnifyValue for IntVarValue {}
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct RegionVidKey {

@@ -812,7 +812,7 @@ pub struct ClosureUpvar<'tcx> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct ConstVarValue(pub ast::ConstTy);
+pub struct ConstVarValue<'tcx>(pub ty::Const<'tcx>);
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum IntVarValue {
