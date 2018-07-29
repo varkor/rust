@@ -322,12 +322,8 @@ impl fmt::Display for ParamKindOrd {
 pub enum GenericParamKind {
     /// A lifetime definition, e.g. `'a: 'b+'c+'d`.
     Lifetime,
-    Type {
-        default: Option<P<Ty>>,
-    },
-    Const {
-        ty: P<Ty>,
-    },
+    Type { default: Option<P<Ty>> },
+    Const { ty: P<Ty> },
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, Debug)]

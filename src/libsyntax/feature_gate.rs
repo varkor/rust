@@ -26,7 +26,7 @@ use self::AttributeType::*;
 use self::AttributeGate::*;
 
 use rustc_target::spec::abi::Abi;
-use ast::{self, NodeId, PatKind, RangeEnd};
+use ast::{self, NodeId, PatKind, RangeEnd, GenericParam, GenericParamKind};
 use attr;
 use codemap::Spanned;
 use edition::{ALL_EDITIONS, Edition};
@@ -419,6 +419,9 @@ declare_features! (
 
     // `existential type`
     (active, existential_type, "1.28.0", Some(34511), None),
+
+    // const generic types
+    (active, const_generics, "1.29.0", Some(44580), None),
 
     // unstable #[target_feature] directives
     (active, arm_target_feature, "1.27.0", Some(44839), None),
@@ -1807,6 +1810,14 @@ impl<'a> Visitor<'a> for PostExpansionVisitor<'a> {
             _ => {}
         }
         visit::walk_fn(self, fn_kind, fn_decl, span);
+    }
+
+    fn visit_generic_param(&mut self, param: &'a GenericParam) {
+        if let GenericParamKind::Const { .. } = param.kind {
+            gate_feature_post!(&self, const_generics, param.ident.span,
+                "const generics are unstable");
+        }
+        visit::walk_generic_param(self, param);
     }
 
     fn visit_trait_item(&mut self, ti: &'a ast::TraitItem) {
