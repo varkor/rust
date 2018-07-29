@@ -591,7 +591,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         type_variables
             .unsolved_variables()
             .into_iter()
-            .map(|t| self.tcx.mk_var(t))
+            .map(|t| self.tcx.mk_ty_var(t))
             .chain(
                 (0..int_unification_table.len())
                     .map(|i| ty::IntVid { index: i as u32 })

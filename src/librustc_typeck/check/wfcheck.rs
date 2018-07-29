@@ -620,7 +620,7 @@ fn check_existential_types<'a, 'fcx, 'gcx, 'tcx>(
                                             )
                                             .emit();
                                     },
-                                }, // match ty
+                                } // match ty
                                 ty::subst::UnpackedKind::Lifetime(region) => {
                                     let param_span = tcx.def_span(param.def_id);
                                     if let ty::ReStatic = region {
@@ -641,7 +641,11 @@ fn check_existential_types<'a, 'fcx, 'gcx, 'tcx>(
                                     } else {
                                         seen.entry(region).or_default().push(param_span);
                                     }
-                                },
+                                }
+                                ty::subst::UnpackedKind::Const(_) => {
+                                    // TODO(const_generics)
+                                    unimplemented!()
+                                }
                             } // match subst
                         } // for (subst, param)
                         for (_, spans) in seen {

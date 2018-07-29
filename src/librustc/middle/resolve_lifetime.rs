@@ -867,6 +867,10 @@ impl<'a, 'tcx> Visitor<'tcx> for LifetimeContext<'a, 'tcx> {
                         next_early_index += 1;
                         None
                     }
+                    GenericParamKind::Const { .. } => {
+                        next_early_index += 1;
+                        None
+                    }
                 }).collect();
 
                 let scope = Scope::Binder {
