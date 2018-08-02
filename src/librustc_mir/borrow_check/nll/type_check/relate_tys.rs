@@ -377,6 +377,17 @@ impl<'cx, 'bccx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx>
         Ok(a)
     }
 
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        if let ty::ConstValue::Infer(ty::InferConst::Canonical(var)) = a.val {
+            self.equate_var(var, b.into())?;
+            Ok(a)
+        } else {
+            debug!("consts(a={:?}, b={:?}, variance={:?})", a, b, self.ambient_variance);
+            relate::super_relate_consts(self, a, b)
+        }
+    }
+
     fn binders<T>(
         &mut self,
         a: &ty::Binder<T>,

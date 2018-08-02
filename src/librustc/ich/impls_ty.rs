@@ -379,6 +379,7 @@ for ::mir::interpret::ConstValue<'gcx> {
                                           hcx: &mut StableHashingContext<'a>,
                                           hasher: &mut StableHasher<W>) {
         use mir::interpret::ConstValue::*;
+        use mir::interpret::InferConst::*;
 
         mem::discriminant(self).hash_stable(hcx, hasher);
 
@@ -401,8 +402,12 @@ for ::mir::interpret::ConstValue<'gcx> {
             Param(ref param) => {
                 param.hash_stable(hcx, hasher);
             }
-            InferVar(vid) => {
-                vid.hash_stable(hcx, hasher);
+            Infer(infer) => {
+                match infer {
+                    Var(vid) => vid.hash_stable(hcx, hasher),
+                    Fresh(i) => i.hash_stable(hcx, hasher),
+                    Canonical(var) => var.hash_stable(hcx, hasher),
+                }
             }
         }
     }
@@ -916,7 +921,6 @@ impl_stable_hash_for!(enum ty::InferTy {
     IntVar(a),
     FloatVar(a),
     FreshTy(a),
-    FreshConstTy(a),
     FreshIntTy(a),
     FreshFloatTy(a),
     CanonicalTy(a),

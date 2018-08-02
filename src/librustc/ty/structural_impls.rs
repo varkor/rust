@@ -13,7 +13,7 @@
 //! hand, though we've recently added some macros (e.g.,
 //! `BraceStructLiftImpl!`) to help with the tedium.
 
-use mir::interpret::{ConstValue, ConstEvalErr};
+use mir::interpret::{ConstValue, InferConst, ConstEvalErr};
 use ty::{self, Lift, Ty, TyCtxt};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
 use rustc_data_structures::accumulate_vec::AccumulateVec;
@@ -1144,7 +1144,13 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
                 ConstValue::Unevaluated(def_id, substs.fold_with(folder))
             }
             ConstValue::Param(param) => ConstValue::Param(param),
-            ConstValue::InferVar(vid) => ConstValue::InferVar(vid),
+            ConstValue::Infer(infer) => {
+                ConstValue::Infer(match infer {
+                    InferConst::Var(vid) =>InferConst::Var(vid),
+                    InferConst::Fresh(i) =>InferConst::Fresh(i),
+                    InferConst::Canonical(var) =>InferConst::Canonical(var),
+                })
+            }
         }
     }
 
@@ -1153,7 +1159,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
             ConstValue::Scalar(_) |
             ConstValue::ScalarPair(_, _) |
             ConstValue::Param(_) | // TODO(const_generics)
-            ConstValue::InferVar(_) | // TODO(const_generics)
+            ConstValue::Infer(_) | // TODO(const_generics)
             ConstValue::ByRef(_, _) => false,
             ConstValue::Unevaluated(_, substs) => substs.visit_with(visitor),
         }

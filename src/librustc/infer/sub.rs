@@ -9,13 +9,14 @@
 // except according to those terms.
 
 use super::SubregionOrigin;
-use super::combine::{CombineFields, RelationDir};
+use super::combine::{CombineFields, RelationDir, const_unification_error};
 
 use traits::Obligation;
 use ty::{self, Ty, TyCtxt};
 use ty::TyVar;
 use ty::fold::TypeFoldable;
 use ty::relate::{Cause, Relate, RelateResult, TypeRelation};
+use mir::interpret::{ConstValue, InferConst};
 use std::mem;
 
 /// Ensures `a` is made a subtype of `b`. Returns `a` on success.
@@ -141,6 +142,40 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
                          .make_subregion(origin, a, b);
 
         Ok(a)
+    }
+
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
+        if a == b { return Ok(a); }
+
+        let infcx = self.fields.infcx;
+        let a = infcx.const_unification_table.borrow_mut().replace_if_possible(a);
+        let b = infcx.const_unification_table.borrow_mut().replace_if_possible(b);
+
+        // Consts can only be equal or unequal to each other: there's no subtyping
+        // relation, so we're just going to perform equating here instead.
+        match (a.val, b.val) {
+            (ConstValue::Infer(InferConst::Var(a_vid)),
+             ConstValue::Infer(InferConst::Var(b_vid))) => {
+                let a_is_expected = self.a_is_expected();
+                infcx.const_unification_table
+                    .borrow_mut()
+                    .unify_var_var(a_vid, b_vid)
+                    .map_err(|e| const_unification_error(a_is_expected, e))?;
+                Ok(a)
+            }
+
+            (ConstValue::Infer(InferConst::Var(_)), _) |
+            (_, ConstValue::Infer(InferConst::Var(_))) => {
+                Ok(a)
+            }
+
+            _ => {
+                self.fields.infcx.super_combine_consts(self, a, b)?;
+                Ok(a)
+            }
+        }
     }
 
     fn binders<T>(&mut self, a: &ty::Binder<T>, b: &ty::Binder<T>)

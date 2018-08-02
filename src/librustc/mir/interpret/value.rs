@@ -3,8 +3,20 @@
 use ty::layout::{HasDataLayout, Size};
 use ty::subst::Substs;
 use hir::def_id::DefId;
+use ty::CanonicalVar;
 
 use super::{EvalResult, Pointer, PointerArithmetic, Allocation};
+
+/// An inference variable for a const, for use in const generics.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, RustcEncodable, RustcDecodable, Hash)]
+pub enum InferConst {
+    /// Infer the value of the const.
+    Var(ty::ConstVid),
+    /// A fresh const variable. See `infer::freshen` for more details.
+    Fresh(u32),
+    /// Canonicalized const variable, used only when preparing a trait query.
+    Canonical(CanonicalVar),
+}
 
 /// Represents a constant value in Rust. Scalar and ScalarPair are optimizations which
 /// matches the LocalValue optimizations for easy conversions between Value and ConstValue.
@@ -17,7 +29,7 @@ pub enum ConstValue<'tcx> {
     /// A const generic parameter.
     Param(ty::ParamConst),
     /// Infer the value of the const.
-    InferVar(ty::ConstVid),
+    Infer(InferConst),
     /// Used only for types with layout::abi::Scalar ABI and ZSTs
     ///
     /// Not using the enum `Value` to encode that this must not be `Undef`
@@ -38,7 +50,7 @@ impl<'tcx> ConstValue<'tcx> {
             ConstValue::ByRef(..) |
             ConstValue::ScalarPair(..) => None,
             ConstValue::Param(_) => unimplemented!(), // TODO(const_generics)
-            ConstValue::InferVar(_) => unimplemented!(), // TODO(const_generics)
+            ConstValue::Infer(_) => unimplemented!(), // TODO(const_generics)
             ConstValue::Scalar(val) => Some(val),
         }
     }

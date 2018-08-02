@@ -1339,7 +1339,7 @@ fn slice_pat_covered_by_constructor<'tcx>(
                 ConstValue::ByRef(..) => bug!("unexpected ConstValue: {:?}", const_val),
                 ConstValue::Scalar(val) | ConstValue::ScalarPair(val, _) => val,
                 ConstValue::Param(_) | // TODO(const_generics)
-                ConstValue::InferVar(_) => unimplemented!(), // TODO(const_generics)
+                ConstValue::Infer(_) => unimplemented!(), // TODO(const_generics)
             };
             if let Ok(ptr) = val.to_ptr() {
                 let is_array_ptr = const_val.ty

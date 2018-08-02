@@ -37,8 +37,7 @@ impl UnifyKey for ty::IntVid {
     fn tag() -> &'static str { "IntVid" }
 }
 
-impl EqUnifyValue for IntVarValue {
-}
+impl EqUnifyValue for IntVarValue {}
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct RegionVidKey {
@@ -87,8 +86,7 @@ impl UnifyKey for ty::FloatVid {
     fn tag() -> &'static str { "FloatVid" }
 }
 
-impl EqUnifyValue for FloatVarValue {
-}
+impl EqUnifyValue for FloatVarValue {}
 
 impl ToType for FloatVarValue {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx> {

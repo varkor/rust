@@ -9,8 +9,9 @@
 // except according to those terms.
 
 use ty::{self, Ty, TyCtxt};
-use ty::error::TypeError;
+use ty::error::{TypeError, ConstError};
 use ty::relate::{self, Relate, TypeRelation, RelateResult};
+use mir::interpret::{ConstValue, InferConst};
 
 /// A type "A" *matches* "B" if the fresh types in B could be
 /// substituted with values so as to make it equal to A. Matching is
@@ -52,15 +53,6 @@ impl<'a, 'gcx, 'tcx> TypeRelation<'a, 'gcx, 'tcx> for Match<'a, 'gcx, 'tcx> {
         self.relate(a, b)
     }
 
-    fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)
-               -> RelateResult<'tcx, ty::Region<'tcx>> {
-        debug!("{}.regions({:?}, {:?})",
-               self.tag(),
-               a,
-               b);
-        Ok(a)
-    }
-
     fn tys(&mut self, a: Ty<'tcx>, b: Ty<'tcx>) -> RelateResult<'tcx, Ty<'tcx>> {
         debug!("{}.tys({:?}, {:?})", self.tag(),
                a, b);
@@ -84,6 +76,36 @@ impl<'a, 'gcx, 'tcx> TypeRelation<'a, 'gcx, 'tcx> for Match<'a, 'gcx, 'tcx> {
 
             _ => {
                 relate::super_relate_tys(self, a, b)
+            }
+        }
+    }
+
+    fn regions(&mut self, a: ty::Region<'tcx>, b: ty::Region<'tcx>)
+               -> RelateResult<'tcx, ty::Region<'tcx>> {
+        debug!("{}.regions({:?}, {:?})",
+               self.tag(),
+               a,
+               b);
+        Ok(a)
+    }
+
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
+        if a == b { return Ok(a); }
+
+        match (a.val, b.val) {
+            (_, ConstValue::Infer(InferConst::Fresh(_))) => {
+                Ok(a)
+            }
+
+            (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
+                Err(TypeError::ConstError(
+                    ConstError::Mismatch(relate::expected_found(self, &a, &b))))
+            }
+
+            _ => {
+                relate::super_relate_consts(self, a, b)
             }
         }
     }

@@ -28,6 +28,7 @@ use middle::resolve_lifetime::ObjectLifetimeDefault;
 use mir::Mir;
 use mir::interpret::GlobalId;
 use mir::GeneratorLayout;
+use mir::interpret::ConstValue;
 use session::CrateDisambiguator;
 use traits::{self, Reveal};
 use ty;
@@ -814,7 +815,7 @@ pub struct ClosureUpvar<'tcx> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct ConstVarValue(pub ast::ConstTy);
+pub struct ConstVarValue(pub ConstValue);
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum IntVarValue {

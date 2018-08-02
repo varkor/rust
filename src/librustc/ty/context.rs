@@ -32,7 +32,7 @@ use middle::lang_items;
 use middle::resolve_lifetime::{self, ObjectLifetimeDefault};
 use middle::stability;
 use mir::{self, Mir, interpret};
-use mir::interpret::{Allocation, ConstValue};
+use mir::interpret::{Allocation, ConstValue, InferConst};
 use ty::subst::{Kind, Substs, Subst};
 use ty::ReprOptions;
 use traits;
@@ -2345,7 +2345,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         CtxtInterners::intern_ty(&self.interners, &self.global_interners, st)
     }
 
-    pub fn mk_mach_const(self, _tm: ast::ConstTy) -> Ty<'tcx> {
+    pub fn mk_mach_const(self, _tm: ast::AnonConst) -> Ty<'tcx> {
         unimplemented!() // TODO(const_generics)
     }
 
@@ -2531,7 +2531,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
 
     pub fn mk_const_var(self, v: ConstVid, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
         self.mk_const(ty::Const {
-            val: ConstValue::InferVar(v),
+            val: ConstValue::Infer(InferConst::Var(v)),
             ty,
         })
     }

@@ -1235,7 +1235,6 @@ pub enum InferTy {
     /// unbound type variable. This is convenient for caching etc. See
     /// `infer::freshen` for more details.
     FreshTy(u32),
-    FreshConstTy(u32),
     FreshIntTy(u32),
     FreshFloatTy(u32),
 

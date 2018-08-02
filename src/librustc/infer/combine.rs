@@ -41,9 +41,10 @@ use super::type_variable::TypeVariableValue;
 
 use hir::def_id::DefId;
 use ty::{IntType, UintType};
-use ty::{self, Ty, TyCtxt};
-use ty::error::TypeError;
+use ty::{self, Ty, TyCtxt, Const};
+use ty::error::{TypeError, ConstError};
 use ty::relate::{self, Relate, RelateResult, TypeRelation};
+use mir::interpret::{ConstValue, InferConst};
 use ty::subst::Substs;
 use traits::{Obligation, PredicateObligations};
 
@@ -75,9 +76,6 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
         let a_is_expected = relation.a_is_expected();
 
         match (&a.sty, &b.sty) {
-            // Relate const parameter variables to other types
-            // TODO(const_generics):
-
             // Relate integral variables to other types
             (&ty::Infer(ty::IntVar(a_id)), &ty::Infer(ty::IntVar(b_id))) => {
                 self.int_unification_table
@@ -120,11 +118,66 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
                 Err(TypeError::Sorts(ty::relate::expected_found(relation, &a, &b)))
             }
 
-
             _ => {
                 ty::relate::super_relate_tys(relation, a, b)
             }
         }
+    }
+
+    pub fn super_combine_consts<R>(&self,
+                                   relation: &mut R,
+                                   a: &'tcx Const<'tcx>,
+                                   b: &'tcx Const<'tcx>)
+                                   -> RelateResult<'tcx, &'tcx Const<'tcx>>
+        where R: TypeRelation<'infcx, 'gcx, 'tcx>
+    {
+        let a_is_expected = relation.a_is_expected();
+
+        match (a.val, b.val) {
+            (ConstValue::Infer(InferConst::Var(a_vid)),
+             ConstValue::Infer(InferConst::Var(b_vid))) => {
+                self.const_unification_table
+                    .borrow_mut()
+                    .unify_var_var(a_vid, b_vid)
+                    .map_err(|e| const_unification_error(a_is_expected, e))?;
+                Ok(a)
+            }
+
+            // All other cases of inference with other variables are errors.
+            (ConstValue::Infer(InferConst::Var(_)), ConstValue::Infer(_)) |
+            (ConstValue::Infer(_), ConstValue::Infer(InferConst::Var(_))) => {
+                unimplemented!()
+                // TODO(const_generics): relate
+                // Err(TypeError::ConstError(
+                    // ConstError::Mismatch(ty::relate::expected_found(relation, &a, &b))))
+            }
+
+
+            (ConstValue::Infer(InferConst::Var(vid)), v) => {
+                self.unify_const_variable(a_is_expected, vid, v)
+            }
+
+            (v, ConstValue::Infer(InferConst::Var(vid))) => {
+                self.unify_const_variable(!a_is_expected, vid, v)
+            }
+
+            _ => {
+                ty::relate::super_relate_consts(relation, a, b)
+            }
+        }
+    }
+
+    fn unify_const_variable(&self,
+                            vid_is_expected: bool,
+                            vid: ty::ConstVid,
+                            val: ty::ConstVarValue)
+                            -> RelateResult<'tcx, &'tcx Const<'tcx>>
+    {
+        self.const_unification_table
+            .borrow_mut()
+            .unify_var_value(vid, Some(val))
+            .map_err(|e| const_unification_error(vid_is_expected, e))?;
+        Ok(self.tcx.mk_mach_const(val))
     }
 
     fn unify_integral_variable(&self,
@@ -463,7 +516,7 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
 
             // Always make a fresh region variable for skolemized regions;
             // the higher-ranked decision procedures rely on this.
-            ty::ReSkolemized(..) => { }
+            ty::ReSkolemized(..) => {}
 
             // For anything else, we make a region variable, unless we
             // are *equating*, in which case it's just wasteful.
@@ -493,6 +546,13 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
         // very descriptive origin for this region variable.
         Ok(self.infcx.next_region_var(MiscVariable(self.span)))
     }
+
+    fn consts(&mut self, c: &'tcx ty::Const<'tcx>, c2: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        assert_eq!(c, c2); // we are abusing TypeRelation here; both LHS and RHS ought to be ==
+
+        unimplemented!() // TODO(const_generics)
+    }
 }
 
 pub trait RelateResultCompare<'tcx, T> {
@@ -512,6 +572,14 @@ impl<'tcx, T:Clone + PartialEq> RelateResultCompare<'tcx, T> for RelateResult<'t
             }
         })
     }
+}
+
+pub fn const_unification_error<'tcx>(a_is_expected: bool, v: (ty::ConstVarValue, ty::ConstVarValue))
+                                     -> TypeError<'tcx>
+{
+    let (a, b) = v;
+    TypeError::ConstError(
+        ConstError::Mismatch(ty::relate::expected_found_bool(a_is_expected, &a, &b)))
 }
 
 fn int_unification_error<'tcx>(a_is_expected: bool, v: (ty::IntVarValue, ty::IntVarValue))

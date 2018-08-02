@@ -13,7 +13,7 @@ pub use self::error::{
     FrameInfo, ConstEvalResult,
 };
 
-pub use self::value::{Scalar, ConstValue, ScalarMaybeUndef};
+pub use self::value::{Scalar, ConstValue, ScalarMaybeUndef, InferConst};
 
 use std::fmt;
 use mir;

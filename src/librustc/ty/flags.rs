@@ -122,7 +122,6 @@ impl FlagComputation {
                 self.add_flags(TypeFlags::HAS_TY_INFER);
                 match infer {
                     ty::FreshTy(_) |
-                    ty::FreshConstTy(_) |
                     ty::FreshIntTy(_) |
                     ty::FreshFloatTy(_) |
                     ty::CanonicalTy(_) => {

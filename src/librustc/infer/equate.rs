@@ -8,7 +8,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use super::combine::{CombineFields, RelationDir};
+use super::combine::{CombineFields, RelationDir, const_unification_error};
 use super::{Subtype};
 
 use hir::def_id::DefId;
@@ -17,6 +17,7 @@ use ty::{self, Ty, TyCtxt};
 use ty::TyVar;
 use ty::subst::Substs;
 use ty::relate::{self, Relate, RelateResult, TypeRelation};
+use mir::interpret::{ConstValue, InferConst};
 
 /// Ensures `a` is made equal to `b`. Returns `a` on success.
 pub struct Equate<'combine, 'infcx: 'combine, 'gcx: 'infcx+'tcx, 'tcx: 'infcx> {
@@ -107,6 +108,40 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         self.fields.infcx.borrow_region_constraints()
                          .make_eqregion(origin, a, b);
         Ok(a)
+    }
+
+    fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
+        -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
+        if a == b { return Ok(a); }
+
+        let infcx = self.fields.infcx;
+        let a = infcx.const_unification_table.borrow_mut().replace_if_possible(a);
+        let b = infcx.const_unification_table.borrow_mut().replace_if_possible(b);
+        match (a.val, b.val) {
+            (ConstValue::Infer(InferConst::Var(a_vid)),
+             ConstValue::Infer(InferConst::Var(b_vid))) => {
+                let a_is_expected = self.a_is_expected();
+                infcx.const_unification_table
+                    .borrow_mut()
+                    .unify_var_var(a_vid, b_vid)
+                    .map_err(|e| const_unification_error(a_is_expected, e))?;
+                Ok(a)
+            }
+
+            (ConstValue::Infer(InferConst::Var(a_vid)), _) => {
+                Ok(a)
+            }
+
+            (_, ConstValue::Infer(InferConst::Var(b_vid))) => {
+                Ok(a)
+            }
+
+            _ => {
+                self.fields.infcx.super_combine_consts(self, a, b)?;
+                Ok(a)
+            }
+        }
     }
 
     fn binders<T>(&mut self, a: &ty::Binder<T>, b: &ty::Binder<T>)

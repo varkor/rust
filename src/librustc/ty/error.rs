@@ -54,6 +54,15 @@ pub enum TypeError<'tcx> {
     ExistentialMismatch(ExpectedFound<&'tcx ty::List<ty::ExistentialPredicate<'tcx>>>),
 
     OldStyleLUB(Box<TypeError<'tcx>>),
+
+    ConstError(ConstError<'tcx>),
+}
+
+// Data structure used in const unification
+#[derive(Clone, Debug)]
+pub enum ConstError<'tcx> {
+    Types(ExpectedFound<&'tcx ty::Const<'tcx>>),
+    Mismatch(ExpectedFound<ty::ConstVarValue>),
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Hash, Debug, Copy)]
