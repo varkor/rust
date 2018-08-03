@@ -13,8 +13,8 @@
 //! hand, though we've recently added some macros (e.g.,
 //! `BraceStructLiftImpl!`) to help with the tedium.
 
-use mir::interpret::{ConstValue, InferConst, ConstEvalErr};
-use ty::{self, Lift, Ty, TyCtxt};
+use mir::interpret::{ConstValue, ConstEvalErr};
+use ty::{self, Lift, Ty, TyCtxt, InferConst};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
 use rustc_data_structures::accumulate_vec::AccumulateVec;
 use rustc_data_structures::indexed_vec::{IndexVec, Idx};

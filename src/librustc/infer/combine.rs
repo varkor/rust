@@ -41,10 +41,10 @@ use super::type_variable::TypeVariableValue;
 
 use hir::def_id::DefId;
 use ty::{IntType, UintType};
-use ty::{self, Ty, TyCtxt, Const};
+use ty::{self, Ty, TyCtxt, Const, InferConst};
 use ty::error::{TypeError, ConstError};
 use ty::relate::{self, Relate, RelateResult, TypeRelation};
-use mir::interpret::{ConstValue, InferConst};
+use mir::interpret::ConstValue;
 use ty::subst::Substs;
 use traits::{Obligation, PredicateObligations};
 

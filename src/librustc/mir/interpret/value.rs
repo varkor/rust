@@ -3,7 +3,6 @@
 use ty::layout::{HasDataLayout, Size};
 use ty::subst::Substs;
 use hir::def_id::DefId;
-use ty::CanonicalVar;
 
 use super::{EvalResult, Pointer, PointerArithmetic, Allocation};
 
@@ -18,7 +17,7 @@ pub enum ConstValue<'tcx> {
     /// A const generic parameter.
     Param(ty::ParamConst),
     /// Infer the value of the const.
-    Infer(InferConst),
+    Infer(ty::InferConst),
     /// Used only for types with layout::abi::Scalar ABI and ZSTs
     ///
     /// Not using the enum `Value` to encode that this must not be `Undef`

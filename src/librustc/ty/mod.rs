@@ -64,7 +64,7 @@ use hir;
 
 pub use self::sty::{Binder, CanonicalVar, DebruijnIndex, INNERMOST};
 pub use self::sty::{FnSig, GenSig, PolyFnSig, PolyGenSig};
-pub use self::sty::{InferTy, ParamTy, ParamConst, ProjectionTy, ExistentialPredicate};
+pub use self::sty::{InferTy, ParamTy, ParamConst, InferConst, ProjectionTy, ExistentialPredicate};
 pub use self::sty::{ClosureSubsts, GeneratorSubsts, UpvarSubsts, TypeAndMut};
 pub use self::sty::{TraitRef, TyKind, PolyTraitRef};
 pub use self::sty::{ExistentialTraitRef, PolyExistentialTraitRef};

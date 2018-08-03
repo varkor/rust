@@ -12,11 +12,11 @@ use super::SubregionOrigin;
 use super::combine::{CombineFields, RelationDir, const_unification_error};
 
 use traits::Obligation;
-use ty::{self, Ty, TyCtxt};
+use ty::{self, Ty, TyCtxt, InferConst};
 use ty::TyVar;
 use ty::fold::TypeFoldable;
 use ty::relate::{Cause, Relate, RelateResult, TypeRelation};
-use mir::interpret::{ConstValue, InferConst};
+use mir::interpret::ConstValue;
 use std::mem;
 
 /// Ensures `a` is made a subtype of `b`. Returns `a` on success.

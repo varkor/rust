@@ -8,10 +8,10 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use ty::{self, Ty, TyCtxt};
+use ty::{self, Ty, TyCtxt, InferConst};
 use ty::error::{TypeError, ConstError};
 use ty::relate::{self, Relate, TypeRelation, RelateResult};
-use mir::interpret::{ConstValue, InferConst};
+use mir::interpret::ConstValue;
 
 /// A type "A" *matches* "B" if the fresh types in B could be
 /// substituted with values so as to make it equal to A. Matching is

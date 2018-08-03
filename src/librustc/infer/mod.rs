@@ -45,7 +45,7 @@ use self::region_constraints::{RegionConstraintCollector, RegionSnapshot};
 use self::region_constraints::{GenericKind, VerifyBound, RegionConstraintData, VarInfos};
 use self::lexical_region_resolve::LexicalRegionResolutions;
 use self::outlives::env::OutlivesEnvironment;
-use self::type_variable::TypeVariableOrigin;
+use self::type_variable::{TypeVariableOrigin, ConstVariableOrigin};
 use self::unify_key::ToType;
 
 pub mod anon_types;

@@ -36,7 +36,8 @@ use traits::{FulfillmentContext, TraitEngine};
 use traits::{Obligation, ObligationCause, PredicateObligation};
 use ty::fold::TypeFoldable;
 use ty::subst::{Kind, UnpackedKind};
-use ty::{self, CanonicalVar, Lift, TyCtxt};
+use ty::{self, CanonicalVar, Lift, TyCtxt, InferConst};
+use mir::interpret::ConstValue;
 
 impl<'cx, 'gcx, 'tcx> InferCtxtBuilder<'cx, 'gcx, 'tcx> {
     /// The "main method" for a canonicalized trait query. Given the
@@ -434,7 +435,7 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                     }
                 }
                 UnpackedKind::Const(_) => {
-                    if let &ty::ConstValue(ty::InferConst::Canonical(index)) = result_value {
+                    if let &ConstValue(InferConst::Canonical(index)) = result_value {
                         opt_values[index] = Some(*original_value);
                     }
                 }

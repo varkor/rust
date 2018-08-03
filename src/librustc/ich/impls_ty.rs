@@ -379,7 +379,6 @@ for ::mir::interpret::ConstValue<'gcx> {
                                           hcx: &mut StableHashingContext<'a>,
                                           hasher: &mut StableHasher<W>) {
         use mir::interpret::ConstValue::*;
-        use mir::interpret::InferConst::*;
 
         mem::discriminant(self).hash_stable(hcx, hasher);
 
@@ -403,6 +402,8 @@ for ::mir::interpret::ConstValue<'gcx> {
                 param.hash_stable(hcx, hasher);
             }
             Infer(infer) => {
+                use ty::InferConst::*;
+
                 match infer {
                     Var(vid) => vid.hash_stable(hcx, hasher),
                     Fresh(i) => i.hash_stable(hcx, hasher),

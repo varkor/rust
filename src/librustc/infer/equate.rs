@@ -13,11 +13,11 @@ use super::{Subtype};
 
 use hir::def_id::DefId;
 
-use ty::{self, Ty, TyCtxt};
+use ty::{self, Ty, TyCtxt, InferConst};
 use ty::TyVar;
 use ty::subst::Substs;
 use ty::relate::{self, Relate, RelateResult, TypeRelation};
-use mir::interpret::{ConstValue, InferConst};
+use mir::interpret::ConstValue;
 
 /// Ensures `a` is made equal to `b`. Returns `a` on success.
 pub struct Equate<'combine, 'infcx: 'combine, 'gcx: 'infcx+'tcx, 'tcx: 'infcx> {

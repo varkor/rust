@@ -68,6 +68,14 @@ pub enum TypeVariableOrigin {
     Generalized(ty::TyVid),
 }
 
+/// Reasons to create a type inference variable
+// TODO(const_generics): move this somewhere more sensible
+#[derive(Copy, Clone, Debug)]
+pub enum ConstVariableOrigin {
+    ConstInference(Span),
+    ConstParameterDefinition(Span, InternedString),
+}
+
 pub type TypeVariableMap = FxHashMap<ty::TyVid, TypeVariableOrigin>;
 
 struct TypeVariableData {
@@ -462,4 +470,3 @@ impl ut::UnifyKey for ty::TyVid {
     fn from_index(i: u32) -> ty::TyVid { ty::TyVid { index: i } }
     fn tag() -> &'static str { "TyVid" }
 }
-
