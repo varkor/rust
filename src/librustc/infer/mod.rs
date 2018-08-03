@@ -902,9 +902,12 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_ty_var(self.next_ty_var_id(true, origin))
     }
 
-    pub fn next_const_var(&self, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
-        // TODO(const_generics): do we need this function?
-        self.tcx.mk_const_var(self.next_const_var_id(), ty)
+    pub fn next_const_var(
+        &self,
+        ty: Ty<'tcx>,
+        origin: ConstVariableOrigin
+    ) -> &'tcx ty::Const<'tcx> {
+        self.tcx.mk_const_var(self.next_const_var_id(origin), ty)
     }
 
     pub fn next_const_var_id(&self) -> ConstVid {

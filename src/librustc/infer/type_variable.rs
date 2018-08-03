@@ -54,7 +54,6 @@ pub enum TypeVariableOrigin {
     NormalizeProjectionType(Span),
     TypeInference(Span),
     TypeParameterDefinition(Span, InternedString),
-    ConstParameterDefinition(Span, InternedString),
 
     /// one of the upvars or closure kind parameters in a `ClosureSubsts`
     /// (before it has been determined)

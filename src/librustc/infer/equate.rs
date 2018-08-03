@@ -112,6 +112,7 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
 
     fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
         -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
+        // TODO(const_generics): missing handling for when only one side is an InferVar
         debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
         if a == b { return Ok(a); }
 

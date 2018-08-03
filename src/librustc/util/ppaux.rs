@@ -973,12 +973,6 @@ define_print! {
     }
 }
 
-impl fmt::Debug for ty::ConstVarValue {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 impl fmt::Debug for ty::IntVarValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

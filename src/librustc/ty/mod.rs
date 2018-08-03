@@ -28,7 +28,7 @@ use middle::resolve_lifetime::ObjectLifetimeDefault;
 use mir::Mir;
 use mir::interpret::GlobalId;
 use mir::GeneratorLayout;
-use mir::interpret::ConstValue;
+// use mir::interpret::ConstValue;
 use session::CrateDisambiguator;
 use traits::{self, Reveal};
 use ty;
@@ -477,6 +477,7 @@ bitflags! {
                                   TypeFlags::HAS_SELF.bits |
                                   TypeFlags::HAS_TY_INFER.bits |
                                   TypeFlags::HAS_RE_INFER.bits |
+                                  TypeFlags::HAS_CT_INFER.bits |
                                   TypeFlags::HAS_RE_SKOL.bits |
                                   TypeFlags::HAS_RE_EARLY_BOUND.bits |
                                   TypeFlags::HAS_FREE_REGIONS.bits |
@@ -815,9 +816,6 @@ pub struct ClosureUpvar<'tcx> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct ConstVarValue(pub ConstValue);
-
-#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum IntVarValue {
     IntType(ast::IntTy),
     UintType(ast::UintTy),
@@ -847,7 +845,8 @@ pub enum GenericParamDefKind<'tcx> {
         synthetic: Option<hir::SyntheticTyParamKind>,
     },
     Const {
-        ty: Ty<'tcx>,
+        ty: Ty<'tcx>, // TODO(const_generics): GenericParamDefKind<'tcx> shouldn't be parameterised
+                      // by 'tcx -- we should use tcx.type_of(def_id) instead for ty
     }
 }
 

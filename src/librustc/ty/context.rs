@@ -2043,6 +2043,7 @@ macro_rules! sty_debug_print {
                     };
                     let region = t.flags.intersects(ty::TypeFlags::HAS_RE_INFER);
                     let ty = t.flags.intersects(ty::TypeFlags::HAS_TY_INFER);
+                    // TODO(const_generics)
 
                     variant.total += 1;
                     total.total += 1;
@@ -2268,7 +2269,11 @@ pub fn keep_local<'tcx, T: ty::TypeFoldable<'tcx>>(x: &T) -> bool {
 
 direct_interners!('tcx,
     region: mk_region(|r: &RegionKind| r.keep_in_local_tcx()) -> RegionKind,
-    const_: mk_const(|c: &Const| keep_local(&c.ty) || keep_local(&c.val)) -> Const<'tcx>
+    // TODO(const_generics): self.has_type_flags(TypeFlags::HAS_CT_INFER)
+    const_: mk_const(|c: &Const| {
+        assert!(c.ty.is_global(), "mk_const({:?}): non-global type", c);
+        keep_local(&c.ty) || keep_local(&c.val)
+    }) -> Const<'tcx>
 );
 
 macro_rules! slice_interners {
@@ -2345,10 +2350,6 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         CtxtInterners::intern_ty(&self.interners, &self.global_interners, st)
     }
 
-    pub fn mk_mach_const(self, _tm: ast::AnonConst) -> Ty<'tcx> {
-        unimplemented!() // TODO(const_generics)
-    }
-
     pub fn mk_mach_int(self, tm: ast::IntTy) -> Ty<'tcx> {
         match tm {
             ast::IntTy::Isize   => self.types.isize,
@@ -2400,19 +2401,12 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         let adt_def = self.adt_def(def_id);
         let substs = Substs::for_item(self, def_id, |param, substs| {
             match param.kind {
-                GenericParamDefKind::Lifetime => bug!(),
+                GenericParamDefKind::Lifetime | GenericParamDefKind::Const { .. } => bug!(),
                 GenericParamDefKind::Type { has_default, .. } => {
                     if param.index == 0 {
                         ty.into()
                     } else {
                         assert!(has_default);
-                        self.type_of(param.def_id).subst(self, substs).into()
-                    }
-                }
-                GenericParamDefKind::Const { .. } => {
-                    if param.index == 0 {
-                        ty.into()
-                    } else {
                         self.type_of(param.def_id).subst(self, substs).into()
                     }
                 }

@@ -232,6 +232,7 @@ impl FlagComputation {
     }
 
     fn add_const(&mut self, constant: &ty::Const) {
+        // TODO(const_generics): missing flags for inference (HAS_FREE_LOCAL_NAMES, etc.)
         self.add_ty(constant.ty);
         match constant.val {
             ConstValue::Unevaluated(_, substs) => {

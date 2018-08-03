@@ -592,6 +592,7 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
     where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
 {
     if a.ty != b.ty {
+        // TODO(const_generics): replace with an assert
         return Err(TypeError::ConstError(
             ConstError::Types(expected_found(relation, &a, &b))
         ));
@@ -602,6 +603,9 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
     // implement both `PartialEq` and `Eq`, corresponding to
     // `structural_match` types.
     // FIXME(const_generics): check for `structural_match` synthetic attribute.
+    // TODO(const_generics): a == b is only valid if a, b are Scalar, ScalarPair, ByRef
+    // TODO(const_generics): possibly need indirection for ByRef?
+    // TODO(const_generics): Param should be a bug here
     match (a.val, b.val) {
         (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
             // The caller should handle these cases!
@@ -614,10 +618,12 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
         {
             Ok(a)
         }
+        // TODO(const_generics): this is probably wrong (regarding TyProjection)
         (ConstValue::Unevaluated(a_def_id, a_substs), ConstValue::Unevaluated(b_def_id, b_substs))
             if a_def_id == b_def_id =>
         {
-            let substs = relation.relate_item_substs(a_def_id, a_substs, b_substs)?;
+            // TODO(const_generics): should just using an invariant (covariance) method
+            let substs = relation.relate_substs(a_def_id, a_substs, b_substs)?;
             Ok(tcx.mk_const(ty::Const {
                 val: ConstValue::Unevaluated(a_def_id, substs),
                 ty: a.ty,

@@ -113,6 +113,7 @@ pub enum TyKind<'tcx> {
     Str,
 
     /// An array with the given length. Written as `[T; n]`.
+    // TODO(const_generics): clean up handling of TyArray with const generics
     Array(Ty<'tcx>, &'tcx ty::Const<'tcx>),
 
     /// The pointee of an array slice.  Written as `[T]`.
@@ -2053,3 +2054,14 @@ impl<'tcx> Const<'tcx> {
 }
 
 impl<'tcx> serialize::UseSpecializedDecodable for &'tcx Const<'tcx> {}
+
+/// An inference variable for a const, for use in const generics.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, RustcEncodable, RustcDecodable, Hash)]
+pub enum InferConst {
+    /// Infer the value of the const.
+    Var(ty::ConstVid),
+    /// A fresh const variable. See `infer::freshen` for more details.
+    Fresh(u32),
+    /// Canonicalized const variable, used only when preparing a trait query.
+    Canonical(CanonicalVar),
+}

@@ -1303,7 +1303,7 @@ pub enum BodyOwnerKind {
 /// These are usually found nested inside types (e.g. array lengths)
 /// or expressions (e.g. repeat counts), and also used to define
 /// explicit discriminant values for enum variants.
-#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Debug)]
 pub struct AnonConst {
     pub id: NodeId,
     pub hir_id: HirId,

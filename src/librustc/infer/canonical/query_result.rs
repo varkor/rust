@@ -434,7 +434,9 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                     }
                 }
                 UnpackedKind::Const(_) => {
-                    unimplemented!() // TODO(const_generics)
+                    if let &ty::ConstValue(ty::InferConst::Canonical(index)) = result_value {
+                        opt_values[index] = Some(*original_value);
+                    }
                 }
             }
         }

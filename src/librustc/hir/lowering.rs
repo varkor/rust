@@ -2266,6 +2266,7 @@ impl<'a> LoweringContext<'a> {
                            mut itctx: ImplTraitContext)
                            -> hir::GenericParam {
         let mut bounds = self.lower_param_bounds(&param.bounds, itctx.reborrow());
+        // TODO(const_generics): only create `hir::GenericParam` once.
         match param.kind {
             GenericParamKind::Lifetime => {
                 let was_collecting_in_band = self.is_collecting_in_band_lifetimes;

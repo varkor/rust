@@ -62,7 +62,7 @@ pub enum TypeError<'tcx> {
 #[derive(Clone, Debug)]
 pub enum ConstError<'tcx> {
     Types(ExpectedFound<&'tcx ty::Const<'tcx>>),
-    Mismatch(ExpectedFound<ty::ConstVarValue>),
+    Mismatch(ExpectedFound<&'tcx ty::Const<'tcx>>),
 }
 
 #[derive(Clone, RustcEncodable, RustcDecodable, PartialEq, Eq, Hash, Debug, Copy)]

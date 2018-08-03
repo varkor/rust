@@ -170,14 +170,14 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
     fn unify_const_variable(&self,
                             vid_is_expected: bool,
                             vid: ty::ConstVid,
-                            val: ty::ConstVarValue)
+                            val: &'tcx ty::Const<'tcx>)
                             -> RelateResult<'tcx, &'tcx Const<'tcx>>
     {
         self.const_unification_table
             .borrow_mut()
             .unify_var_value(vid, Some(val))
             .map_err(|e| const_unification_error(vid_is_expected, e))?;
-        Ok(self.tcx.mk_mach_const(val))
+        Ok(val)
     }
 
     fn unify_integral_variable(&self,
@@ -574,8 +574,10 @@ impl<'tcx, T:Clone + PartialEq> RelateResultCompare<'tcx, T> for RelateResult<'t
     }
 }
 
-pub fn const_unification_error<'tcx>(a_is_expected: bool, v: (ty::ConstVarValue, ty::ConstVarValue))
-                                     -> TypeError<'tcx>
+pub fn const_unification_error<'tcx>(
+    a_is_expected: bool,
+    v: (&'tcx ty::Const<'tcx>, &'tcx ty::Const<'tcx>)
+) -> TypeError<'tcx>
 {
     let (a, b) = v;
     TypeError::ConstError(

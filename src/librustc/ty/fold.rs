@@ -100,7 +100,9 @@ pub trait TypeFoldable<'tcx>: fmt::Debug + Clone {
         self.has_type_flags(TypeFlags::HAS_TY_INFER)
     }
     fn needs_infer(&self) -> bool {
-        self.has_type_flags(TypeFlags::HAS_TY_INFER | TypeFlags::HAS_RE_INFER)
+        self.has_type_flags(
+            TypeFlags::HAS_TY_INFER | TypeFlags::HAS_RE_INFER | TypeFlags::HAS_CT_INFER
+        )
     }
     fn has_skol(&self) -> bool {
         self.has_type_flags(TypeFlags::HAS_RE_SKOL)
@@ -126,7 +128,7 @@ pub trait TypeFoldable<'tcx>: fmt::Debug + Clone {
     }
 
     /// Indicates whether this value references only 'global'
-    /// types/lifetimes that are the same regardless of what fn we are
+    /// types/lifetimes/consts that are the same regardless of what fn we are
     /// in. This is used for caching.
     fn is_global(&self) -> bool {
         !self.has_type_flags(TypeFlags::HAS_FREE_LOCAL_NAMES)

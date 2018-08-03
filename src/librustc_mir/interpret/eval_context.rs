@@ -387,6 +387,7 @@ impl<'a, 'mir, 'tcx: 'mir, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M
             self.param_env,
             &substs,
         );
+        // TODO(const_generics): should bug!() on Infer and error on Param
         ty::Instance::resolve(
             *self.tcx,
             self.param_env,
