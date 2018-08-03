@@ -623,7 +623,8 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
             if a_def_id == b_def_id =>
         {
             // TODO(const_generics): should just using an invariant (covariance) method
-            let substs = relation.relate_substs(a_def_id, a_substs, b_substs)?;
+            let substs =
+                relation.relate_with_variance(ty::Variance::Invariant, &a_substs, &b_substs)?;
             Ok(tcx.mk_const(ty::Const {
                 val: ConstValue::Unevaluated(a_def_id, substs),
                 ty: a.ty,

@@ -23,7 +23,7 @@ use middle::region;
 use middle::lang_items;
 use ty::subst::{Kind, Substs};
 use ty::{TyVid, IntVid, FloatVid, ConstVid};
-use ty::{self, Ty, TyCtxt, GenericParamDefKind};
+use ty::{self, Ty, TyCtxt, GenericParamDefKind, InferConst};
 use ty::error::{ExpectedFound, TypeError, UnconstrainedNumeric};
 use ty::fold::TypeFoldable;
 use ty::relate::RelateResult;
@@ -38,6 +38,7 @@ use syntax_pos::{self, Span};
 use syntax_pos::symbol::InternedString;
 use util::nodemap::FxHashMap;
 use arena::SyncDroplessArena;
+use mir::interpret::ConstValue;
 
 use self::combine::CombineFields;
 use self::higher_ranked::HrMatchResult;
@@ -101,7 +102,7 @@ pub struct InferCtxt<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     pub type_variables: RefCell<type_variable::TypeVariableTable<'tcx>>,
 
     // Map from const parameter variable to the kind of const it represents
-    const_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::ConstVid>>>,
+    const_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::ConstVid<'tcx>>>>,
 
     // Map from integral variable to the kind of integer it represents
     int_unification_table: RefCell<ut::UnificationTable<ut::InPlace<ty::IntVid>>>,
@@ -530,7 +531,7 @@ impl<'tcx> InferOk<'tcx, ()> {
 pub struct CombinedSnapshot<'a, 'tcx:'a> {
     projection_cache_snapshot: traits::ProjectionCacheSnapshot,
     type_snapshot: type_variable::Snapshot<'tcx>,
-    const_snapshot: ut::Snapshot<ut::InPlace<ty::ConstVid>>,
+    const_snapshot: ut::Snapshot<ut::InPlace<ty::ConstVid<'tcx>>>,
     int_snapshot: ut::Snapshot<ut::InPlace<ty::IntVid>>,
     float_snapshot: ut::Snapshot<ut::InPlace<ty::FloatVid>>,
     region_constraints_snapshot: RegionSnapshot,
@@ -910,7 +911,8 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         self.tcx.mk_const_var(self.next_const_var_id(origin), ty)
     }
 
-    pub fn next_const_var_id(&self) -> ConstVid {
+    pub fn next_const_var_id(&self, _origin: ConstVariableOrigin) -> ConstVid<'tcx> {
+        // TODO(const_generics): integrate _origin
         self.const_unification_table
             .borrow_mut()
             .new_key(None)
@@ -1565,5 +1567,20 @@ impl<'tcx> fmt::Debug for RegionObligation<'tcx> {
         write!(f, "RegionObligation(sub_region={:?}, sup_type={:?})",
                self.sub_region,
                self.sup_type)
+    }
+}
+
+pub fn replace_const_if_possible<'tcx>(
+    mut table: RefMut<ut::UnificationTable<ut::InPlace<ty::ConstVid<'tcx>>>>,
+    c: &'tcx ty::Const<'tcx>,
+) -> &'tcx ty::Const<'tcx> {
+    match c.val {
+        ConstValue::Infer(InferConst::Var(vid)) => {
+            match table.probe_value(vid) {
+                Some(c) => c,
+                None => c,
+            }
+        }
+        _ => c,
     }
 }

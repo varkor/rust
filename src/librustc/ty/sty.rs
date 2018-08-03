@@ -24,6 +24,7 @@ use mir::interpret::{Scalar, Pointer};
 
 use std::iter;
 use std::cmp::Ordering;
+use std::marker::PhantomData;
 use rustc_target::spec::abi;
 use syntax::ast::{self, Ident};
 use syntax::symbol::{keywords, InternedString};
@@ -1188,8 +1189,9 @@ pub struct TyVid {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
-pub struct ConstVid {
+pub struct ConstVid<'tcx> {
     pub index: u32,
+    pub phantom: PhantomData<&'tcx ()>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, RustcEncodable, RustcDecodable)]
@@ -2057,9 +2059,9 @@ impl<'tcx> serialize::UseSpecializedDecodable for &'tcx Const<'tcx> {}
 
 /// An inference variable for a const, for use in const generics.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, RustcEncodable, RustcDecodable, Hash)]
-pub enum InferConst {
+pub enum InferConst<'tcx> {
     /// Infer the value of the const.
-    Var(ty::ConstVid),
+    Var(ty::ConstVid<'tcx>),
     /// A fresh const variable. See `infer::freshen` for more details.
     Fresh(u32),
     /// Canonicalized const variable, used only when preparing a trait query.

@@ -8,8 +8,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use super::SubregionOrigin;
 use super::combine::{CombineFields, RelationDir, const_unification_error};
+use super::{SubregionOrigin, replace_const_if_possible};
 
 use traits::Obligation;
 use ty::{self, Ty, TyCtxt, InferConst};
@@ -151,8 +151,8 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         if a == b { return Ok(a); }
 
         let infcx = self.fields.infcx;
-        let a = infcx.const_unification_table.borrow_mut().replace_if_possible(a);
-        let b = infcx.const_unification_table.borrow_mut().replace_if_possible(b);
+        let a = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), a);
+        let b = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), b);
 
         // Consts can only be equal or unequal to each other: there's no subtyping
         // relation, so we're just going to perform equating here instead.

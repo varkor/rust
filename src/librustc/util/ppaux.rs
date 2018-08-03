@@ -909,7 +909,7 @@ impl fmt::Debug for ty::TyVid {
     }
 }
 
-impl fmt::Debug for ty::ConstVid {
+impl<'tcx> fmt::Debug for ty::ConstVid<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "_#{}f", self.index)
     }

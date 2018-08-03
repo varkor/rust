@@ -434,8 +434,8 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                         opt_values[index] = Some(*original_value);
                     }
                 }
-                UnpackedKind::Const(_) => {
-                    if let &ConstValue(InferConst::Canonical(index)) = result_value {
+                UnpackedKind::Const(result_value) => {
+                    if let ConstValue::Infer(InferConst::Canonical(index)) = result_value.val {
                         opt_values[index] = Some(*original_value);
                     }
                 }

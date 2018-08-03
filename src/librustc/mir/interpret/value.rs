@@ -17,7 +17,7 @@ pub enum ConstValue<'tcx> {
     /// A const generic parameter.
     Param(ty::ParamConst),
     /// Infer the value of the const.
-    Infer(ty::InferConst),
+    Infer(ty::InferConst<'tcx>),
     /// Used only for types with layout::abi::Scalar ABI and ZSTs
     ///
     /// Not using the enum `Value` to encode that this must not be `Undef`

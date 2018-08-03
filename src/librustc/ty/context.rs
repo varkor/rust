@@ -51,6 +51,7 @@ use ty::query;
 use ty::steal::Steal;
 use ty::BindingMode;
 use ty::CanonicalTy;
+use ty::fold::TypeFoldable;
 use util::nodemap::{DefIdSet, ItemLocalMap};
 use util::nodemap::{FxHashMap, FxHashSet};
 use rustc_data_structures::accumulate_vec::AccumulateVec;
@@ -2523,7 +2524,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_infer(TyVar(v))
     }
 
-    pub fn mk_const_var(self, v: ConstVid, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+    pub fn mk_const_var(self, v: ConstVid<'tcx>, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
         self.mk_const(ty::Const {
             val: ConstValue::Infer(InferConst::Var(v)),
             ty,

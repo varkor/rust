@@ -18,7 +18,8 @@ use rustc::traits::query::Fallible;
 use rustc::ty::fold::{TypeFoldable, TypeVisitor};
 use rustc::ty::relate::{self, Relate, RelateResult, TypeRelation};
 use rustc::ty::subst::Kind;
-use rustc::ty::{self, CanonicalTy, CanonicalVar, RegionVid, Ty, TyCtxt};
+use rustc::ty::{self, CanonicalTy, CanonicalVar, RegionVid, Ty, TyCtxt, InferConst};
+use rustc::mir::interpret::ConstValue;
 use rustc_data_structures::fx::FxHashMap;
 use rustc_data_structures::indexed_vec::{Idx, IndexVec};
 use std::mem;
@@ -379,7 +380,7 @@ impl<'cx, 'bccx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx>
 
     fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
         -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
-        if let ty::ConstValue::Infer(ty::InferConst::Canonical(var)) = a.val {
+        if let ConstValue::Infer(InferConst::Canonical(var)) = a.val {
             self.equate_var(var, b.into())?;
             Ok(a)
         } else {

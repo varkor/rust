@@ -454,8 +454,21 @@ impl<'a, 'tcx> Lift<'tcx> for ty::error::TypeError<'a> {
 
             Sorts(ref x) => return tcx.lift(x).map(Sorts),
             OldStyleLUB(ref x) => return tcx.lift(x).map(OldStyleLUB),
-            ExistentialMismatch(ref x) => return tcx.lift(x).map(ExistentialMismatch)
+            ExistentialMismatch(ref x) => return tcx.lift(x).map(ExistentialMismatch),
+            ConstError(ref x) => return tcx.lift(x).map(ConstError),
         })
+    }
+}
+
+impl<'a, 'tcx> Lift<'tcx> for ty::error::ConstError<'a> {
+    type Lifted = ty::error::ConstError<'tcx>;
+    fn lift_to_tcx<'b, 'gcx>(&self, tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
+        use ty::error::ConstError::*;
+
+        match *self {
+            Types(ref x) => return tcx.lift(x).map(Types),
+            Mismatch(ref x) => return tcx.lift(x).map(Mismatch),
+        }
     }
 }
 
@@ -1131,6 +1144,14 @@ EnumTypeFoldableImpl! {
         (ty::error::TypeError::Sorts)(x),
         (ty::error::TypeError::ExistentialMismatch)(x),
         (ty::error::TypeError::OldStyleLUB)(x),
+        (ty::error::TypeError::ConstError)(x),
+    }
+}
+
+EnumTypeFoldableImpl! {
+    impl<'tcx> TypeFoldable<'tcx> for ty::error::ConstError<'tcx> {
+        (ty::error::ConstError::Types)(x),
+        (ty::error::ConstError::Mismatch)(x),
     }
 }
 

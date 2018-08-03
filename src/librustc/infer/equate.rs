@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use super::combine::{CombineFields, RelationDir, const_unification_error};
-use super::{Subtype};
+use super::{Subtype, replace_const_if_possible};
 
 use hir::def_id::DefId;
 
@@ -117,8 +117,8 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         if a == b { return Ok(a); }
 
         let infcx = self.fields.infcx;
-        let a = infcx.const_unification_table.borrow_mut().replace_if_possible(a);
-        let b = infcx.const_unification_table.borrow_mut().replace_if_possible(b);
+        let a = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), a);
+        let b = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), b);
         match (a.val, b.val) {
             (ConstValue::Infer(InferConst::Var(a_vid)),
              ConstValue::Infer(InferConst::Var(b_vid))) => {
@@ -130,11 +130,11 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
                 Ok(a)
             }
 
-            (ConstValue::Infer(InferConst::Var(a_vid)), _) => {
+            (ConstValue::Infer(InferConst::Var(_)), _) => {
                 Ok(a)
             }
 
-            (_, ConstValue::Infer(InferConst::Var(b_vid))) => {
+            (_, ConstValue::Infer(InferConst::Var(_))) => {
                 Ok(a)
             }
 
@@ -153,3 +153,5 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         self.fields.higher_ranked_sub(b, a, self.a_is_expected)
     }
 }
+
+

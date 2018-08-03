@@ -177,6 +177,9 @@ impl<'tcx> fmt::Display for TypeError<'tcx> {
             OldStyleLUB(ref err) => {
                 write!(f, "{}", err)
             }
+            ConstError(..) => {
+                unreachable!() // TODO(const_generics)
+            }
         }
     }
 }

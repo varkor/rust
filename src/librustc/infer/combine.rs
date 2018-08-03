@@ -153,12 +153,12 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
             }
 
 
-            (ConstValue::Infer(InferConst::Var(vid)), v) => {
-                self.unify_const_variable(a_is_expected, vid, v)
+            (ConstValue::Infer(InferConst::Var(vid)), _) => {
+                self.unify_const_variable(a_is_expected, vid, b)
             }
 
-            (v, ConstValue::Infer(InferConst::Var(vid))) => {
-                self.unify_const_variable(!a_is_expected, vid, v)
+            (_, ConstValue::Infer(InferConst::Var(vid))) => {
+                self.unify_const_variable(!a_is_expected, vid, a)
             }
 
             _ => {
@@ -169,8 +169,8 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
 
     fn unify_const_variable(&self,
                             vid_is_expected: bool,
-                            vid: ty::ConstVid,
-                            val: &'tcx ty::Const<'tcx>)
+                            vid: ty::ConstVid<'tcx>,
+                            val: &'tcx Const<'tcx>)
                             -> RelateResult<'tcx, &'tcx Const<'tcx>>
     {
         self.const_unification_table

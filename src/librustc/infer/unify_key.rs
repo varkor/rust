@@ -10,6 +10,7 @@
 
 use ty::{self, FloatVarValue, IntVarValue, Ty, TyCtxt, Const};
 use rustc_data_structures::unify::{NoError, EqUnifyValue, UnifyKey, UnifyValue};
+use std::marker::PhantomData;
 
 pub trait ToType {
     fn to_type<'a, 'gcx, 'tcx>(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>) -> Ty<'tcx>;
@@ -18,7 +19,7 @@ pub trait ToType {
 impl<'tcx> UnifyKey for ty::ConstVid<'tcx> {
     type Value = Option<&'tcx Const<'tcx>>;
     fn index(&self) -> u32 { self.index }
-    fn from_index(i: u32) -> ty::ConstVid { ty::ConstVid { index: i } }
+    fn from_index(i: u32) -> ty::ConstVid<'tcx> { ty::ConstVid { index: i, phantom: PhantomData } }
     fn tag() -> &'static str { "ConstVid" }
 }
 
