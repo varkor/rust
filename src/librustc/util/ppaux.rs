@@ -344,7 +344,7 @@ impl PrintContext {
                         GenericParamDefKind::Type { has_default, .. } => {
                             Some((param.def_id, has_default))
                         }
-                        GenericParamDefKind::Const { .. } => unimplemented!(), // TODO(const_generics):
+                        GenericParamDefKind::Const { .. } => None, // FIXME(const_generics:defaults)
                     }).peekable();
                 let has_default = {
                     let has_default = type_params.peek().map(|(_, has_default)| has_default);

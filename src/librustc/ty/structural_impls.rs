@@ -466,7 +466,6 @@ impl<'a, 'tcx> Lift<'tcx> for ty::error::ConstError<'a> {
         use ty::error::ConstError::*;
 
         match *self {
-            Types(ref x) => return tcx.lift(x).map(Types),
             Mismatch(ref x) => return tcx.lift(x).map(Mismatch),
         }
     }
@@ -1150,7 +1149,6 @@ EnumTypeFoldableImpl! {
 
 EnumTypeFoldableImpl! {
     impl<'tcx> TypeFoldable<'tcx> for ty::error::ConstError<'tcx> {
-        (ty::error::ConstError::Types)(x),
         (ty::error::ConstError::Mismatch)(x),
     }
 }

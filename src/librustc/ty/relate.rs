@@ -591,25 +591,22 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
                                            -> RelateResult<'tcx, &'tcx Const<'tcx>>
     where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
 {
-    if a.ty != b.ty {
-        // TODO(const_generics): replace with an assert
-        return Err(TypeError::ConstError(
-            ConstError::Types(expected_found(relation, &a, &b))
-        ));
-    }
+    assert!(a.ty != b.ty);
 
     let tcx = relation.tcx();
     // Currently, the values that can be unified are those that
     // implement both `PartialEq` and `Eq`, corresponding to
     // `structural_match` types.
     // FIXME(const_generics): check for `structural_match` synthetic attribute.
-    // TODO(const_generics): a == b is only valid if a, b are Scalar, ScalarPair, ByRef
     // TODO(const_generics): possibly need indirection for ByRef?
     // TODO(const_generics): Param should be a bug here
     match (a.val, b.val) {
         (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
             // The caller should handle these cases!
             bug!("var types encountered in super_relate_consts")
+        }
+        (ConstValue::Param(_), _) | (_, ConstValue::Param(_)) => {
+            bug!("param types encountered in super_relate_consts")
         }
         (ConstValue::Scalar(_), _) |
         (ConstValue::ScalarPair(..), _) |
@@ -622,7 +619,6 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
         (ConstValue::Unevaluated(a_def_id, a_substs), ConstValue::Unevaluated(b_def_id, b_substs))
             if a_def_id == b_def_id =>
         {
-            // TODO(const_generics): should just using an invariant (covariance) method
             let substs =
                 relation.relate_with_variance(ty::Variance::Invariant, &a_substs, &b_substs)?;
             Ok(tcx.mk_const(ty::Const {
@@ -630,12 +626,9 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
                 ty: a.ty,
             }))
         }
-        (ConstValue::Param(ref a_p), ConstValue::Param(ref b_p)) if a_p.index == b_p.index => {
-            Ok(a)
-        }
          _ => {
             Err(TypeError::ConstError(
-                ConstError::Types(expected_found(relation, &a, &b))
+                ConstError::Mismatch(expected_found(relation, &a, &b))
             ))
         }
     }

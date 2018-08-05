@@ -1372,7 +1372,7 @@ fn object_lifetime_defaults_for_item(
             })
         }
         GenericParamKind::Const { .. } => {
-            // TODO(const_generics):
+            // Generic consts don't impose any constraints.
             None
         }
     })

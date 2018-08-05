@@ -570,7 +570,7 @@ impl<'a> TraitDef<'a> {
 
                 cx.typaram(self.span, param.ident, vec![], bounds, None)
             }
-            GenericParamKind::Const { .. } => unimplemented!() // TODO(const_generics):
+            GenericParamKind::Const { .. } => param.clone(),
         }));
 
         // and similarly for where clauses

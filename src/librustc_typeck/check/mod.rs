@@ -1330,15 +1330,22 @@ pub fn check_item_type<'a,'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, it: &'tcx hir::Item
         } else {
             for item in &m.items {
                 let generics = tcx.generics_of(tcx.hir.local_def_id(item.id));
-                if generics.params.len() - generics.own_counts().lifetimes != 0 {
+                let own_counts = generics.own_counts();
+                if generics.params.len() - own_counts.lifetimes != 0 {
                     let mut err = struct_span_err!(tcx.sess, item.span, E0044,
                         "foreign items may not have type or const parameters");
                     err.span_label(item.span, "can't have type or const parameters");
                     // FIXME: once we start storing spans for type arguments, turn this into a
                     // suggestion.
-                    // TODO(const_generics): help message
-                    err.help("use specialization instead of type parameters by replacing them \
-                              with concrete types like `u32`");
+                    if own_counts.types > 0 {
+                        err.help("use specialization instead of type parameters by replacing \
+                                  them with concrete types like `u32`");
+                    }
+                    if own_counts.consts > 0 {
+                        err.help("use specialization instead of const parameters by replacing \
+                                  them with concrete consts like `0`");
+                    }
+
                     err.emit();
                 }
 
@@ -1348,7 +1355,7 @@ pub fn check_item_type<'a,'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, it: &'tcx hir::Item
             }
         }
       }
-      _ => {/* nothing to do */ }
+      _ => { /* nothing to do */ }
     }
 }
 

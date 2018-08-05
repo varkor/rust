@@ -2267,7 +2267,8 @@ impl<'a> LoweringContext<'a> {
                            -> hir::GenericParam {
         let mut bounds = self.lower_param_bounds(&param.bounds, itctx.reborrow());
         // TODO(const_generics): only create `hir::GenericParam` once.
-        match param.kind {
+
+        let (name, kind) = match param.kind {
             GenericParamKind::Lifetime => {
                 let was_collecting_in_band = self.is_collecting_in_band_lifetimes;
                 self.is_collecting_in_band_lifetimes = false;
@@ -2277,19 +2278,12 @@ impl<'a> LoweringContext<'a> {
                     hir::LifetimeName::Param(param_name) => param_name,
                     _ => hir::ParamName::Plain(lt.name.ident()),
                 };
-                let param = hir::GenericParam {
-                    id: lt.id,
-                    name: param_name,
-                    span: lt.span,
-                    pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
-                    attrs: self.lower_attrs(&param.attrs),
-                    bounds,
-                    kind: hir::GenericParamKind::Lifetime { in_band: false }
-                };
+
+                let kind = hir::GenericParamKind::Lifetime { in_band: false };
 
                 self.is_collecting_in_band_lifetimes = was_collecting_in_band;
 
-                param
+                (param_name, kind)
             }
             GenericParamKind::Type { ref default, .. } => {
                 // Don't expose `Self` (recovered "keyword used as ident" parse error).
@@ -2309,37 +2303,33 @@ impl<'a> LoweringContext<'a> {
                                    .collect();
                 }
 
-                hir::GenericParam {
-                    id: self.lower_node_id(param.id).node_id,
-                    name: hir::ParamName::Plain(ident),
-                    pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
-                    attrs: self.lower_attrs(&param.attrs),
-                    bounds,
-                    span: ident.span,
-                    kind: hir::GenericParamKind::Type {
-                        default: default.as_ref().map(|x| {
-                            self.lower_ty(x, ImplTraitContext::Disallowed)
-                        }),
-                        synthetic: param.attrs.iter()
-                                              .filter(|attr| attr.check_name("rustc_synthetic"))
-                                              .map(|_| hir::SyntheticTyParamKind::ImplTrait)
-                                              .next(),
-                    }
-                }
+                let kind = hir::GenericParamKind::Type {
+                    default: default.as_ref().map(|x| {
+                        self.lower_ty(x, ImplTraitContext::Disallowed)
+                    }),
+                    synthetic: param.attrs.iter()
+                                          .filter(|attr| attr.check_name("rustc_synthetic"))
+                                          .map(|_| hir::SyntheticTyParamKind::ImplTrait)
+                                          .next(),
+                };
+
+                (hir::ParamName::Plain(ident), kind)
             }
             GenericParamKind::Const { ref ty } => {
-                hir::GenericParam {
-                    id: self.lower_node_id(param.id).node_id,
-                    name: hir::ParamName::Plain(param.ident),
-                    span: param.ident.span,
-                    pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
-                    attrs: self.lower_attrs(&param.attrs),
-                    bounds,
-                    kind: hir::GenericParamKind::Const {
-                        ty: self.lower_ty(&ty, ImplTraitContext::Disallowed),
-                    }
-                }
+                (hir::ParamName::Plain(param.ident), hir::GenericParamKind::Const {
+                    ty: self.lower_ty(&ty, ImplTraitContext::Disallowed),
+                })
             }
+        };
+
+        hir::GenericParam {
+            id: self.lower_node_id(param.id).node_id,
+            name,
+            span: param.ident.span,
+            pure_wrt_drop: attr::contains_name(&param.attrs, "may_dangle"),
+            attrs: self.lower_attrs(&param.attrs),
+            bounds,
+            kind,
         }
     }
 

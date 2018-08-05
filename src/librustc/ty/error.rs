@@ -61,7 +61,6 @@ pub enum TypeError<'tcx> {
 // Data structure used in const unification
 #[derive(Clone, Debug)]
 pub enum ConstError<'tcx> {
-    Types(ExpectedFound<&'tcx ty::Const<'tcx>>),
     Mismatch(ExpectedFound<&'tcx ty::Const<'tcx>>),
 }
 

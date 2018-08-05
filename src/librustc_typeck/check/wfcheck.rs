@@ -448,7 +448,7 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
                 fcx.tcx.types.err.into()
             }
             GenericParamDefKind::Const { .. } => {
-                // TODO(const_generics): defaults
+                // FIXME(const_generics:defaults)
                 fcx.tcx.types.err.into()
             }
         }
@@ -600,11 +600,10 @@ fn check_existential_types<'a, 'fcx, 'gcx, 'tcx>(
                         for (subst, param) in substs.iter().zip(&generics.params) {
                             match subst.unpack() {
                                 ty::subst::UnpackedKind::Type(ty) => match ty.sty {
-                                    ty::Param(..) => {},
+                                    ty::Param(..) => {}
                                     // prevent `fn foo() -> Foo<u32>` from being defining
                                     _ => {
-                                        tcx
-                                            .sess
+                                        tcx.sess
                                             .struct_span_err(
                                                 span,
                                                 "non-defining existential type use \
@@ -619,7 +618,7 @@ fn check_existential_types<'a, 'fcx, 'gcx, 'tcx>(
                                                 ),
                                             )
                                             .emit();
-                                    },
+                                    }
                                 } // match ty
                                 ty::subst::UnpackedKind::Lifetime(region) => {
                                     let param_span = tcx.def_span(param.def_id);
@@ -642,9 +641,25 @@ fn check_existential_types<'a, 'fcx, 'gcx, 'tcx>(
                                         seen.entry(region).or_default().push(param_span);
                                     }
                                 }
-                                ty::subst::UnpackedKind::Const(_) => {
-                                    // TODO(const_generics)
-                                    unimplemented!()
+                                ty::subst::UnpackedKind::Const(ct) => match ct.val {
+                                    ConstValue::Param(_) => {}
+                                    _ => {
+                                        tcx.sess
+                                            .struct_span_err(
+                                                span,
+                                                "non-defining existential type use \
+                                                in defining scope",
+                                            )
+                                            .span_note(
+                                                tcx.def_span(param.def_id),
+                                                &format!(
+                                                    "used non-generic const {} for \
+                                                    generic parameter",
+                                                    ty,
+                                                ),
+                                            )
+                                            .emit();
+                                    }
                                 }
                             } // match subst
                         } // for (subst, param)

@@ -108,15 +108,22 @@ fn inferred_outlives_crate<'tcx>(
         .map(|(&def_id, set)| {
             let vec: Vec<ty::Predicate<'tcx>> = set
                 .iter()
-                .map(
+                .filter_map(
                     |ty::OutlivesPredicate(kind1, region2)| match kind1.unpack() {
-                        UnpackedKind::Type(ty1) => ty::Predicate::TypeOutlives(ty::Binder::bind(
-                            ty::OutlivesPredicate(ty1, region2),
-                        )),
-                        UnpackedKind::Lifetime(region1) => ty::Predicate::RegionOutlives(
-                            ty::Binder::bind(ty::OutlivesPredicate(region1, region2)),
-                        ),
-                        UnpackedKind::Const(_ct) => unimplemented!(), // TODO(const_generics):
+                        UnpackedKind::Type(ty1) => {
+                            Some(ty::Predicate::TypeOutlives(ty::Binder::bind(
+                                ty::OutlivesPredicate(ty1, region2)
+                            )))
+                        }
+                        UnpackedKind::Lifetime(region1) => {
+                            Some(ty::Predicate::RegionOutlives(
+                                ty::Binder::bind(ty::OutlivesPredicate(region1, region2))
+                            ))
+                        }
+                        UnpackedKind::Const(_) => {
+                            // Generic consts don't impose any constraints.
+                            None
+                        }
                     },
                 )
                 .collect();

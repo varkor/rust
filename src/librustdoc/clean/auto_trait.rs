@@ -785,9 +785,7 @@ impl<'a, 'tcx, 'rcx, 'cstore> AutoTraitFinder<'a, 'tcx, 'rcx, 'cstore> {
                         bounds.insert(0, GenericBound::maybe_sized(self.cx));
                     }
                 }
-                GenericParamDefKind::Const { .. } => {
-                    unimplemented!() // TODO(const_generics)
-                }
+                GenericParamDefKind::Const { .. } => {}
             }
         }
 
