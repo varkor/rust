@@ -218,8 +218,11 @@ impl<'a, 'tcx, 'rcx, 'cstore> DocContext<'a, 'tcx, 'rcx, 'cstore> {
                         name: hir::LifetimeName::Param(name),
                     }));
                 }
-                ty::GenericParamDefKind::Type {..} => {
+                ty::GenericParamDefKind::Type { .. } => {
                     args.push(hir::GenericArg::Type(self.ty_param_to_ty(param.clone())));
+                }
+                ty::GenericParamDefKind::Const { .. } => {
+                    unimplemented!() // TODO(const_generics)
                 }
             }
         }

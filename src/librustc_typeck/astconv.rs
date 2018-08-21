@@ -296,6 +296,9 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                 GenericParamDefKind::Type { has_default, .. } => {
                     defaults.types += has_default as usize
                 }
+                GenericParamDefKind::Const { .. } => {
+                    // FIXME(const_generics:defaults)
+                }
             };
         }
 
@@ -435,8 +438,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         inferred_kind: I,
     ) -> &'tcx Substs<'tcx> where
         A: Fn(DefId) -> (Option<&'b GenericArgs>, bool),
-        P: Fn(&GenericParamDef, &GenericArg) -> Kind<'tcx>,
-        I: Fn(Option<&[Kind<'tcx>]>, &GenericParamDef, bool) -> Kind<'tcx>
+        P: Fn(&GenericParamDef<'tcx>, &GenericArg) -> Kind<'tcx>,
+        I: Fn(Option<&[Kind<'tcx>]>, &GenericParamDef<'tcx>, bool) -> Kind<'tcx>
     {
         // Collect the segments of the path: we need to substitute arguments
         // for parameters throughout the entire path (wherever there are
@@ -507,23 +510,25 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                     (Some(&arg), Some(&param)) => {
                         match (arg, &param.kind) {
                             (GenericArg::Lifetime(_), GenericParamDefKind::Lifetime)
-                            | (GenericArg::Type(_), GenericParamDefKind::Type { .. }) => {
+                            | (GenericArg::Type(_), GenericParamDefKind::Type { .. })
+                            | (GenericArg::Const(_), GenericParamDefKind::Const { .. }) => {
                                 push_kind(&mut substs, provided_kind(param, arg));
                                 args.next();
                                 params.next();
                             }
-                            (GenericArg::Lifetime(_), GenericParamDefKind::Type { .. }) => {
-                                // We expected a type argument, but got a lifetime
-                                // argument. This is an error, but we need to handle it
-                                // gracefully so we can report sensible errors. In this
-                                // case, we're simply going to infer this argument.
-                                args.next();
-                            }
-                            (GenericArg::Type(_), GenericParamDefKind::Lifetime) => {
-                                // We expected a lifetime argument, but got a type
+                            (GenericArg::Type(_), GenericParamDefKind::Lifetime)
+                            | (GenericArg::Const(_), GenericParamDefKind::Lifetime) => {
+                                // We expected a lifetime argument, but got a type or const
                                 // argument. That means we're inferring the lifetimes.
                                 push_kind(&mut substs, inferred_kind(None, param, infer_types));
                                 params.next();
+                            }
+                            (_, _) => {
+                                // We expected one kind of parameter, but the user provided
+                                // another. This is an error, but we need to handle it
+                                // gracefully so we can report sensible errors.
+                                // In this case, we're simply going to infer this argument.
+                                args.next();
                             }
                         }
                     }
@@ -536,12 +541,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                     (None, Some(&param)) => {
                         // If there are fewer arguments than parameters, it means
                         // we're inferring the remaining arguments.
-                        match param.kind {
-                            GenericParamDefKind::Lifetime | GenericParamDefKind::Type { .. } => {
-                                let kind = inferred_kind(Some(&substs), param, infer_types);
-                                push_kind(&mut substs, kind);
-                            }
-                        }
+                        let kind = inferred_kind(Some(&substs), param, infer_types);
+                        push_kind(&mut substs, kind);
                         args.next();
                         params.next();
                     }
@@ -595,7 +596,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         );
 
         let is_object = self_ty.map_or(false, |ty| ty.sty == TRAIT_OBJECT_DUMMY_SELF);
-        let default_needs_object_self = |param: &ty::GenericParamDef| {
+        let default_needs_object_self = |param: &ty::GenericParamDef<'tcx>| {
             if let GenericParamDefKind::Type { has_default, .. } = param.kind {
                 if is_object && has_default {
                     if tcx.at(span).type_of(param.def_id).has_self_ty() {
@@ -625,6 +626,9 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                     }
                     (GenericParamDefKind::Type { .. }, GenericArg::Type(ty)) => {
                         self.ast_ty_to_ty(&ty).into()
+                    }
+                    (GenericParamDefKind::Const { ty }, GenericArg::Const(ct)) => {
+                        self.ast_const_to_const(&ct, ty).into()
                     }
                     _ => unreachable!(),
                 }
@@ -675,14 +679,9 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         }
                     }
                     GenericParamDefKind::Const { .. } => {
-                        // FIXME(varkor)
-                        let mut i = param.index as usize - (ty_params.accepted + lt_accepted + own_self);
-                        if i < const_provided {
-                            unimplemented!() // TODO(const_generics):
-                        } else {
-                            // We've already errored above about the mismatch.
-                            tcx.types.err.into()
-                        }
+                        // FIXME(const_generics:defaults)
+                        // We've already errored above about the mismatch.
+                        tcx.types.err.into()
                     }
                 }
             },

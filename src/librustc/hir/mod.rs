@@ -414,6 +414,7 @@ impl GenericArg {
         match self {
             GenericArg::Lifetime(l) => l.id,
             GenericArg::Type(t) => t.id,
+            GenericArg::Const(c) => c.value.id,
         }
     }
 }
@@ -472,6 +473,7 @@ impl GenericArgs {
             match arg {
                 GenericArg::Lifetime(_) => own_counts.lifetimes += 1,
                 GenericArg::Type(_) => own_counts.types += 1,
+                GenericArg::Const(_) => own_counts.consts += 1,
             };
         }
 

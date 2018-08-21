@@ -2385,7 +2385,7 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
 
                             if seen_bindings.contains_key(&ident) {
                                 let span = seen_bindings.get(&ident).unwrap();
-                                let err = ResolutionError::NameAlreadyUsedInTypeParameterList(
+                                let err = ResolutionError::NameAlreadyUsedInParameterList(
                                     ident.name,
                                     span,
                                 );

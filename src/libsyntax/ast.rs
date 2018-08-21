@@ -922,7 +922,7 @@ pub struct Expr {
     pub id: NodeId,
     pub node: ExprKind,
     pub span: Span,
-    pub attrs: ThinVec<Attribute>
+    pub attrs: ThinVec<Attribute>,
 }
 
 impl Expr {

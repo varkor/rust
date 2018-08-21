@@ -5024,6 +5024,9 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     (GenericParamDefKind::Type { .. }, GenericArg::Type(ty)) => {
                         self.to_ty(ty).into()
                     }
+                    (GenericParamDefKind::Const { ty }, GenericArg::Const(ct)) => {
+                        self.to_const(ct, ty).into()
+                    }
                     _ => unreachable!(),
                 }
             },
@@ -5052,20 +5055,9 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                         }
                     }
                     GenericParamDefKind::Const { .. } => {
-                        // FIXME(varkor)
-                        if let Some((_, generics)) = segment {
-                            let own_counts = generics.own_counts();
-                            i -= own_counts.lifetimes + own_counts.types;
-                        }
-
-                        if let Some(ct) = consts.get(i) {
-                            // A provided const parameter.
-                            self.to_const(ct, ty).into()
-                        } else {
-                            // FIXME(const_generics:defaults)
-                            // No const parameters were provided, we can infer all.
-                            self.var_for_def(span, param)
-                        }
+                        // FIXME(const_generics:defaults)
+                        // No const parameters were provided, we have to infer them.
+                        self.var_for_def(span, param)
                     }
                 }
             },

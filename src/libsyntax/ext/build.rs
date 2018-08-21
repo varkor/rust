@@ -410,7 +410,7 @@ impl<'a> AstBuilder for ExtCtxt<'a> {
                 id: ast::DUMMY_NODE_ID,
                 node: expr,
                 span,
-                attrs: ast::ThinVec::new(),
+                attrs: ThinVec::new(),
             })
         }
     }
