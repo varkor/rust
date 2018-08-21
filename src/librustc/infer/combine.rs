@@ -444,7 +444,7 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
     fn tys(&mut self, t: Ty<'tcx>, t2: Ty<'tcx>) -> RelateResult<'tcx, Ty<'tcx>> {
         assert_eq!(t, t2); // we are abusing TypeRelation here; both LHS and RHS ought to be ==
 
-        // Check to see whether the type we are genealizing references
+        // Check to see whether the type we are generalizing references
         // any other type variable related to `vid` via
         // subtyping. This is basically our "occurs check", preventing
         // us from creating infinitely sized types.
@@ -551,7 +551,21 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
         -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
         assert_eq!(c, c2); // we are abusing TypeRelation here; both LHS and RHS ought to be ==
 
-        unimplemented!() // TODO(const_generics)
+        match c.val {
+            ConstValue::Infer(InferConst::Var(vid)) => {
+                let mut variables = self.infcx.const_unification_table.borrow_mut();
+                match variables.probe_value(vid) {
+                    Some(u) => {
+                        drop(variables);
+                        self.relate(&u, &u)
+                    }
+                    None => Ok(c),
+                }
+            }
+            _ => {
+                relate::super_relate_consts(self, c, c)
+            }
+        }
     }
 }
 

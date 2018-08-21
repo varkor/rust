@@ -1571,12 +1571,12 @@ impl<'tcx> fmt::Debug for RegionObligation<'tcx> {
 }
 
 pub fn replace_const_if_possible<'tcx>(
-    mut table: RefMut<ut::UnificationTable<ut::InPlace<ty::ConstVid<'tcx>>>>,
+    mut variables: RefMut<ut::UnificationTable<ut::InPlace<ty::ConstVid<'tcx>>>>,
     c: &'tcx ty::Const<'tcx>,
 ) -> &'tcx ty::Const<'tcx> {
     match c.val {
         ConstValue::Infer(InferConst::Var(vid)) => {
-            match table.probe_value(vid) {
+            match variables.probe_value(vid) {
                 Some(c) => c,
                 None => c,
             }
