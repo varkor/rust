@@ -17,6 +17,8 @@ use rustc::ty::error::{ExpectedFound, TypeError};
 use rustc::ty::subst::{Subst, Substs};
 use rustc::util::common::ErrorReported;
 
+use errors::DiagnosticId;
+
 use syntax_pos::Span;
 
 use super::{Inherited, FnCtxt};
@@ -580,124 +582,75 @@ fn compare_self_type<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 }
 
 fn compare_number_of_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
-                                        impl_m: &ty::AssociatedItem,
-                                        impl_m_span: Span,
-                                        trait_m: &ty::AssociatedItem,
-                                        trait_item_span: Option<Span>)
+                                        impl_: &ty::AssociatedItem,
+                                        impl_span: Span,
+                                        trait_: &ty::AssociatedItem,
+                                        trait_span: Option<Span>)
                                         -> Result<(), ErrorReported> {
-    let impl_m_generics = tcx.generics_of(impl_m.def_id);
-    let trait_m_generics = tcx.generics_of(trait_m.def_id);
-    let num_impl_m_type_params = impl_m_generics.own_counts().types;
-    let num_trait_m_type_params = trait_m_generics.own_counts().types;
-    if num_impl_m_type_params != num_trait_m_type_params {
-        let impl_m_node_id = tcx.hir.as_local_node_id(impl_m.def_id).unwrap();
-        let impl_m_item = tcx.hir.expect_impl_item(impl_m_node_id);
-        let span = if impl_m_item.generics.params.is_empty() {
-            impl_m_span
-        } else {
-            impl_m_item.generics.span
-        };
+    let trait_own_counts = tcx.generics_of(trait_.def_id).own_counts();
+    let impl_own_counts = tcx.generics_of(impl_.def_id).own_counts();
 
-        let mut err = struct_span_err!(tcx.sess,
-                                       span,
-                                       E0049,
-                                       "method `{}` has {} type parameter{} but its trait \
-                                        declaration has {} type parameter{}",
-                                       trait_m.ident,
-                                       num_impl_m_type_params,
-                                       if num_impl_m_type_params == 1 { "" } else { "s" },
-                                       num_trait_m_type_params,
-                                       if num_trait_m_type_params == 1 {
-                                           ""
-                                       } else {
-                                           "s"
-                                       });
+    let matchings = [
+        ("type", trait_own_counts.types, impl_own_counts.types),
+        ("const", trait_own_counts.consts, impl_own_counts.consts),
+    ];
 
-        let mut suffix = None;
+    let mut err_occurred = false;
+    for &(kind, trait_count, impl_count) in &matchings {
+        if impl_count != trait_count {
+            err_occurred = true;
 
-        if let Some(span) = trait_item_span {
-            err.span_label(span,
-                           format!("expected {}",
-                                    &if num_trait_m_type_params != 1 {
-                                        format!("{} type parameters", num_trait_m_type_params)
-                                    } else {
-                                        format!("{} type parameter", num_trait_m_type_params)
-                                    }));
-        } else {
-            suffix = Some(format!(", expected {}", num_trait_m_type_params));
+            let impl_node_id = tcx.hir.as_local_node_id(impl_.def_id).unwrap();
+            let impl_item = tcx.hir.expect_impl_item(impl_node_id);
+            let span = if impl_item.generics.params.is_empty() {
+                impl_span
+            } else {
+                impl_item.generics.span
+            };
+
+            let mut err = tcx.sess.struct_span_err_with_code(
+                span,
+                &format!(
+                    "method `{}` has {} {kind} parameter{} but its trait \
+                     declaration has {} {kind} parameter{}",
+                    trait_.ident,
+                    impl_count,
+                    if impl_count != 1 { "s" } else { "" },
+                    trait_count,
+                    if trait_count != 1 { "s" } else { "" },
+                    kind = kind,
+                ),
+                DiagnosticId::Error("E0408".into()),
+            );
+
+            let mut suffix = None;
+
+            if let Some(span) = trait_span {
+                err.span_label(
+                    span,
+                    format!("expected {} {} parameter{}", trait_count, kind,
+                        if trait_count != 1 { "s" } else { "" })
+                );
+            } else {
+                suffix = Some(format!(", expected {}", trait_count));
+            }
+
+            err.span_label(
+                span,
+                format!("found {} {} parameter{}{}", impl_count, kind,
+                    if impl_count != 1 { "s" } else { "" },
+                    suffix.unwrap_or_else(|| String::new())),
+            );
+
+            err.emit();
         }
-
-        err.span_label(span,
-                       format!("found {}{}",
-                                &if num_impl_m_type_params != 1 {
-                                    format!("{} type parameters", num_impl_m_type_params)
-                                } else {
-                                    "1 type parameter".to_string()
-                                },
-                                suffix.as_ref().map(|s| &s[..]).unwrap_or("")));
-
-        err.emit();
-
-        return Err(ErrorReported);
     }
 
-    let num_impl_m_const_params = impl_m_generics.own_counts().consts;
-    let num_trait_m_const_params = trait_m_generics.own_counts().consts;
-
-    if num_impl_m_const_params != num_trait_m_const_params {
-        /*
-        let impl_m_node_id = tcx.hir.as_local_node_id(impl_m.def_id).unwrap();
-        let impl_m_item = tcx.hir.expect_impl_item(impl_m_node_id);
-        let span = if impl_m_item.generics.params.is_empty() {
-            impl_m_span
-        } else {
-            impl_m_item.generics.span
-        };
-
-        let mut err = struct_span_err!(tcx.sess,
-                                       span,
-                                       E0049, // TODO(const_generics): new error code?
-                                       "method `{}` has {} const parameter{} but its trait \
-                                        declaration has {} const parameter{}",
-                                       trait_m.name,
-                                       num_impl_m_const_params,
-                                       if num_impl_m_const_params == 1 { "" } else { "s" },
-                                       num_trait_m_const_params,
-                                       if num_trait_m_const_params == 1 {
-                                           ""
-                                       } else {
-                                           "s"
-                                       });
-
-        let mut suffix = None;
-
-        if let Some(span) = trait_item_span {
-            err.span_label(span,
-                           format!("expected {}",
-                                    &if num_trait_m_const_params != 1 {
-                                        format!("{} const parameters", num_trait_m_const_params)
-                                    } else {
-                                        format!("{} const parameter", num_trait_m_const_params)
-                                    }));
-        } else {
-            suffix = Some(format!(", expected {}", num_trait_m_const_params));
-        }
-
-        err.span_label(span,
-                       format!("found {}{}",
-                                &if num_impl_m_const_params != 1 {
-                                    format!("{} const parameters", num_impl_m_const_params)
-                                } else {
-                                    format!("1 const parameter")
-                                },
-                                suffix.as_ref().map(|s| &s[..]).unwrap_or("")));
-
-        err.emit();
-        */
-        return Err(ErrorReported);
+    if err_occurred {
+        Err(ErrorReported)
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }
 
 fn compare_number_of_method_arguments<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,

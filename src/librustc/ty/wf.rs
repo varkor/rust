@@ -216,16 +216,13 @@ impl<'a, 'gcx, 'tcx> WfPredicates<'a, 'gcx, 'tcx> {
     /// into `self.out`.
     fn compute_const(&mut self, constant: &'tcx ty::Const<'tcx>) {
         self.require_sized(constant.ty, traits::ConstSized);
-        // TODO(const_generics:param/infer)
         if let ConstValue::Unevaluated(def_id, substs) = constant.val {
             let obligations = self.nominal_obligations(def_id, substs);
             self.out.extend(obligations);
 
             let predicate = ty::Predicate::ConstEvaluatable(def_id, substs);
             let cause = self.cause(traits::MiscObligation);
-            self.out.push(traits::Obligation::new(cause,
-                                                    self.param_env,
-                                                    predicate));
+            self.out.push(traits::Obligation::new(cause, self.param_env, predicate));
         }
     }
 

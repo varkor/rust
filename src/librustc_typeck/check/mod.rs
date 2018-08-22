@@ -5181,7 +5181,7 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                        generics: &ty::Generics,
                                        ty: Ty<'tcx>) {
     let own_counts = generics.own_counts();
-    debug!("check_bounds_are_used(n_tps={}, n_cts={}, ty={:?})",
+    debug!("check_bounds_are_used(n_tys={}, n_cts={}, ty={:?})",
         own_counts.types,
         own_counts.consts,
         ty
@@ -5190,6 +5190,7 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     if own_counts.types + own_counts.consts == 0 {
         return;
     }
+
     // Make a vector of booleans initially false, set to true when used.
     let mut types_used = vec![false; own_counts.types];
 
