@@ -131,7 +131,8 @@ impl<'a, 'gcx, 'tcx> ConstraintConversion<'a, 'gcx, 'tcx> {
             }
 
             UnpackedKind::Const(_c1) => {
-                unimplemented!() // TODO(const_generics)
+                // Consts cannot outlive one another, so we
+                // don't need to handle any relations here.
             }
         }
     }

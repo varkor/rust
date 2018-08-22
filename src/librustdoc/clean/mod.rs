@@ -1255,7 +1255,7 @@ impl Clean<Constant> for hir::ConstArg {
         //     type_: ty.clean(cx),
         //     expr: print_const_expr(self.value.body),
         // }
-        unimplemented!() // TODO(const_generics)
+        unimplemented!() // TODO(const_generics:rustdoc)
     }
 }
 
@@ -2543,7 +2543,7 @@ impl Clean<Type> for hir::Ty {
                                     if let Some(ct) = const_.cloned() {
                                         const_substs.insert(const_param_def, ct.clean(cx));
                                     }
-                                    // TODO(const_generics): defaults
+                                    // TODO(const_generics:defaults)
                                     indices.consts += 1;
                                 }
                             }
@@ -2794,7 +2794,7 @@ impl<'tcx> Clean<Constant> for ty::Const<'tcx> {
     fn clean(&self, cx: &DocContext) -> Constant {
         Constant {
             type_: self.ty.clean(cx),
-            expr: format!("{:?}", self.val), // TODO(const_generics)
+            expr: format!("{:?}", self.val), // TODO(const_generics:rustdoc)
         }
     }
 }
@@ -3755,7 +3755,7 @@ fn print_const(cx: &DocContext, n: &ty::Const) -> String {
             }
         },
         ConstValue::Param(..) => {
-            unimplemented!() // TODO(const_generics)
+            unimplemented!() // TODO(const_generics:rustdoc)
         }
         _ => {
             let mut s = String::new();

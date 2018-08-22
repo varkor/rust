@@ -1244,13 +1244,9 @@ define_print! {
                 Array(ty, sz) => {
                     print!(f, cx, write("["), print(ty), write("; "))?;
                     match sz.val {
-                        ConstValue::Unevaluated(_def_id, _substs) => {
-                            write!(f, "_")?;
-                        }
-                        _ => ty::tls::with(|tcx| {
-                            // TODO(const_generics): check wrt `Param`
-                            write!(f, "{}", sz.unwrap_usize(tcx))
-                        })?,
+                        ConstValue::Unevaluated(..) | ConstValue::Infer(..) => write!(f, "_")?,
+                        ConstValue::Param(ParamConst { name, .. }) => write!(f, "{}", name)?,
+                        _ => ty::tls::with(|tcx| write!(f, "{}", sz.unwrap_usize(tcx)))?,
                     }
                     write!(f, "]")
                 }
@@ -1277,9 +1273,9 @@ define_print! {
     ('tcx) ConstValue<'tcx>, (self, f, cx) {
         display {
             match self {
-                ConstValue::Unevaluated(..) => write!(f, "_"),
+                ConstValue::Unevaluated(..) | ConstValue::Infer(..) => write!(f, "_"),
                 ConstValue::Param(ParamConst { name, .. }) => write!(f, "{}", name),
-                _ => write!(f, "{:?}", self), // TODO(const_generics)
+                _ => write!(f, "{:?}", self),
             }
         }
     }

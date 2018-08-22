@@ -502,29 +502,36 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
         Box::new(
             unsubstituted_region_constraints
                 .iter()
-                .map(move |constraint| {
+                .filter_map(move |constraint| {
                     let ty::OutlivesPredicate(k1, r2) = constraint.skip_binder(); // restored below
                     let k1 = substitute_value(self.tcx, result_subst, k1);
                     let r2 = substitute_value(self.tcx, result_subst, r2);
                     match k1.unpack() {
-                        UnpackedKind::Lifetime(r1) => Obligation::new(
-                            cause.clone(),
-                            param_env,
-                            ty::Predicate::RegionOutlives(ty::Binder::dummy(
-                                ty::OutlivesPredicate(r1, r2),
-                            )),
-                        ),
+                        UnpackedKind::Lifetime(r1) => {
+                            Some(Obligation::new(
+                                cause.clone(),
+                                param_env,
+                                ty::Predicate::RegionOutlives(ty::Binder::dummy(
+                                    ty::OutlivesPredicate(r1, r2),
+                                )),
+                            ))
+                        }
 
-                        UnpackedKind::Type(t1) => Obligation::new(
-                            cause.clone(),
-                            param_env,
-                            ty::Predicate::TypeOutlives(ty::Binder::dummy(ty::OutlivesPredicate(
-                                t1, r2,
-                            ))),
-                        ),
+                        UnpackedKind::Type(t1) => {
+                            Some(Obligation::new(
+                                cause.clone(),
+                                param_env,
+                                ty::Predicate::TypeOutlives(ty::Binder::dummy(ty::OutlivesPredicate(
+                                    t1, r2,
+                                ))),
+                            ))
+                        }
 
-                        // TODO(const_generics): does it even make sense to specify that a const outlives something?
-                        UnpackedKind::Const(_) => unimplemented!(),
+                        UnpackedKind::Const(_) => {
+                            // Consts cannot outlive one another, so we don't have to do anything
+                            // in this case.
+                            None
+                        }
                     }
                 }),
         ) as Box<dyn Iterator<Item = _>>

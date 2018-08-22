@@ -5044,7 +5044,7 @@ impl<'a> Parser<'a> {
         Ok((ident, TraitItemKind::Type(bounds, default), generics))
     }
 
-    // TODO(const_generics): docs
+    // TODO(const_generics:docs)
     fn parse_const_param(&mut self, preceding_attrs: Vec<Attribute>) -> PResult<'a, GenericParam> {
         self.expect_keyword(keywords::Const)?;
         let ident = self.parse_ident()?;
@@ -5827,7 +5827,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    // TODO(const_generics): const generics introduces expressions to the list of things we can see after '<'
+    // TODO(const_generics): const generics introduces expressions to the list of
+    // things we can see after '<'.
     fn choose_generics_over_qpath(&self) -> bool {
         // There's an ambiguity between generic parameters and qualified paths in impls.
         // If we see `<` it may start both, so we have to inspect some following tokens.

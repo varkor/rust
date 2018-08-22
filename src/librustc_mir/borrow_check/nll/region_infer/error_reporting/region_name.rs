@@ -490,9 +490,9 @@ impl<'tcx> RegionInferenceContext<'tcx> {
     }
 
     /// We've found an enum/struct/union type with the substitutions
-    /// `substs` and -- in the HIR -- a path with the generic
-    /// arguments `args`. If `needle_fr` appears in the args, return
-    /// the `hir::Lifetime` that corresponds to it. If not, push onto
+    /// `substs` and, in the HIR, a path with the generic arguments
+    /// `args`. If `needle_fr` appears in the args, return the
+    /// `hir::Lifetime` that corresponds to it. If not, push on to
     /// `search_stack` the types+hir to search through.
     fn try_match_adt_and_generic_args<'hir>(
         &self,
@@ -514,7 +514,8 @@ impl<'tcx> RegionInferenceContext<'tcx> {
                 }
 
                 (UnpackedKind::Const(_ct), hir::GenericArg::Const(_hir_ct)) => {
-                    unimplemented!() // TODO(const_generics)
+                    // Lifetimes cannot be found in consts, so we don't need
+                    // to search anything here.
                 }
 
                 (UnpackedKind::Lifetime(_), _)

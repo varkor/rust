@@ -222,7 +222,7 @@ impl<'a, 'tcx, 'rcx, 'cstore> DocContext<'a, 'tcx, 'rcx, 'cstore> {
                     args.push(hir::GenericArg::Type(self.ty_param_to_ty(param.clone())));
                 }
                 ty::GenericParamDefKind::Const { .. } => {
-                    unimplemented!() // TODO(const_generics)
+                    unimplemented!() // TODO(const_generics:rustdoc)
                 }
             }
         }

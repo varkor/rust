@@ -1530,7 +1530,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             hir::TyKind::Array(ref ty, ref length) => {
                 let length_def_id = tcx.hir.local_def_id(length.id);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
-                // TODO(const_generics): const param?
+                // TODO(const_generics): `Param/Infer` case
                 let length = ty::Const::unevaluated(tcx, length_def_id, substs, tcx.types.usize);
                 let array_ty = tcx.mk_ty(ty::Array(self.ast_ty_to_ty(&ty), length));
                 self.normalize_ty(ast_ty.span, array_ty)
@@ -1559,23 +1559,25 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         result_ty
     }
 
-    pub fn ast_const_to_const(&self, ast_const: &hir::ConstArg, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+    pub fn ast_const_to_const(
+        &self,
+        ast_const: &hir::ConstArg,
+        ty: Ty<'tcx>
+    ) -> &'tcx ty::Const<'tcx> {
         debug!("ast_const_to_const(id={:?}, ast_ty={:?})", ast_const.value.id, ast_const);
         let tcx = self.tcx();
         let def_id = tcx.hir.local_def_id(ast_const.value.id);
 
         let const_val = ConstValue::Unevaluated(def_id, Substs::identity_for_item(tcx, def_id));
         // TODO(const_generics)
-        /*if let hir::Expr_::ExprPath(hir::QPath::Resolved(None, ref path)) = ast_const.node {
+        /*if let hir::ExprKind::Path(hir::QPath::Resolved(None, ref path)) = ast_const.value.node {
             if let Def::ConstParam(def_id) = path.def {
-                self.prohibit_type_params(&path.segments);
-
                 let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
                 let item_id = tcx.hir.get_parent_node(node_id);
                 let item_def_id = tcx.hir.local_def_id(item_id);
                 let generics = tcx.generics_of(item_def_id);
-                let index = generics.const_param_to_index[&tcx.hir.local_def_id(node_id)];
-                const_val = ConstValue::Param(ParamConst::new(index, tcx.hir.name(node_id)));
+                let index = generics.param_def_id_to_index[&tcx.hir.local_def_id(node_id)];
+                const_val = ConstValue::Param(ParamConst::new(index, tcx.hir.name(node_id).as_interned_str()));
             }
         }*/
 

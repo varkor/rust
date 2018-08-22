@@ -1040,6 +1040,8 @@ enum NightsWatch {}
 ```
 "##,
 
+// TODO(const_generics:docs): these should be unified with E0107 (i.e. these can just be
+// deleted)
 E0085: r##"
 Too many const parameters were supplied for a function. For example:
 
@@ -1066,7 +1068,7 @@ fn main() {
 }
 ```
 
-// TODO(const_generics): example of inferring const parameter
+// TODO(const_generics:docs): example of inferring const parameter
 "##,
 
 E0087: r##"

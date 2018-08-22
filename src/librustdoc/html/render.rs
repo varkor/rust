@@ -1467,7 +1467,7 @@ impl<'a> Cache {
                     self.typarams.insert(did, param.name.clone());
                 }
                 clean::GenericParamDefKind::Const { .. } => {
-                    unimplemented!() // TODO(const_generics)
+                    unimplemented!() // TODO(const_generics:rustdoc)
                 }
             }
         }

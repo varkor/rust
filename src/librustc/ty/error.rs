@@ -176,8 +176,20 @@ impl<'tcx> fmt::Display for TypeError<'tcx> {
             OldStyleLUB(ref err) => {
                 write!(f, "{}", err)
             }
-            ConstError(..) => {
-                unreachable!() // TODO(const_generics)
+            ConstError(ref err) => {
+                write!(f, "{}", err)
+            }
+        }
+    }
+}
+
+impl<'tcx> fmt::Display for ConstError<'tcx> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::ConstError::*;
+
+        match *self {
+            Mismatch(ref values) => {
+                write!(f, "expected `{:?}`, found `{:?}`", values.expected, values.found)
             }
         }
     }
