@@ -14,7 +14,7 @@ use hair::cx::Cx;
 use hair::cx::block;
 use hair::cx::to_ref::ToRef;
 use rustc::hir::def::{Def, CtorKind};
-use rustc::mir::interpret::GlobalId;
+use rustc::mir::interpret::{GlobalId, ConstValue};
 use rustc::ty::{self, AdtKind, Ty};
 use rustc::ty::adjustment::{Adjustment, Adjust, AutoBorrow, AutoBorrowMutability};
 use rustc::ty::cast::CastKind as TyCastKind;
@@ -760,7 +760,22 @@ fn convert_path_expr<'a, 'gcx, 'tcx>(cx: &mut Cx<'a, 'gcx, 'tcx>,
             ),
         },
 
-        Def::ConstParam(def_id) |
+        Def::ConstParam(def_id) => {
+            let node_id = cx.tcx.hir.as_local_node_id(def_id).unwrap();
+            let item_id = cx.tcx.hir.get_parent_node(node_id);
+            let item_def_id = cx.tcx.hir.local_def_id(item_id);
+            let generics = cx.tcx.generics_of(item_def_id);
+            let index = generics.param_def_id_to_index[&cx.tcx.hir.local_def_id(node_id)];
+            let name = cx.tcx.hir.name(node_id).as_interned_str();
+            let val = ConstValue::Param(ty::ParamConst::new(index, name));
+            ExprKind::Literal {
+                literal: cx.tcx.mk_const(ty::Const {
+                    val,
+                    ty: cx.tables().node_id_to_type(expr.hir_id),
+                }),
+            }
+        }
+
         Def::Const(def_id) |
         Def::AssociatedConst(def_id) => ExprKind::Literal {
             literal: ty::Const::unevaluated(
