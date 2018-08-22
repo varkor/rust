@@ -146,10 +146,7 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
             // All other cases of inference with other variables are errors.
             (ConstValue::Infer(InferConst::Var(_)), ConstValue::Infer(_)) |
             (ConstValue::Infer(_), ConstValue::Infer(InferConst::Var(_))) => {
-                unimplemented!()
-                // TODO(const_generics): relate
-                // Err(TypeError::ConstError(
-                    // ConstError::Mismatch(ty::relate::expected_found(relation, &a, &b))))
+                bug!("tried to combine ConstValue::Infer/ConstValue::Infer(InferConst::Var)")
             }
 
 

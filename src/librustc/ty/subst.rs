@@ -505,7 +505,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for SubstFolder<'a, 'gcx, 'tcx> {
         return t1;
     }
 
-    // TODO(const_generics): fold const?
+    // TODO(const_generics): do we need fold_const?
 }
 
 impl<'a, 'gcx, 'tcx> SubstFolder<'a, 'gcx, 'tcx> {

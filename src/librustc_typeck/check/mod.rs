@@ -5187,7 +5187,9 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
         ty
     );
 
-    if own_counts.types + own_counts.consts == 0 {
+    // TODO(const_generics): we probably want to check the bounds for const parameters too.
+
+    if own_counts.types == 0 {
         return;
     }
 
@@ -5219,24 +5221,6 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 .emit();
         }
     }
-
-    // TODO(const_generics): is there even a way to walk all consts?
-    // let mut consts_used = vec![false; own_counts.types];
-
-    // let consts = generics.params.iter().filter(|param| match param.kind {
-    //    ty::GenericParamDefKind::Const => true,
-    //    _ => false,
-    // });
-    // for (&used, param) in consts_used.iter().zip(consts) {
-    //    if !used {
-    //        let id = tcx.hir.as_local_node_id(param.def_id).unwrap();
-    //        let span = tcx.hir.span(id);
-    //        // TODO(const_generics): new error code
-    //        struct_span_err!(tcx.sess, span, E0091, "const parameter `{}` is unused", param.name)
-    //            .span_label(span, "unused const parameter")
-    //            .emit();
-    //    }
-    // }
 }
 
 fn fatally_break_rust(sess: &Session) {

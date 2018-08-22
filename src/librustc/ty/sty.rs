@@ -114,7 +114,7 @@ pub enum TyKind<'tcx> {
     Str,
 
     /// An array with the given length. Written as `[T; n]`.
-    // TODO(const_generics): clean up handling of TyArray with const generics
+    // TODO(const_generics): clean up handling of Array with const generics
     Array(Ty<'tcx>, &'tcx ty::Const<'tcx>),
 
     /// The pointee of an array slice.  Written as `[T]`.

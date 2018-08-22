@@ -5827,8 +5827,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    // TODO(const_generics): const generics introduces expressions to the list of
-    // things we can see after '<'.
     fn choose_generics_over_qpath(&self, param: bool) -> bool {
         // There's an ambiguity between generic parameters and qualified paths in impls.
         // If we see `<` it may start both, so we have to inspect some following tokens.

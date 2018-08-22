@@ -478,8 +478,8 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                     return Ok(s);
                 }
                 match x.val {
+                    // TODO(const_generics): make sure this works.
                     ConstValue::Unevaluated(def_id, substs) => {
-                        // TODO(const_generics)
                         // FIXME(eddyb) get the right param_env.
                         let param_env = ty::ParamEnv::empty();
                         match tcx.lift_to_global(&substs) {
@@ -493,7 +493,7 @@ pub fn super_relate_tys<'a, 'gcx, 'tcx, R>(relation: &mut R,
                                 if let Some(instance) = instance {
                                     let cid = GlobalId {
                                         instance,
-                                        promoted: None
+                                        promoted: None,
                                     };
                                     if let Some(s) = tcx.const_eval(param_env.and(cid))
                                                         .ok()
@@ -598,7 +598,6 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
     // implement both `PartialEq` and `Eq`, corresponding to
     // `structural_match` types.
     // FIXME(const_generics): check for `structural_match` synthetic attribute.
-    // TODO(const_generics): possibly need indirection for ByRef?
     match (a.val, b.val) {
         (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
             // The caller should handle these cases!
@@ -609,6 +608,7 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
         }
         (ConstValue::Scalar(_), _) |
         (ConstValue::ScalarPair(..), _) |
+        // TODO(const_generics): possibly need indirection for ByRef?
         (ConstValue::ByRef(..), _)
             if a == b =>
         {

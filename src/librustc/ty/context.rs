@@ -51,7 +51,6 @@ use ty::query;
 use ty::steal::Steal;
 use ty::BindingMode;
 use ty::CanonicalTy;
-use ty::fold::TypeFoldable;
 use util::nodemap::{DefIdSet, ItemLocalMap};
 use util::nodemap::{FxHashMap, FxHashSet};
 use rustc_data_structures::accumulate_vec::AccumulateVec;
@@ -2277,11 +2276,8 @@ pub fn keep_local<'tcx, T: ty::TypeFoldable<'tcx>>(x: &T) -> bool {
 
 direct_interners!('tcx,
     region: mk_region(|r: &RegionKind| r.keep_in_local_tcx()) -> RegionKind,
-    // TODO(const_generics): self.has_type_flags(TypeFlags::HAS_CT_INFER)
-    const_: mk_const(|c: &Const| {
-        assert!(c.ty.is_global(), "mk_const({:?}): non-global type", c);
-        keep_local(&c.ty) || keep_local(&c.val)
-    }) -> Const<'tcx>
+    // TODO(const_generics): we might want to change this.
+    const_: mk_const(|c: &Const| keep_local(&c.ty) || keep_local(&c.val)) -> Const<'tcx>
 );
 
 macro_rules! slice_interners {

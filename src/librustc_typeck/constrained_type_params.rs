@@ -93,7 +93,6 @@ impl<'tcx> TypeVisitor<'tcx> for ParameterCollector {
     fn visit_const(&mut self, c: &'tcx ty::Const<'tcx>) -> bool {
         match c.val {
             ConstValue::Param(data) => {
-                debug!("ParameterCollector::visit_const: visit const param: {}", data);
                 self.parameters.push(Parameter::from(data));
             }
             _ => {}

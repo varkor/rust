@@ -914,7 +914,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
     }
 
     pub fn next_const_var_id(&self, _origin: ConstVariableOrigin) -> ConstVid<'tcx> {
-        // TODO(const_generics): integrate _origin
+        // TODO(const_generics): integrate _origin.
         self.const_unification_table
             .borrow_mut()
             .new_key(None)

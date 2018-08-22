@@ -136,15 +136,13 @@ fn enforce_impl_params_are_constrained<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                 }
             }
             ty::GenericParamDefKind::Const => {
-                // TODO(const_generics): This is all right, but the collection
-                // of const params in input_parameters is wrong
-                // let param_ct = ty::ParamConst::for_def(param);
-                // if !input_parameters.contains(&ctp::Parameter::from(param_ct)) {
-                //    report_unused_parameter(tcx,
-                //                            tcx.def_span(param.def_id),
-                //                            "const",
-                //                            &param_ct.to_string());
-                // }
+                let param_ct = ty::ParamConst::for_def(param);
+                if !input_parameters.contains(&ctp::Parameter::from(param_ct)) {
+                   report_unused_parameter(tcx,
+                                           tcx.def_span(param.def_id),
+                                           "const",
+                                           &param_ct.to_string());
+                }
             }
         }
     }

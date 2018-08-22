@@ -829,9 +829,9 @@ fn check_variances_for_type_defn<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                     .collect();
 
     identify_constrained_type_params(tcx,
-                                        ty_predicates.predicates.as_slice(),
-                                        None,
-                                        &mut constrained_parameters);
+                                     ty_predicates.predicates.as_slice(),
+                                     None,
+                                     &mut constrained_parameters);
 
     for (index, _) in variances.iter().enumerate() {
         if constrained_parameters.contains(&Parameter(index as u32)) {
