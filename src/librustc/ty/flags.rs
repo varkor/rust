@@ -232,7 +232,6 @@ impl FlagComputation {
     }
 
     fn add_const(&mut self, constant: &ty::Const) {
-        // TODO(const_generics): missing flags for inference (HAS_FREE_LOCAL_NAMES, etc.)
         self.add_ty(constant.ty);
         match constant.val {
             ConstValue::Unevaluated(_, substs) => {
@@ -242,6 +241,15 @@ impl FlagComputation {
             ConstValue::Param(_) => {
                 self.add_flags(TypeFlags::HAS_FREE_LOCAL_NAMES);
                 self.add_flags(TypeFlags::HAS_PARAMS);
+            }
+            ConstValue::Infer(infer) => {
+                self.add_flags(TypeFlags::HAS_FREE_LOCAL_NAMES);
+                self.add_flags(TypeFlags::HAS_CT_INFER);
+                match infer {
+                    ty::InferConst::Fresh(_) |
+                    ty::InferConst::Canonical(_) => self.add_flags(TypeFlags::HAS_CANONICAL_VARS),
+                    ty::InferConst::Var(_) => self.add_flags(TypeFlags::KEEP_IN_LOCAL_TCX),
+                }
             }
             _ => {}
         }

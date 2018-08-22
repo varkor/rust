@@ -2024,13 +2024,17 @@ macro_rules! sty_debug_print {
                 total: usize,
                 region_infer: usize,
                 ty_infer: usize,
-                both_infer: usize,
+                ct_infer: usize,
+                all_infer: usize,
             }
 
             pub fn go(tcx: TyCtxt) {
                 let mut total = DebugStat {
                     total: 0,
-                    region_infer: 0, ty_infer: 0, both_infer: 0,
+                    region_infer: 0,
+                    ty_infer: 0,
+                    ct_infer: 0,
+                    all_infer: 0,
                 };
                 $(let mut $variant = total;)*
 
@@ -2044,30 +2048,33 @@ macro_rules! sty_debug_print {
                     };
                     let region = t.flags.intersects(ty::TypeFlags::HAS_RE_INFER);
                     let ty = t.flags.intersects(ty::TypeFlags::HAS_TY_INFER);
-                    // TODO(const_generics)
+                    let ct = t.flags.intersects(ty::TypeFlags::HAS_CT_INFER);
 
                     variant.total += 1;
                     total.total += 1;
                     if region { total.region_infer += 1; variant.region_infer += 1 }
                     if ty { total.ty_infer += 1; variant.ty_infer += 1 }
-                    if region && ty { total.both_infer += 1; variant.both_infer += 1 }
+                    if ct { total.ct_infer += 1; variant.ct_infer += 1 }
+                    if region && ty && ct { total.all_infer += 1; variant.all_infer += 1 }
                 }
-                println!("Ty interner             total           ty region  both");
+                println!("Ty interner             total           ty region ct all");
                 $(println!("    {:18}: {uses:6} {usespc:4.1}%, \
-{ty:4.1}% {region:5.1}% {both:4.1}%",
+{ty:4.1}% {region:5.1}% {ct:4.1}% {all:4.1}%",
                            stringify!($variant),
                            uses = $variant.total,
                            usespc = $variant.total as f64 * 100.0 / total.total as f64,
-                           ty = $variant.ty_infer as f64 * 100.0  / total.total as f64,
-                           region = $variant.region_infer as f64 * 100.0  / total.total as f64,
-                           both = $variant.both_infer as f64 * 100.0  / total.total as f64);
+                           ty = $variant.ty_infer as f64 * 100.0 / total.total as f64,
+                           ct = $variant.ct_infer as f64 * 100.0 / total.total as f64,
+                           region = $variant.region_infer as f64 * 100.0 / total.total as f64,
+                           all = $variant.all_infer as f64 * 100.0 / total.total as f64);
                   )*
                 println!("                  total {uses:6}        \
-{ty:4.1}% {region:5.1}% {both:4.1}%",
+{ty:4.1}% {region:5.1}% {ct:4.1}% {all:4.1}%",
                          uses = total.total,
-                         ty = total.ty_infer as f64 * 100.0  / total.total as f64,
-                         region = total.region_infer as f64 * 100.0  / total.total as f64,
-                         both = total.both_infer as f64 * 100.0  / total.total as f64)
+                         ty = total.ty_infer as f64 * 100.0 / total.total as f64,
+                         ct = total.ct_infer as f64 * 100.0 / total.total as f64,
+                         region = total.region_infer as f64 * 100.0 / total.total as f64,
+                         all = total.all_infer as f64 * 100.0 / total.total as f64)
             }
         }
 
