@@ -344,7 +344,7 @@ impl PrintContext {
                         GenericParamDefKind::Type { has_default, .. } => {
                             Some((param.def_id, has_default))
                         }
-                        GenericParamDefKind::Const { .. } => None, // FIXME(const_generics:defaults)
+                        GenericParamDefKind::Const => None, // FIXME(const_generics:defaults)
                     }).peekable();
                 let has_default = {
                     let has_default = type_params.peek().map(|(_, has_default)| has_default);
@@ -618,12 +618,12 @@ define_print! {
     }
 }
 
-impl<'tcx> fmt::Debug for ty::GenericParamDef<'tcx> {
+impl fmt::Debug for ty::GenericParamDef {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let type_name = match self.kind {
             ty::GenericParamDefKind::Lifetime => "Lifetime",
             ty::GenericParamDefKind::Type { .. } => "Type",
-            ty::GenericParamDefKind::Const { .. } => "Const",
+            ty::GenericParamDefKind::Const => "Const",
         };
         write!(f, "{}({}, {:?}, {})",
                type_name,

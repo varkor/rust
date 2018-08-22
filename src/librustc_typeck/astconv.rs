@@ -57,7 +57,7 @@ pub trait AstConv<'gcx, 'tcx> {
 
     /// Same as ty_infer, but with a known type parameter definition.
     fn ty_infer_for_def(&self,
-                        _def: &ty::GenericParamDef<'tcx>,
+                        _def: &ty::GenericParamDef,
                         span: Span) -> Ty<'tcx> {
         self.ty_infer(span)
     }
@@ -296,7 +296,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                 GenericParamDefKind::Type { has_default, .. } => {
                     defaults.types += has_default as usize
                 }
-                GenericParamDefKind::Const { .. } => {
+                GenericParamDefKind::Const => {
                     // FIXME(const_generics:defaults)
                 }
             };
@@ -438,8 +438,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         inferred_kind: I,
     ) -> &'tcx Substs<'tcx> where
         A: Fn(DefId) -> (Option<&'b GenericArgs>, bool),
-        P: Fn(&GenericParamDef<'tcx>, &GenericArg) -> Kind<'tcx>,
-        I: Fn(Option<&[Kind<'tcx>]>, &GenericParamDef<'tcx>, bool) -> Kind<'tcx>
+        P: Fn(&GenericParamDef, &GenericArg) -> Kind<'tcx>,
+        I: Fn(Option<&[Kind<'tcx>]>, &GenericParamDef, bool) -> Kind<'tcx>
     {
         // Collect the segments of the path: we need to substitute arguments
         // for parameters throughout the entire path (wherever there are
@@ -511,7 +511,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                         match (arg, &param.kind) {
                             (GenericArg::Lifetime(_), GenericParamDefKind::Lifetime)
                             | (GenericArg::Type(_), GenericParamDefKind::Type { .. })
-                            | (GenericArg::Const(_), GenericParamDefKind::Const { .. }) => {
+                            | (GenericArg::Const(_), GenericParamDefKind::Const) => {
                                 push_kind(&mut substs, provided_kind(param, arg));
                                 args.next();
                                 params.next();
@@ -596,7 +596,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
         );
 
         let is_object = self_ty.map_or(false, |ty| ty.sty == TRAIT_OBJECT_DUMMY_SELF);
-        let default_needs_object_self = |param: &ty::GenericParamDef<'tcx>| {
+        let default_needs_object_self = |param: &ty::GenericParamDef| {
             if let GenericParamDefKind::Type { has_default, .. } = param.kind {
                 if is_object && has_default {
                     if tcx.at(span).type_of(param.def_id).has_self_ty() {
@@ -610,8 +610,9 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             false
         };
 
+        let tcx = self.tcx();
         let substs = Self::create_substs_for_generic_args(
-            self.tcx(),
+            tcx,
             def_id,
             &[][..],
             self_ty.is_some(),
@@ -627,8 +628,8 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                     (GenericParamDefKind::Type { .. }, GenericArg::Type(ty)) => {
                         self.ast_ty_to_ty(&ty).into()
                     }
-                    (GenericParamDefKind::Const { ty }, GenericArg::Const(ct)) => {
-                        self.ast_const_to_const(&ct, ty).into()
+                    (GenericParamDefKind::Const, GenericArg::Const(ct)) => {
+                        self.ast_const_to_const(&ct, tcx.type_of(param.def_id)).into()
                     }
                     _ => unreachable!(),
                 }
@@ -678,7 +679,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
                             tcx.types.err.into()
                         }
                     }
-                    GenericParamDefKind::Const { .. } => {
+                    GenericParamDefKind::Const => {
                         // FIXME(const_generics:defaults)
                         // We've already errored above about the mismatch.
                         tcx.types.err.into()

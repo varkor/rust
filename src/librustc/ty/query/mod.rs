@@ -106,7 +106,7 @@ define_queries! { <'tcx>
 
         /// Maps from the def-id of an item (trait/struct/enum/fn) to its
         /// associated generics.
-        [] fn generics_of: GenericsOfItem(DefId) -> &'tcx ty::Generics<'tcx>,
+        [] fn generics_of: GenericsOfItem(DefId) -> &'tcx ty::Generics,
 
         /// Maps from the def-id of an item (trait/struct/enum/fn) to the
         /// predicates (where clauses) that must be proven true in order

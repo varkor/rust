@@ -1243,7 +1243,7 @@ impl Clean<Lifetime> for hir::GenericParam {
     }
 }
 
-impl<'tcx> Clean<Lifetime> for ty::GenericParamDef<'tcx> {
+impl Clean<Lifetime> for ty::GenericParamDef {
     fn clean(&self, _cx: &DocContext) -> Lifetime {
         Lifetime(self.name.to_string())
     }
@@ -1423,7 +1423,7 @@ impl GenericParamDef {
     }
 }
 
-impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef<'tcx> {
+impl Clean<GenericParamDef> for ty::GenericParamDef {
     fn clean(&self, cx: &DocContext) -> GenericParamDef {
         let (name, kind) = match self.kind {
             ty::GenericParamDefKind::Lifetime => {
@@ -1444,10 +1444,10 @@ impl<'tcx> Clean<GenericParamDef> for ty::GenericParamDef<'tcx> {
                     synthetic: None,
                 })
             }
-            ty::GenericParamDefKind::Const { ref ty } => {
+            ty::GenericParamDefKind::Const => {
                 (self.name.clean(cx), GenericParamDefKind::Const {
                     did: self.def_id,
-                    ty: ty.clean(cx),
+                    ty: cx.tcx.type_of(self.def_id).clean(cx),
                 })
             }
         };
@@ -1578,7 +1578,7 @@ impl Clean<Generics> for hir::Generics {
     }
 }
 
-impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics<'tcx>,
+impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics,
                                     &'a ty::GenericPredicates<'tcx>) {
     fn clean(&self, cx: &DocContext) -> Generics {
         use self::WherePredicate as WP;
@@ -1597,7 +1597,7 @@ impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics<'tcx>,
                 }
                 Some(param.clean(cx))
             }
-            ty::GenericParamDefKind::Const { .. } => None,
+            ty::GenericParamDefKind::Const => None,
         }).collect::<Vec<GenericParamDef>>();
 
         let mut where_predicates = preds.predicates.to_vec().clean(cx);
@@ -1643,7 +1643,7 @@ impl<'a, 'tcx> Clean<Generics> for (&'a ty::Generics<'tcx>,
             params: gens.params.iter().flat_map(|param| match param.kind {
                     ty::GenericParamDefKind::Lifetime => Some(param.clean(cx)),
                     ty::GenericParamDefKind::Type { .. } => None,
-                    ty::GenericParamDefKind::Const { .. } => Some(param.clean(cx)),
+                    ty::GenericParamDefKind::Const => Some(param.clean(cx)),
                 }).chain(simplify::ty_params(stripped_typarams).into_iter())
                 .collect(),
             where_predicates: simplify::where_clauses(cx, where_predicates),

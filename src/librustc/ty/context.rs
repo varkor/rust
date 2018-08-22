@@ -103,7 +103,7 @@ pub struct GlobalArenas<'tcx> {
     layout: TypedArena<LayoutDetails>,
 
     // references
-    generics: TypedArena<ty::Generics<'tcx>>,
+    generics: TypedArena<ty::Generics>,
     trait_def: TypedArena<ty::TraitDef>,
     adt_def: TypedArena<ty::AdtDef>,
     steal_mir: TypedArena<Steal<Mir<'tcx>>>,
@@ -952,7 +952,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         }
     }
 
-    pub fn alloc_generics(self, generics: ty::Generics<'tcx>) -> &'gcx ty::Generics<'tcx> {
+    pub fn alloc_generics(self, generics: ty::Generics) -> &'gcx ty::Generics {
         self.global_arenas.generics.alloc(generics)
     }
 
@@ -2402,7 +2402,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         let adt_def = self.adt_def(def_id);
         let substs = Substs::for_item(self, def_id, |param, substs| {
             match param.kind {
-                GenericParamDefKind::Lifetime | GenericParamDefKind::Const { .. } => bug!(),
+                GenericParamDefKind::Lifetime | GenericParamDefKind::Const => bug!(),
                 GenericParamDefKind::Type { has_default, .. } => {
                     if param.index == 0 {
                         ty.into()
@@ -2561,13 +2561,15 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty_param(0, keywords::SelfType.name().as_interned_str())
     }
 
-    pub fn mk_param_from_def(self, param: &ty::GenericParamDef<'tcx>) -> Kind<'tcx> {
+    pub fn mk_param_from_def(self, param: &ty::GenericParamDef) -> Kind<'tcx> {
         match param.kind {
             GenericParamDefKind::Lifetime => {
                 self.mk_region(ty::ReEarlyBound(param.to_early_bound_region_data())).into()
             }
             GenericParamDefKind::Type { .. } => self.mk_ty_param(param.index, param.name).into(),
-            GenericParamDefKind::Const { ty } => self.mk_const_param(param.index, param.name, ty).into(),
+            GenericParamDefKind::Const => {
+                self.mk_const_param(param.index, param.name, self.type_of(param.def_id)).into()
+            }
         }
     }
 

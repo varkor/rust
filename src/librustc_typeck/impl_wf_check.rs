@@ -135,7 +135,7 @@ fn enforce_impl_params_are_constrained<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                             &param.name.to_string());
                 }
             }
-            ty::GenericParamDefKind::Const { .. } => {
+            ty::GenericParamDefKind::Const => {
                 // TODO(const_generics): This is all right, but the collection
                 // of const params in input_parameters is wrong
                 // let param_ct = ty::ParamConst::for_def(param);

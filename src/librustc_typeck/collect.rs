@@ -801,7 +801,7 @@ fn has_late_bound_regions<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
 
 fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                          def_id: DefId)
-                         -> &'tcx ty::Generics<'tcx> {
+                         -> &'tcx ty::Generics {
     use rustc::hir::map::*;
     use rustc::hir::*;
 
@@ -954,22 +954,19 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             Some(ty_param)
         }
 
-        GenericParamKind::Const { ref ty } => {
+        GenericParamKind::Const { .. } => {
             if param.name.ident().name == keywords::SelfType.name() {
                 span_bug!(param.span,  "`Self` should not be the name of a regular parameter");
             }
 
             let const_param_def_id = tcx.hir.local_def_id(param.id);
-            let icx = ItemCtxt::new(tcx, const_param_def_id);
 
             let const_param = ty::GenericParamDef {
                 index: type_start + i as u32,
                 name: param.name.ident().as_interned_str(),
                 def_id: const_param_def_id,
                 pure_wrt_drop: param.pure_wrt_drop,
-                kind: ty::GenericParamDefKind::Const{
-                    ty: icx.to_ty(&ty)
-                },
+                kind: ty::GenericParamDefKind::Const,
             };
             i += 1;
             Some(const_param)

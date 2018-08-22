@@ -703,7 +703,7 @@ impl_stable_hash_for!(enum ty::adjustment::CustomCoerceUnsized {
     Struct(index)
 });
 
-impl_stable_hash_for!(struct ty::Generics<'tcx> {
+impl_stable_hash_for!(struct ty::Generics {
     parent,
     parent_count,
     params,
@@ -713,7 +713,7 @@ impl_stable_hash_for!(struct ty::Generics<'tcx> {
     has_late_bound_regions,
 });
 
-impl_stable_hash_for!(struct ty::GenericParamDef<'tcx> {
+impl_stable_hash_for!(struct ty::GenericParamDef {
     name,
     def_id,
     index,
@@ -721,7 +721,7 @@ impl_stable_hash_for!(struct ty::GenericParamDef<'tcx> {
     kind
 });
 
-impl<'a, 'tcx> HashStable<StableHashingContext<'a>> for ty::GenericParamDefKind<'tcx> {
+impl<'a> HashStable<StableHashingContext<'a>> for ty::GenericParamDefKind {
     fn hash_stable<W: StableHasherResult>(&self,
                                           hcx: &mut StableHashingContext<'a>,
                                           hasher: &mut StableHasher<W>) {
@@ -737,9 +737,7 @@ impl<'a, 'tcx> HashStable<StableHashingContext<'a>> for ty::GenericParamDefKind<
                 object_lifetime_default.hash_stable(hcx, hasher);
                 synthetic.hash_stable(hcx, hasher);
             }
-            ty::GenericParamDefKind::Const { ref ty } => {
-                ty.hash_stable(hcx, hasher);
-            }
+            ty::GenericParamDefKind::Const => {}
         }
     }
 }

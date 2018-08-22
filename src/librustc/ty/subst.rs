@@ -216,7 +216,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                        def_id: DefId,
                        mut mk_kind: F)
                        -> &'tcx Substs<'tcx>
-    where F: FnMut(&ty::GenericParamDef<'tcx>, &[Kind<'tcx>]) -> Kind<'tcx>
+    where F: FnMut(&ty::GenericParamDef, &[Kind<'tcx>]) -> Kind<'tcx>
     {
         let defs = tcx.generics_of(def_id);
         let count = defs.count();
@@ -234,7 +234,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
                         def_id: DefId,
                         mut mk_kind: F)
                         -> &'tcx Substs<'tcx>
-    where F: FnMut(&ty::GenericParamDef<'tcx>, &[Kind<'tcx>]) -> Kind<'tcx>
+    where F: FnMut(&ty::GenericParamDef, &[Kind<'tcx>]) -> Kind<'tcx>
     {
         Substs::for_item(tcx, def_id, |param, substs| {
             match self.get(param.index as usize) {
@@ -246,9 +246,9 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
 
     fn fill_item<F>(substs: &mut AccumulateVec<[Kind<'tcx>; 8]>,
                     tcx: TyCtxt<'a, 'gcx, 'tcx>,
-                    defs: &ty::Generics<'tcx>,
+                    defs: &ty::Generics,
                     mk_kind: &mut F)
-    where F: FnMut(&ty::GenericParamDef<'tcx>, &[Kind<'tcx>]) -> Kind<'tcx>
+    where F: FnMut(&ty::GenericParamDef, &[Kind<'tcx>]) -> Kind<'tcx>
     {
         if let Some(def_id) = defs.parent {
             let parent_defs = tcx.generics_of(def_id);
@@ -258,9 +258,9 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     fn fill_single<F>(substs: &mut AccumulateVec<[Kind<'tcx>; 8]>,
-                      defs: &ty::Generics<'tcx>,
+                      defs: &ty::Generics,
                       mk_kind: &mut F)
-    where F: FnMut(&ty::GenericParamDef<'tcx>, &[Kind<'tcx>]) -> Kind<'tcx>
+    where F: FnMut(&ty::GenericParamDef, &[Kind<'tcx>]) -> Kind<'tcx>
     {
         for param in &defs.params {
             let kind = mk_kind(param, substs);
@@ -337,7 +337,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
-    pub fn type_for_def(&self, def: &ty::GenericParamDef<'tcx>) -> Kind<'tcx> {
+    pub fn type_for_def(&self, def: &ty::GenericParamDef) -> Kind<'tcx> {
         self.type_at(def.index as usize).into()
     }
 
@@ -354,7 +354,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
         tcx.mk_substs(target_substs.iter().chain(&self[defs.params.len()..]).cloned())
     }
 
-    pub fn truncate_to(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>, generics: &ty::Generics<'tcx>)
+    pub fn truncate_to(&self, tcx: TyCtxt<'a, 'gcx, 'tcx>, generics: &ty::Generics)
                        -> &'tcx Substs<'tcx> {
         tcx.mk_substs(self.iter().take(generics.count()).cloned())
     }

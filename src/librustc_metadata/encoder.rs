@@ -770,7 +770,7 @@ impl<'a, 'b: 'a, 'tcx: 'b> IsolatedEncoder<'a, 'b, 'tcx> {
         }
     }
 
-    fn encode_generics(&mut self, def_id: DefId) -> Lazy<ty::Generics<'tcx>> {
+    fn encode_generics(&mut self, def_id: DefId) -> Lazy<ty::Generics> {
         debug!("IsolatedEncoder::encode_generics({:?})", def_id);
         let tcx = self.tcx;
         self.lazy(tcx.generics_of(def_id))

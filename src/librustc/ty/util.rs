@@ -602,7 +602,7 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
                 GenericParamDefKind::Type { .. } => {
                     bug!("empty_substs_for_def_id: {:?} has type parameters", item_def_id)
                 }
-                GenericParamDefKind::Const { .. } => {
+                GenericParamDefKind::Const => {
                     bug!("empty_substs_for_def_id: {:?} has const parameters", item_def_id)
                 }
             }

@@ -956,7 +956,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
     pub fn var_for_def(&self,
                        span: Span,
-                       param: &ty::GenericParamDef<'tcx>)
+                       param: &ty::GenericParamDef)
                        -> Kind<'tcx> {
         match param.kind {
             GenericParamDefKind::Lifetime => {
@@ -982,12 +982,12 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
 
                 self.tcx.mk_ty_var(ty_var_id).into()
             }
-            GenericParamDefKind::Const { ty } => {
+            GenericParamDefKind::Const => {
                 let const_var_id =
                     self.const_unification_table
                         .borrow_mut()
                         .new_key(None);
-                 self.tcx.mk_const_var(const_var_id, ty).into()
+                 self.tcx.mk_const_var(const_var_id, self.tcx.type_of(param.def_id)).into()
             }
         }
     }

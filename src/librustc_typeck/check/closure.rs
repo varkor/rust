@@ -112,7 +112,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                 GenericParamDefKind::Type { .. } => {
                     self.infcx.next_ty_var(TypeVariableOrigin::ClosureSynthetic(expr.span)).into()
                 }
-                GenericParamDefKind::Const { .. } => {
+                GenericParamDefKind::Const => {
                     span_bug!(expr.span, "closure has const param")
                 }
             }

@@ -272,7 +272,7 @@ pub struct Entry<'tcx> {
     pub ty: Option<Lazy<Ty<'tcx>>>,
     pub inherent_impls: LazySeq<DefIndex>,
     pub variances: LazySeq<ty::Variance>,
-    pub generics: Option<Lazy<ty::Generics<'tcx>>>,
+    pub generics: Option<Lazy<ty::Generics>>,
     pub predicates: Option<Lazy<ty::GenericPredicates<'tcx>>>,
     pub predicates_defined_on: Option<Lazy<ty::GenericPredicates<'tcx>>>,
 

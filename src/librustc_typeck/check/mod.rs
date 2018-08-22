@@ -1864,7 +1864,7 @@ impl<'a, 'gcx, 'tcx> AstConv<'gcx, 'tcx> for FnCtxt<'a, 'gcx, 'tcx> {
     }
 
     fn ty_infer_for_def(&self,
-                        def: &ty::GenericParamDef<'tcx>,
+                        def: &ty::GenericParamDef,
                         span: Span) -> Ty<'tcx> {
         if let UnpackedKind::Type(ty) = self.var_for_def(span, def).unpack() {
             return ty;
@@ -5024,8 +5024,8 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                     (GenericParamDefKind::Type { .. }, GenericArg::Type(ty)) => {
                         self.to_ty(ty).into()
                     }
-                    (GenericParamDefKind::Const { ty }, GenericArg::Const(ct)) => {
-                        self.to_const(ct, ty).into()
+                    (GenericParamDefKind::Const, GenericArg::Const(ct)) => {
+                        self.to_const(ct, self.tcx.type_of(param.def_id)).into()
                     }
                     _ => unreachable!(),
                 }
@@ -5054,7 +5054,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
                             self.var_for_def(span, param)
                         }
                     }
-                    GenericParamDefKind::Const { .. } => {
+                    GenericParamDefKind::Const => {
                         // FIXME(const_generics:defaults)
                         // No const parameters were provided, we have to infer them.
                         self.var_for_def(span, param)
@@ -5223,7 +5223,7 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     // let mut consts_used = vec![false; own_counts.types];
 
     // let consts = generics.params.iter().filter(|param| match param.kind {
-    //    ty::GenericParamDefKind::Const { .. } => true,
+    //    ty::GenericParamDefKind::Const => true,
     //    _ => false,
     // });
     // for (&used, param) in consts_used.iter().zip(consts) {
