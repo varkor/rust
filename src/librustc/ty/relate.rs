@@ -599,7 +599,6 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
     // `structural_match` types.
     // FIXME(const_generics): check for `structural_match` synthetic attribute.
     // TODO(const_generics): possibly need indirection for ByRef?
-    // TODO(const_generics): Param should be a bug here
     match (a.val, b.val) {
         (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
             // The caller should handle these cases!

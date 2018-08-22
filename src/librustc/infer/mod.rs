@@ -46,7 +46,8 @@ use self::region_constraints::{RegionConstraintCollector, RegionSnapshot};
 use self::region_constraints::{GenericKind, VerifyBound, RegionConstraintData, VarInfos};
 use self::lexical_region_resolve::LexicalRegionResolutions;
 use self::outlives::env::OutlivesEnvironment;
-use self::type_variable::{TypeVariableOrigin, ConstVariableOrigin};
+use self::type_variable::TypeVariableOrigin;
+use self::const_variable::ConstVariableOrigin;
 use self::unify_key::ToType;
 
 pub mod anon_types;
@@ -67,6 +68,7 @@ pub mod resolve;
 mod freshen;
 mod sub;
 pub mod type_variable;
+pub mod const_variable;
 pub mod unify_key;
 
 #[must_use]
