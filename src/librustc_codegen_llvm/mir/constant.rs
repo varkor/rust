@@ -157,7 +157,7 @@ impl FunctionCx<'a, 'll, 'tcx> {
                 };
                 tcx.const_eval(param_env.and(cid))
             },
-            // TODO(const_generics): `Param/Infer` case
+            // TODO(const_generics:param/infer)
             _ => Ok(constant),
         }
     }

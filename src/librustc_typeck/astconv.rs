@@ -1531,7 +1531,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
             hir::TyKind::Array(ref ty, ref length) => {
                 let length_def_id = tcx.hir.local_def_id(length.id);
                 let substs = Substs::identity_for_item(tcx, length_def_id);
-                // TODO(const_generics): `Param/Infer` case
+                // TODO(const_generics:param/infer)
                 let length = ty::Const::unevaluated(tcx, length_def_id, substs, tcx.types.usize);
                 let array_ty = tcx.mk_ty(ty::Array(self.ast_ty_to_ty(&ty), length));
                 self.normalize_ty(ast_ty.span, array_ty)

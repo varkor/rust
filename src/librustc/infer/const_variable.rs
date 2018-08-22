@@ -16,4 +16,5 @@ use syntax_pos::Span;
 pub enum ConstVariableOrigin {
     ConstInference(Span),
     ConstParameterDefinition(Span, InternedString),
+    SubstitutionPlaceholder(Span),
 }

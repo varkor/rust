@@ -1177,8 +1177,7 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
         match *self {
             ConstValue::Scalar(_) |
             ConstValue::ScalarPair(_, _) |
-            ConstValue::Param(_) | // TODO(const_generics)
-            ConstValue::Infer(_) | // TODO(const_generics)
+            ConstValue::Param(_) | ConstValue::Infer(_) | // TODO(const_generics:param/infer)
             ConstValue::ByRef(_, _) => false,
             ConstValue::Unevaluated(_, substs) => substs.visit_with(visitor),
         }

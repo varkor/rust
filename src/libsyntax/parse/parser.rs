@@ -5253,7 +5253,7 @@ impl<'a> Parser<'a> {
         // We are considering adding generics to the `where` keyword as an alternative higher-rank
         // parameter syntax (as in `where<'a>` or `where<T>`. To avoid that being a breaking
         // change we parse those generics now, but report an error.
-        if self.choose_generics_over_qpath() {
+        if self.choose_generics_over_qpath(false) {
             let generics = self.parse_generics()?;
             self.span_err(generics.span,
                           "generic parameters on `where` clauses are reserved for future use");
@@ -5829,7 +5829,7 @@ impl<'a> Parser<'a> {
 
     // TODO(const_generics): const generics introduces expressions to the list of
     // things we can see after '<'.
-    fn choose_generics_over_qpath(&self) -> bool {
+    fn choose_generics_over_qpath(&self, param: bool) -> bool {
         // There's an ambiguity between generic parameters and qualified paths in impls.
         // If we see `<` it may start both, so we have to inspect some following tokens.
         // The following combinations can only start generics,
@@ -5840,6 +5840,7 @@ impl<'a> Parser<'a> {
         //     `<` (LIFETIME|IDENT) `,` - first generic parameter in a list
         //     `<` (LIFETIME|IDENT) `:` - generic parameter with bounds
         //     `<` (LIFETIME|IDENT) `=` - generic parameter with a default
+        //     `<` const IDENT          - generic const parameter
         // The only truly ambiguous case is
         //     `<` IDENT `>` `::` IDENT ...
         // we disambiguate it in favor of generics (`impl<T> ::absolute::Path<T> { ... }`)
@@ -5849,7 +5850,9 @@ impl<'a> Parser<'a> {
             (self.look_ahead(1, |t| t == &token::Pound || t == &token::Gt) ||
              self.look_ahead(1, |t| t.is_lifetime() || t.is_ident()) &&
                 self.look_ahead(2, |t| t == &token::Gt || t == &token::Comma ||
-                                       t == &token::Colon || t == &token::Eq))
+                                       t == &token::Colon || t == &token::Eq) ||
+             param && self.look_ahead(1, |t| t.is_keyword(keywords::Const) &&
+                self.look_ahead(2, |t| t.is_ident())))
     }
 
     fn parse_impl_body(&mut self) -> PResult<'a, (Vec<ImplItem>, Vec<Attribute>)> {
@@ -5882,7 +5885,7 @@ impl<'a> Parser<'a> {
     fn parse_item_impl(&mut self, unsafety: Unsafety, defaultness: Defaultness)
                        -> PResult<'a, ItemInfo> {
         // First, parse generic parameters if necessary.
-        let mut generics = if self.choose_generics_over_qpath() {
+        let mut generics = if self.choose_generics_over_qpath(true) {
             self.parse_generics()?
         } else {
             ast::Generics::default()

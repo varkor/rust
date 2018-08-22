@@ -2266,7 +2266,6 @@ impl<'a> LoweringContext<'a> {
                            mut itctx: ImplTraitContext)
                            -> hir::GenericParam {
         let mut bounds = self.lower_param_bounds(&param.bounds, itctx.reborrow());
-        // TODO(const_generics): only create `hir::GenericParam` once.
 
         let (name, kind) = match param.kind {
             GenericParamKind::Lifetime => {

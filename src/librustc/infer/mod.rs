@@ -589,7 +589,7 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         let mut type_variables = self.type_variables.borrow_mut();
         let mut int_unification_table = self.int_unification_table.borrow_mut();
         let mut float_unification_table = self.float_unification_table.borrow_mut();
-        // TODO(const_generics)
+        // TODO(const_generics): should there be an equivalent function for const variables?
 
         type_variables
             .unsolved_variables()

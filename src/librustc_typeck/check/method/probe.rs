@@ -22,6 +22,7 @@ use rustc::traits::{self, ObligationCause};
 use rustc::ty::{self, Ty, ToPolyTraitRef, ToPredicate, TraitRef, TypeFoldable};
 use rustc::ty::GenericParamDefKind;
 use rustc::infer::type_variable::TypeVariableOrigin;
+use rustc::infer::const_variable::ConstVariableOrigin;
 use rustc::util::nodemap::FxHashSet;
 use rustc::infer::{self, InferOk};
 use rustc::middle::stability;
@@ -1420,10 +1421,14 @@ impl<'a, 'gcx, 'tcx> ProbeContext<'a, 'gcx, 'tcx> {
             match param.kind {
                 GenericParamDefKind::Lifetime => self.tcx.types.re_erased.into(),
                 GenericParamDefKind::Type { .. } => {
-                    self.next_ty_var(TypeVariableOrigin::SubstitutionPlaceholder(
-                        self.tcx.def_span(def_id))).into()
+                    let span = self.tcx.def_span(def_id);
+                    self.next_ty_var(TypeVariableOrigin::SubstitutionPlaceholder(span)).into()
                 }
-                GenericParamDefKind::Const => unimplemented!(), // TODO(const_generics)
+                GenericParamDefKind::Const => {
+                    let span = self.tcx.def_span(def_id);
+                    let origin = ConstVariableOrigin::SubstitutionPlaceholder(span);
+                    self.next_const_var(self.tcx.type_of(param.def_id), origin).into()
+                }
             }
         })
     }
