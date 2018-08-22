@@ -112,17 +112,16 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
 
     fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
         -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
-        // TODO(const_generics): missing handling for when only one side is an InferVar
         debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
         if a == b { return Ok(a); }
 
         let infcx = self.fields.infcx;
         let a = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), a);
         let b = replace_const_if_possible(infcx.const_unification_table.borrow_mut(), b);
+        let a_is_expected = self.a_is_expected();
         match (a.val, b.val) {
             (ConstValue::Infer(InferConst::Var(a_vid)),
              ConstValue::Infer(InferConst::Var(b_vid))) => {
-                let a_is_expected = self.a_is_expected();
                 infcx.const_unification_table
                     .borrow_mut()
                     .unify_var_var(a_vid, b_vid)
@@ -130,11 +129,13 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
                 Ok(a)
             }
 
-            (ConstValue::Infer(InferConst::Var(_)), _) => {
+            (ConstValue::Infer(InferConst::Var(a_id)), _) => {
+                self.fields.infcx.unify_const_variable(a_is_expected, a_id, b)?;
                 Ok(a)
             }
 
-            (_, ConstValue::Infer(InferConst::Var(_))) => {
+            (_, ConstValue::Infer(InferConst::Var(b_id))) => {
+                self.fields.infcx.unify_const_variable(!a_is_expected, b_id, a)?;
                 Ok(a)
             }
 
@@ -153,5 +154,3 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
         self.fields.higher_ranked_sub(b, a, self.a_is_expected)
     }
 }
-
-

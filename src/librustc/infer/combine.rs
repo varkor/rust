@@ -167,7 +167,7 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
         }
     }
 
-    fn unify_const_variable(&self,
+    pub fn unify_const_variable(&self,
                             vid_is_expected: bool,
                             vid: ty::ConstVid<'tcx>,
                             val: &'tcx Const<'tcx>)

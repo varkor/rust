@@ -146,7 +146,6 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
 
     fn consts(&mut self, a: &'tcx ty::Const<'tcx>, b: &'tcx ty::Const<'tcx>)
         -> RelateResult<'tcx, &'tcx ty::Const<'tcx>> {
-        // TODO(const_generics): missing handling for when only one side is an InferVar
         debug!("{}.consts({:?}, {:?})", self.tag(), a, b);
         if a == b { return Ok(a); }
 
@@ -156,10 +155,10 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
 
         // Consts can only be equal or unequal to each other: there's no subtyping
         // relation, so we're just going to perform equating here instead.
+        let a_is_expected = self.a_is_expected();
         match (a.val, b.val) {
             (ConstValue::Infer(InferConst::Var(a_vid)),
              ConstValue::Infer(InferConst::Var(b_vid))) => {
-                let a_is_expected = self.a_is_expected();
                 infcx.const_unification_table
                     .borrow_mut()
                     .unify_var_var(a_vid, b_vid)
@@ -167,8 +166,13 @@ impl<'combine, 'infcx, 'gcx, 'tcx> TypeRelation<'infcx, 'gcx, 'tcx>
                 Ok(a)
             }
 
-            (ConstValue::Infer(InferConst::Var(_)), _) |
-            (_, ConstValue::Infer(InferConst::Var(_))) => {
+            (ConstValue::Infer(InferConst::Var(a_id)), _) => {
+                self.fields.infcx.unify_const_variable(a_is_expected, a_id, b)?;
+                Ok(a)
+            }
+
+            (_, ConstValue::Infer(InferConst::Var(b_id))) => {
+                self.fields.infcx.unify_const_variable(!a_is_expected, b_id, a)?;
                 Ok(a)
             }
 
