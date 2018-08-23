@@ -2552,7 +2552,12 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         self.mk_ty(Param(ParamTy { idx: index, name: name }))
     }
 
-    pub fn mk_const_param(self, index: u32, name: InternedString, ty: Ty<'tcx>) -> &'tcx ty::Const<'tcx> {
+    pub fn mk_const_param(
+        self,
+        index: u32,
+        name: InternedString,
+        ty: Ty<'tcx>
+    ) -> &'tcx ty::Const<'tcx> {
         debug!("mk_const_param: index={} name={:?} ty={:?}", index, name, ty);
         self.mk_const(ty::Const {
             val: ConstValue::Param(ParamConst { index, name }),

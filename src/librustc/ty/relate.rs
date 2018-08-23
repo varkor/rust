@@ -591,7 +591,7 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
                                            -> RelateResult<'tcx, &'tcx Const<'tcx>>
     where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
 {
-    assert!(a.ty != b.ty);
+    assert_eq!(a.ty, b.ty);
 
     let tcx = relation.tcx();
     // Currently, the values that can be unified are those that
@@ -601,10 +601,13 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
     match (a.val, b.val) {
         (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
             // The caller should handle these cases!
-            bug!("var types encountered in super_relate_consts")
+            bug!("var types encountered in super_relate_consts: {:?} {:?}", a, b)
+        }
+        (ConstValue::Param(a_p), ConstValue::Param(b_p)) if a_p.index == b_p.index => {
+            Ok(a)
         }
         (ConstValue::Param(_), _) | (_, ConstValue::Param(_)) => {
-            bug!("param types encountered in super_relate_consts")
+            bug!("param types encountered in super_relate_consts: {:?} {:?}", a, b);
         }
         (ConstValue::Scalar(_), _) |
         (ConstValue::ScalarPair(..), _) |

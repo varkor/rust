@@ -1169,13 +1169,38 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
             NodeTy(&hir::Ty { node: hir::TyKind::Array(_, ref constant), .. }) |
             NodeTy(&hir::Ty { node: hir::TyKind::Typeof(ref constant), .. }) |
             NodeExpr(&hir::Expr { node: ExprKind::Repeat(_, ref constant), .. })
-                if constant.id == node_id => tcx.types.usize,
+                if constant.id == node_id =>
+            {
+                tcx.types.usize
+            }
 
             NodeVariant(&Spanned { node: VariantKind { disr_expr: Some(ref e), .. }, .. })
-                if e.id == node_id => {
-                    tcx.adt_def(tcx.hir.get_parent_did(node_id))
-                        .repr.discr_type().to_ty(tcx)
+                if e.id == node_id =>
+            {
+                tcx.adt_def(tcx.hir.get_parent_did(node_id))
+                    .repr.discr_type().to_ty(tcx)
+            }
+
+            NodeExpr(&hir::Expr { node: ExprKind::Path(ref path), .. }) => {
+                match path {
+                    QPath::Resolved(_, ref path) => {
+                        match path.def {
+                            Def::Fn(def_id) => {
+                                let generics = tcx.generics_of(def_id);
+                                for param in &generics.params {
+                                    // if param.id == node_id {
+                                        // generics.param_def_id_to_index
+                                        return tcx.type_of(param.def_id);
+                                    // }
+                                }
+                                bug!("no such param");
+                            }
+                            x => bug!("other def {:?}", x),
+                        }
+                    }
+                    _ => bug!("other path"),
                 }
+            }
 
             x => {
                 bug!("unexpected const parent in type_of_def_id(): {:?}", x);
