@@ -1,4 +1,4 @@
-// Copyright 2017 The Rust Project Developers. See the COPYRIGHT
+// Copyright 2018 The Rust Project Developers. See the COPYRIGHT
 // file at the top-level directory of this distribution and at
 // http://rust-lang.org/COPYRIGHT.
 //
@@ -8,16 +8,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// run-pass
+
 #![feature(const_generics)]
+#![allow(dead_code)]
 
-#[allow(dead_code)]
-
-struct ConstArray<T, const LEN: usize> {
-    array: [T; LEN],
+fn const_u32_identity<const X: u32>() -> u32 {
+    X
 }
 
 fn main() {
-    let arr = ConstArray::<i32, 8> {
-        array: [0; 8],
-    };
+    println!("{:?}", foo::<18>());
 }

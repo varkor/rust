@@ -8,13 +8,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// run-pass
+
 #![feature(const_generics)]
-#![allow(dead_code)]
 
-fn const_u32_identity<const X: u32>() -> u32 {
-    X
+#[allow(dead_code)]
+
+trait Trait {
+    fn test(&self) -> usize;
 }
 
-fn main() {
-    println!("{:?}", foo::<18>());
+impl<T, const N: usize> Trait for [T; N] {
+    fn test(&self) -> usize {
+        self.len()
+    }
 }
+
+fn main() {}

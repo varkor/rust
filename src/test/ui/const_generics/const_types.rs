@@ -1,4 +1,4 @@
-// Copyright 2017 The Rust Project Developers. See the COPYRIGHT
+// Copyright 2018 The Rust Project Developers. See the COPYRIGHT
 // file at the top-level directory of this distribution and at
 // http://rust-lang.org/COPYRIGHT.
 //
@@ -8,18 +8,18 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+// run-pass
+
 #![feature(const_generics)]
 
 #[allow(dead_code)]
 
-trait Trait {
-    fn test(&self) -> usize;
+struct ConstArray<T, const LEN: usize> {
+    array: [T; LEN],
 }
 
-impl<T, const N: usize> Trait for [T; N] {
-    fn test(&self) -> usize {
-        self.len()
-    }
+fn main() {
+    let arr = ConstArray::<i32, 8> {
+        array: [0; 8],
+    };
 }
-
-fn main() {}
