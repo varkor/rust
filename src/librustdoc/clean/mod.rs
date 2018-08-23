@@ -2526,7 +2526,8 @@ impl Clean<Type> for hir::Ty {
                                     indices.types += 1;
                                 }
                                 hir::GenericParamKind::Const { .. } => {
-                                    let const_param_def = Def::ConstParam(cx.tcx.hir.local_def_id(param.id));
+                                    let const_param_def =
+                                        Def::ConstParam(cx.tcx.hir.local_def_id(param.id));
                                     let mut j = 0;
                                     let const_ = generic_args.args.iter().find_map(|arg| {
                                         match arg {

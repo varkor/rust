@@ -126,7 +126,7 @@ impl<'a, 'tcx> Visitor<'tcx> for ReachableContext<'a, 'tcx> {
                             // If this path leads to a constant, then we need to
                             // recurse into the constant to continue finding
                             // items that are reachable.
-                            Def::Const(..) | Def::ConstParam(..) | Def::AssociatedConst(..) => {
+                            Def::Const(..) | Def::AssociatedConst(..) => {
                                 self.worklist.push(node_id);
                             }
 
@@ -321,8 +321,9 @@ impl<'a, 'tcx> ReachableContext<'a, 'tcx> {
             hir_map::NodeTy(_) |
             hir_map::NodeMacroDef(_) => {}
             _ => {
-                bug!("found unexpected thingy in worklist: {}",
-                     self.tcx.hir.node_to_string(search_item))
+                bug!("found unexpected thingy in worklist: {} ({:?})",
+                     self.tcx.hir.node_to_string(search_item),
+                     node);
             }
         }
     }

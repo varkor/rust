@@ -75,7 +75,7 @@ impl<'a, 'tcx> MarkSymbolVisitor<'a, 'tcx> {
 
     fn handle_definition(&mut self, def: Def) {
         match def {
-            Def::ConstParam(_) | Def::Const(_) |
+            Def::Const(_) |
             Def::AssociatedConst(..) | Def::TyAlias(_) => {
                 self.check_def_id(def.def_id());
             }

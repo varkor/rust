@@ -60,7 +60,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             PatKind::Path(ref qpath) => {
                 let (def, _, _) = self.resolve_ty_and_def_ufcs(qpath, pat.id, pat.span);
                 match def {
-                    Def::ConstParam(..) | Def::Const(..) | Def::AssociatedConst(..) => false,
+                    Def::Const(..) | Def::AssociatedConst(..) => false,
                     _ => true,
                 }
             }

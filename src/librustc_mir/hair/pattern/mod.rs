@@ -681,13 +681,9 @@ impl<'a, 'tcx> PatternContext<'a, 'tcx> {
                   -> Pattern<'tcx> {
         let ty = self.tables.node_id_to_type(id);
         let def = self.tables.qpath_def(qpath, id);
-        let (is_associated_const, is_const_param) = match def {
-            Def::AssociatedConst(_) => (true, false),
-            Def::ConstParam(_) => (false, true),
-            _ => (false, false),
-        };
+        let is_associated_const = if let Def::AssociatedConst(_) = def { true } else { false };
         let kind = match def {
-            Def::ConstParam(def_id) | Def::Const(def_id) | Def::AssociatedConst(def_id) => {
+            Def::Const(def_id) | Def::AssociatedConst(def_id) => {
                 let substs = self.tables.node_substs(id);
                 match ty::Instance::resolve(
                     self.tcx,
@@ -716,8 +712,6 @@ impl<'a, 'tcx> PatternContext<'a, 'tcx> {
                     None => {
                         self.errors.push(if is_associated_const {
                             PatternError::AssociatedConstInPattern(span)
-                        } else if is_const_param {
-                            PatternError::ConstParamInPattern(span)
                         } else {
                             PatternError::StaticInPattern(span)
                         });
