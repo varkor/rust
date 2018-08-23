@@ -564,13 +564,14 @@ impl<'a> PathSource<'a> {
                 Def::StructCtor(_, CtorKind::Const) | Def::StructCtor(_, CtorKind::Fn) |
                 Def::VariantCtor(_, CtorKind::Const) | Def::VariantCtor(_, CtorKind::Fn) |
                 Def::Const(..) | Def::Static(..) | Def::Local(..) | Def::Upvar(..) |
-                Def::Fn(..) | Def::Method(..) | Def::AssociatedConst(..) | Def::ConstParam(..) => true,
+                Def::Fn(..) | Def::Method(..) | Def::AssociatedConst(..)
+                | Def::ConstParam(..) => true,
                 _ => false,
             },
             PathSource::Pat => match def {
                 Def::StructCtor(_, CtorKind::Const) |
                 Def::VariantCtor(_, CtorKind::Const) |
-                Def::Const(..) | Def::AssociatedConst(..) | Def::ConstParam(..) => true,
+                Def::Const(..) | Def::AssociatedConst(..) => true,
                 _ => false,
             },
             PathSource::TupleStruct => match def {
@@ -2873,7 +2874,6 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
                         match def {
                             Def::StructCtor(_, CtorKind::Const) |
                             Def::VariantCtor(_, CtorKind::Const) |
-                            Def::ConstParam(..) |
                             Def::Const(..) if is_syntactic_ambiguity => {
                                 // Disambiguate in favor of a unit struct/variant
                                 // or constant pattern.
@@ -2881,7 +2881,7 @@ impl<'a, 'crateloader: 'a> Resolver<'a, 'crateloader> {
                                 Some(PathResolution::new(def))
                             }
                             Def::StructCtor(..) | Def::VariantCtor(..) |
-                            Def::ConstParam(..) | Def::Const(..) | Def::Static(..) => {
+                            Def::Const(..) | Def::Static(..) => {
                                 // This is unambiguously a fresh binding, either syntactically
                                 // (e.g. `IDENT @ PAT` or `ref IDENT`) or because `IDENT` resolves
                                 // to something unusable as a pattern (e.g. constructor function),

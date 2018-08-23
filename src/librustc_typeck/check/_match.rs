@@ -754,7 +754,6 @@ https://doc.rust-lang.org/reference/types.html#trait-objects");
             }
             Def::VariantCtor(_, CtorKind::Const) |
             Def::StructCtor(_, CtorKind::Const) |
-            Def::ConstParam(..) |
             Def::Const(..) | Def::AssociatedConst(..) => {} // OK
             _ => bug!("unexpected pattern definition: {:?}", def)
         }
