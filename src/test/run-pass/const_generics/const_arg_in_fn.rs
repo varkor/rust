@@ -15,4 +15,6 @@ fn const_u32_identity<const X: u32>() -> u32 {
     X
 }
 
-fn main() {}
+fn main() {
+    println!("{:?}", foo::<18>());
+}
