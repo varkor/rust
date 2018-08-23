@@ -1,5 +1,6 @@
 #![allow(unknown_lints)]
 
+use ty;
 use ty::layout::{HasDataLayout, Size};
 use ty::subst::Substs;
 use hir::def_id::DefId;

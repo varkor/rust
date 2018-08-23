@@ -470,7 +470,7 @@ impl<'a, 'mir, 'tcx, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M> {
 
     // Also used e.g. when miri runs into a constant.
     // Unfortunately, this needs an `&mut` to be able to allocate a copy of a `ByRef`
-    // constant.  This bleeds up to `eval_operand` needing `&mut`.
+    // constant. This bleeds up to `eval_operand` needing `&mut`.
     pub fn const_value_to_op(
         &mut self,
         val: ConstValue<'tcx>,
@@ -483,6 +483,8 @@ impl<'a, 'mir, 'tcx, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M> {
                     promoted: None,
                 })
             }
+            ConstValue::Param(_) => bug!(),
+            ConstValue::Infer(_) => bug!(),
             ConstValue::ByRef(alloc, offset) => {
                 // FIXME: Allocate new AllocId for all constants inside
                 let id = self.memory.allocate_value(alloc.clone(), MemoryKind::Stack)?;
