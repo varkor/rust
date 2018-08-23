@@ -1194,6 +1194,7 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                                 }
                                 bug!("there was no generic parameter associated with the arg");
                             }
+                            Def::Err => tcx.types.err,
                             x => bug!("unexpected const parent path def {:?}", x),
                         }
                     }

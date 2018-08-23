@@ -1,0 +1,9 @@
+error[E0425]: cannot find function `find_me_not` in this scope
+  --> $DIR/const-arg-in-unknown-fn.rs:14:5
+   |
+LL |     find_me_not::<18>(); //~ ERROR cannot find function
+   |     ^^^^^^^^^^^ not found in this scope
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0425`.
