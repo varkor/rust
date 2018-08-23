@@ -1165,9 +1165,9 @@ impl<'tcx> TypeFoldable<'tcx> for ConstValue<'tcx> {
             ConstValue::Param(param) => ConstValue::Param(param),
             ConstValue::Infer(infer) => {
                 ConstValue::Infer(match infer {
-                    InferConst::Var(vid) =>InferConst::Var(vid),
-                    InferConst::Fresh(i) =>InferConst::Fresh(i),
-                    InferConst::Canonical(var) =>InferConst::Canonical(var),
+                    InferConst::Var(vid) => InferConst::Var(vid),
+                    InferConst::Fresh(i) => InferConst::Fresh(i),
+                    InferConst::Canonical(var) => InferConst::Canonical(var),
                 })
             }
         }

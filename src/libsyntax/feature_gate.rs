@@ -429,8 +429,8 @@ declare_features! (
     // `existential type`
     (active, existential_type, "1.28.0", Some(34511), None),
 
-    // const generic types
-    (active, const_generics, "1.29.0", Some(44580), None),
+    // Const generic types
+    (active, const_generics, "1.30.0", Some(44580), None),
 
     // unstable #[target_feature] directives
     (active, arm_target_feature, "1.27.0", Some(44839), None),

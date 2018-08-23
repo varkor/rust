@@ -994,8 +994,8 @@ impl<'a, 'gcx, 'tcx> InferCtxt<'a, 'gcx, 'tcx> {
         }
     }
 
-    /// Given a set of generics defined on a type or impl, returns a substitution mapping each
-    /// type/const/lifetime parameter to a fresh inference variable.
+    /// Given a set of generics defined on a type or impl, returns a substitution
+    /// mapping each generic parameter to a fresh inference variable.
     pub fn fresh_substs_for_item(&self,
                                  span: Span,
                                  def_id: DefId)

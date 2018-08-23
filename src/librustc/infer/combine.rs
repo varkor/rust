@@ -149,7 +149,6 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
                 bug!("tried to combine ConstValue::Infer/ConstValue::Infer(InferConst::Var)")
             }
 
-
             (ConstValue::Infer(InferConst::Var(vid)), _) => {
                 self.unify_const_variable(a_is_expected, vid, b)
             }
@@ -592,7 +591,8 @@ pub fn const_unification_error<'tcx>(
 {
     let (a, b) = v;
     TypeError::ConstError(
-        ConstError::Mismatch(ty::relate::expected_found_bool(a_is_expected, &a, &b)))
+        ConstError::Mismatch(ty::relate::expected_found_bool(a_is_expected, &a, &b))
+    )
 }
 
 fn int_unification_error<'tcx>(a_is_expected: bool, v: (ty::IntVarValue, ty::IntVarValue))

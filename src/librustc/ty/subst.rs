@@ -277,7 +277,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
-    pub fn types(&'a self) -> impl DoubleEndedIterator<Item=Ty<'tcx>> + 'a {
+    pub fn types(&'a self) -> impl DoubleEndedIterator<Item = Ty<'tcx>> + 'a {
         self.iter().filter_map(|k| {
             if let UnpackedKind::Type(ty) = k.unpack() {
                 Some(ty)
@@ -288,7 +288,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
-    pub fn regions(&'a self) -> impl DoubleEndedIterator<Item=ty::Region<'tcx>> + 'a {
+    pub fn regions(&'a self) -> impl DoubleEndedIterator<Item = ty::Region<'tcx>> + 'a {
         self.iter().filter_map(|k| {
             if let UnpackedKind::Lifetime(lt) = k.unpack() {
                 Some(lt)
@@ -299,7 +299,7 @@ impl<'a, 'gcx, 'tcx> Substs<'tcx> {
     }
 
     #[inline]
-    pub fn consts(&'a self) -> impl DoubleEndedIterator<Item=&'tcx ty::Const<'tcx>> + 'a {
+    pub fn consts(&'a self) -> impl DoubleEndedIterator<Item = &'tcx ty::Const<'tcx>> + 'a {
         self.iter().filter_map(|k| {
             if let UnpackedKind::Const(ct) = k.unpack() {
                 Some(ct)

@@ -101,7 +101,8 @@ impl<'a, 'gcx, 'tcx> TypeRelation<'a, 'gcx, 'tcx> for Match<'a, 'gcx, 'tcx> {
 
             (ConstValue::Infer(_), _) | (_, ConstValue::Infer(_)) => {
                 Err(TypeError::ConstError(
-                    ConstError::Mismatch(relate::expected_found(self, &a, &b))))
+                    ConstError::Mismatch(relate::expected_found(self, &a, &b))
+                ))
             }
 
             _ => {

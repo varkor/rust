@@ -90,7 +90,7 @@ impl OperandRef<'ll, 'tcx> {
 
         let val = match val.val {
             ConstValue::Unevaluated(..) => bug!(),
-            ConstValue::Param(_) => bug!(),
+            ConstValue::Param(_) => bug!("encountered a ConstValue::Param in codegen"),
             ConstValue::Infer(_) => bug!(),
             ConstValue::Scalar(x) => {
                 let scalar = match layout.abi {

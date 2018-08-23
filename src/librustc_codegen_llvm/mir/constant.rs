@@ -156,8 +156,9 @@ impl FunctionCx<'a, 'll, 'tcx> {
                     promoted: None,
                 };
                 tcx.const_eval(param_env.and(cid))
-            },
-            // TODO(const_generics:param/infer)
+            }
+            ConstValue::Param(_) => bug!(),
+            ConstValue::Infer(_) => bug!(),
             _ => Ok(constant),
         }
     }

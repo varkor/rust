@@ -128,7 +128,7 @@ pub trait TypeFoldable<'tcx>: fmt::Debug + Clone {
     }
 
     /// Indicates whether this value references only 'global'
-    /// types/lifetimes/consts that are the same regardless of what fn we are
+    /// generic params that are the same regardless of what fn we are
     /// in. This is used for caching.
     fn is_global(&self) -> bool {
         !self.has_type_flags(TypeFlags::HAS_FREE_LOCAL_NAMES)

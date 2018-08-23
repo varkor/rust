@@ -1188,23 +1188,20 @@ fn type_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                             Def::Fn(def_id) => {
                                 let generics = tcx.generics_of(def_id);
                                 for param in &generics.params {
-                                    // if param.id == node_id {
-                                        // generics.param_def_id_to_index
-                                        return tcx.type_of(param.def_id);
-                                    // }
+                                    // TODO(const_generics): this should obviously pick the correct
+                                    // parameter, and not just the first one.
+                                    return tcx.type_of(param.def_id);
                                 }
-                                bug!("no such param");
+                                bug!("there was no generic parameter associated with the arg");
                             }
-                            x => bug!("other def {:?}", x),
+                            x => bug!("unexpected const parent path def {:?}", x),
                         }
                     }
-                    _ => bug!("other path"),
+                    x => bug!("unexpected const parent path {:?}", x),
                 }
             }
 
-            x => {
-                bug!("unexpected const parent in type_of_def_id(): {:?}", x);
-            }
+            x => bug!("unexpected const parent in type_of_def_id(): {:?}", x),
         },
 
         NodeGenericParam(param) => {

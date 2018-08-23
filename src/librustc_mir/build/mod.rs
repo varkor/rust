@@ -45,11 +45,9 @@ pub fn mir_build<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> Mir<'t
         hir::map::NodeStructCtor(ctor) =>
             return create_constructor_shim(tcx, id, ctor),
 
-        _ => match tcx.hir.maybe_body_owned_by(id) {
+        x => match tcx.hir.maybe_body_owned_by(id) {
             Some(body) => body,
-            None => {
-                span_bug!(tcx.hir.span(id), "can't build MIR for {:?}", def_id)
-            }
+            None => span_bug!(tcx.hir.span(id), "can't build MIR for {:?} ({:?}", def_id, x),
         },
     };
 
