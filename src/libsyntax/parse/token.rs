@@ -284,6 +284,12 @@ impl Token {
     pub fn can_begin_const_arg(&self) -> bool {
         match self {
             OpenDelim(Brace) => true,
+            Interpolated(ref nt) => match nt.0 {
+                NtExpr(..) => true,
+                NtBlock(..) => true,
+                NtLiteral(..) => true,
+                _ => false,
+            }
             _ => self.can_begin_literal_or_bool(),
         }
     }

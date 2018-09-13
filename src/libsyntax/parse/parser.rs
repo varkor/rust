@@ -5067,6 +5067,7 @@ impl<'a> Parser<'a> {
     crate fn parse_generic_params(&mut self) -> PResult<'a, Vec<ast::GenericParam>> {
         let mut params = vec![];
         let mut max_param = None;
+        // TODO(const_generics): move parameter order enforcement to AST.
         fn enforce_param_order(parser: &Parser,
                                max_param: &mut Option<ParamKindOrd>,
                                param_ord: ParamKindOrd) {
@@ -5111,9 +5112,6 @@ impl<'a> Parser<'a> {
                     if let Some(max_param) = max_param {
                         self.span_err(attrs[0].span,
                             &format!("trailing attribute after {} parameters", max_param));
-                    } else {
-                        self.span_err(attrs[0].span,
-                            "leading attribute before generic parameters");
                     }
                 }
                 break
@@ -5202,7 +5200,7 @@ impl<'a> Parser<'a> {
                     let lit = self.parse_lit()?;
                     self.mk_expr(lit.span, ExprKind::Lit(P(lit)), ThinVec::new())
                 } else {
-                    unreachable!()
+                    unreachable!() // TODO(const_generics): handle this case
                 };
                 debug!("const arg: expr={:?}", expr);
                 let value = AnonConst {
@@ -5253,7 +5251,7 @@ impl<'a> Parser<'a> {
         // We are considering adding generics to the `where` keyword as an alternative higher-rank
         // parameter syntax (as in `where<'a>` or `where<T>`. To avoid that being a breaking
         // change we parse those generics now, but report an error.
-        if self.choose_generics_over_qpath(false) {
+        if self.choose_generics_over_qpath() {
             let generics = self.parse_generics()?;
             self.span_err(generics.span,
                           "generic parameters on `where` clauses are reserved for future use");
@@ -5827,7 +5825,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn choose_generics_over_qpath(&self, param: bool) -> bool {
+    fn choose_generics_over_qpath(&self) -> bool {
         // There's an ambiguity between generic parameters and qualified paths in impls.
         // If we see `<` it may start both, so we have to inspect some following tokens.
         // The following combinations can only start generics,
@@ -5849,8 +5847,7 @@ impl<'a> Parser<'a> {
              self.look_ahead(1, |t| t.is_lifetime() || t.is_ident()) &&
                 self.look_ahead(2, |t| t == &token::Gt || t == &token::Comma ||
                                        t == &token::Colon || t == &token::Eq) ||
-             param && self.look_ahead(1, |t| t.is_keyword(keywords::Const) &&
-                self.look_ahead(2, |t| t.is_ident())))
+             self.look_ahead(1, |t| t.is_keyword(keywords::Const)))
     }
 
     fn parse_impl_body(&mut self) -> PResult<'a, (Vec<ImplItem>, Vec<Attribute>)> {
@@ -5883,7 +5880,7 @@ impl<'a> Parser<'a> {
     fn parse_item_impl(&mut self, unsafety: Unsafety, defaultness: Defaultness)
                        -> PResult<'a, ItemInfo> {
         // First, parse generic parameters if necessary.
-        let mut generics = if self.choose_generics_over_qpath(true) {
+        let mut generics = if self.choose_generics_over_qpath() {
             self.parse_generics()?
         } else {
             ast::Generics::default()

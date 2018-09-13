@@ -1089,9 +1089,9 @@ fn external_generic_args(cx: &DocContext, trait_did: Option<DefId>, has_self: bo
     match trait_did {
         // Attempt to sugar an external path like Fn<(A, B,), C> to Fn(A, B) -> C
         Some(did) if cx.tcx.lang_items().fn_trait_kind(did).is_some() => {
-            assert_eq!(types.len(), 1);
-            let inputs = match types[0].sty {
-                ty::Tuple(ref tys) => tys.iter().map(|t| t.clean(cx)).collect(),
+            assert!(first_ty_sty.is_some());
+            let inputs = match first_ty_sty {
+                Some(ty::Tuple(ref tys)) => tys.iter().map(|t| t.clean(cx)).collect(),
                 _ => return GenericArgs::AngleBracketed { args, bindings },
             };
             let output = None;
