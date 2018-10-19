@@ -856,6 +856,7 @@ impl Pat {
             PatKind::TupleStruct(_, ref s, _) | PatKind::Tuple(ref s, _) => {
                 s.iter().all(|p| p.walk_(it))
             }
+            PatKind::Or(ref pats) => pats.iter().all(|p| p.walk_(it)),
             PatKind::Box(ref s) | PatKind::Ref(ref s, _) => {
                 s.walk_(it)
             }
@@ -947,6 +948,9 @@ pub enum PatKind {
     /// 0 <= position <= subpats.len()
     TupleStruct(QPath, HirVec<P<Pat>>, Option<usize>),
 
+    /// An or-pattern `A | B | C`.
+    Or(Vec<P<Pat>>),
+
     /// A path pattern for an unit struct/variant or a (maybe-associated) constant.
     Path(QPath),
 
@@ -954,14 +958,17 @@ pub enum PatKind {
     /// If the `..` pattern fragment is present, then `Option<usize>` denotes its position.
     /// 0 <= position <= subpats.len()
     Tuple(HirVec<P<Pat>>, Option<usize>),
+
     /// A `box` pattern
     Box(P<Pat>),
     /// A reference pattern, e.g., `&mut (a, b)`
     Ref(P<Pat>, Mutability),
+
     /// A literal
     Lit(P<Expr>),
     /// A range pattern, e.g., `1...2` or `1..2`
     Range(P<Expr>, P<Expr>, RangeEnd),
+
     /// `[a, b, ..i, y, z]` is represented as:
     ///     `PatKind::Slice(box [a, b], Some(i), box [y, z])`
     Slice(HirVec<P<Pat>>, Option<P<Pat>>, HirVec<P<Pat>>),

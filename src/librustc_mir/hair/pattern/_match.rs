@@ -85,9 +85,6 @@
 ///                     D((r_1, p_(i,2), .., p_(i,n)))
 ///                     D((r_2, p_(i,2), .., p_(i,n)))
 ///
-///     Note that the OR-patterns are not always used directly in Rust, but are used to derive
-///     the exhaustive integer matching rules, so they're written here for posterity.
-///
 /// The algorithm for computing `U`
 /// -------------------------------
 /// The algorithm is inductive (on the number of columns: i.e., components of tuple patterns).
@@ -632,7 +629,7 @@ impl<'tcx> Witness<'tcx> {
 /// the column of patterns being analyzed.
 ///
 /// We make sure to omit constructors that are statically impossible. eg for
-/// Option<!> we do not include Some(_) in the returned list of constructors.
+/// `Option<!>` we do not include `Some(_)` in the returned list of constructors.
 fn all_constructors<'a, 'tcx: 'a>(cx: &mut MatchCheckCtxt<'a, 'tcx>,
                                   pcx: PatternContext<'tcx>)
                                   -> Vec<Constructor<'tcx>>
@@ -1296,7 +1293,7 @@ fn is_useful_specialized<'p, 'a: 'p, 'tcx: 'a>(
 /// Slice patterns, however, can match slices of different lengths. For instance,
 /// `[a, b, ..tail]` can match a slice of length 2, 3, 4 and so on.
 ///
-/// Returns None in case of a catch-all, which can't be specialized.
+/// Returns `None` in case of a catch-all, which can't be specialized.
 fn pat_constructors<'tcx>(cx: &mut MatchCheckCtxt<'_, 'tcx>,
                           pat: &Pattern<'tcx>,
                           pcx: PatternContext)
@@ -1331,6 +1328,15 @@ fn pat_constructors<'tcx>(cx: &mut MatchCheckCtxt<'_, 'tcx>,
             } else {
                 Some(vec![Slice(pat_len)])
             }
+        }
+        PatternKind::Or { ref pats } => {
+            let mut v = vec![];
+            for pat in pats {
+                if let Some(ctors) = pat_constructors(cx, pat, pcx) {
+                    v.extend(ctors);
+                }
+            }
+            Some(v)
         }
     }
 }
@@ -1862,6 +1868,18 @@ fn specialize<'p, 'a: 'p, 'tcx: 'a>(
                 _ => span_bug!(pat.span,
                     "unexpected ctor {:?} for slice pat", constructor)
             }
+        }
+
+        PatternKind::Or { ref pats } => {
+            let mut v = vec![];
+            for pat in pats {
+                let mut d = vec![pat];
+                d.extend(r);
+                if let Some(s) = specialize(cx, &d, constructor, wild_patterns) {
+                    v.extend(s);
+                }
+            }
+            Some(v)
         }
     };
     debug!("specialize({:#?}, {:#?}) = {:#?}", r[0], wild_patterns, head);

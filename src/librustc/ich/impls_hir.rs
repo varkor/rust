@@ -456,6 +456,7 @@ impl_stable_hash_for!(enum hir::PatKind {
     Binding(binding_mode, var, name, sub),
     Struct(path, field_pats, dotdot),
     TupleStruct(path, field_pats, dotdot),
+    Or(pats),
     Path(path),
     Tuple(field_pats, dotdot),
     Box(sub),

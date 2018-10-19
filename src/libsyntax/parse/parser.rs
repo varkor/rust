@@ -4129,7 +4129,21 @@ impl<'a> Parser<'a> {
 
     /// Parse a pattern.
     pub fn parse_pat(&mut self, expected: Option<&'static str>) -> PResult<'a, P<Pat>> {
-        self.parse_pat_with_range_pat(true, expected)
+        let lo = self.span;
+        let pat = self.parse_pat_with_range_pat(true, expected)?;
+        if let token::OrOr = self.token {
+            let mut pats = vec![pat];
+            while let token::OrOr = self.token {
+                self.expect_or()?;
+                pats.push(self.parse_pat_with_range_pat(true, expected)?);
+            }
+            return Ok(P(Pat {
+                node: PatKind::Or(pats),
+                span: lo.to(self.prev_span),
+                id: ast::DUMMY_NODE_ID
+            }));
+        }
+        Ok(pat)
     }
 
     /// Parse a pattern, with a setting whether modern range patterns e.g., `a..=b`, `a..b` are

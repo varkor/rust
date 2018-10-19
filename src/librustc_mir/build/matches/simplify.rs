@@ -167,7 +167,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 } else {
                     Err(match_pair)
                 }
-            },
+            }
 
             PatternKind::Array { ref prefix, ref slice, ref suffix } => {
                 self.prefix_slice_suffix(&mut candidate.match_pairs,
@@ -189,6 +189,10 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 let place = match_pair.place.deref();
                 candidate.match_pairs.push(MatchPair::new(place, subpattern));
                 Ok(())
+            }
+
+            PatternKind::Or { .. } => {
+                Err(match_pair)
             }
         }
     }

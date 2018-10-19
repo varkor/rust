@@ -15,7 +15,7 @@ use syntax::parse::ParseSess;
 use syntax::parse::lexer::comments;
 use syntax::print::pp::{self, Breaks};
 use syntax::print::pp::Breaks::{Consistent, Inconsistent};
-use syntax::print::pprust::PrintState;
+use syntax::print::pprust::{PrintState, SeparatorSpacing};
 use syntax::ptr::P;
 use syntax::symbol::keywords;
 use syntax::util::parser::{self, AssocOp, Fixity};
@@ -1845,6 +1845,10 @@ impl<'a> State<'a> {
                 }
                 self.s.space()?;
                 self.s.word("}")?;
+            }
+            PatKind::Or(ref pats) => {
+                let spacing = SeparatorSpacing::Both;
+                self.strsep("|", spacing, Inconsistent, &pats[..], |s, p| s.print_pat(&p))?;
             }
             PatKind::Tuple(ref elts, ddpos) => {
                 self.popen()?;

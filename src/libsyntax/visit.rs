@@ -433,6 +433,7 @@ pub fn walk_pat<'a, V: Visitor<'a>>(visitor: &mut V, pattern: &'a Pat) {
                 visitor.visit_pat(&field.node.pat)
             }
         }
+        PatKind::Or(ref pats) => walk_list!(visitor, visit_pat, pats),
         PatKind::Tuple(ref tuple_elements, _) => {
             walk_list!(visitor, visit_pat, tuple_elements);
         }

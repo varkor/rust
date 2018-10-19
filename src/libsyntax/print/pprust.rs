@@ -435,6 +435,11 @@ pub fn visibility_qualified(vis: &ast::Visibility, s: &str) -> String {
     format!("{}{}", to_string(|s| s.print_visibility(vis)), s)
 }
 
+pub enum SeparatorSpacing {
+    After,
+    Both,
+}
+
 pub trait PrintState<'a> {
     fn writer(&mut self) -> &mut pp::Printer<'a>;
     fn boxes(&mut self) -> &mut Vec<pp::Breaks>;
@@ -494,16 +499,36 @@ pub trait PrintState<'a> {
         self.writer().end()
     }
 
-    fn commasep<T, F>(&mut self, b: Breaks, elts: &[T], mut op: F) -> io::Result<()>
+    fn strsep<T, F>(
+        &mut self,
+        sep: &str,
+        spacing: SeparatorSpacing,
+        b: Breaks,
+        elts: &[T],
+        mut op: F
+    ) -> io::Result<()>
         where F: FnMut(&mut Self, &T) -> io::Result<()>,
     {
         self.rbox(0, b)?;
         let mut first = true;
         for elt in elts {
-            if first { first = false; } else { self.word_space(",")?; }
+            if first {
+                first = false;
+            } else {
+                if let SeparatorSpacing::Both = spacing {
+                    self.writer().space()?;
+                }
+                self.word_space(sep)?;
+            }
             op(self, elt)?;
         }
         self.end()
+    }
+
+    fn commasep<T, F>(&mut self, b: Breaks, elts: &[T], op: F) -> io::Result<()>
+        where F: FnMut(&mut Self, &T) -> io::Result<()>,
+    {
+        self.strsep(",", SeparatorSpacing::After, b, elts, op)
     }
 
     fn next_lit(&mut self, pos: BytePos) -> Option<comments::Literal> {
@@ -2594,6 +2619,10 @@ impl<'a> State<'a> {
                     self.commasep(Inconsistent, &elts[..], |s, p| s.print_pat(p))?;
                 }
                 self.pclose()?;
+            }
+            PatKind::Or(ref pats) => {
+                let spacing = SeparatorSpacing::Both;
+                self.strsep("|", spacing, Inconsistent, &pats[..], |s, p| s.print_pat(p))?;
             }
             PatKind::Path(None, ref path) => {
                 self.print_path(path, true, 0)?;

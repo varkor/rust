@@ -1158,6 +1158,7 @@ pub fn noop_fold_pat<T: Folder>(p: P<Pat>, folder: &mut T) -> P<Pat> {
                 PatKind::TupleStruct(folder.fold_path(pth),
                         pats.move_map(|x| folder.fold_pat(x)), ddpos)
             }
+            PatKind::Or(pats) => PatKind::Or(pats.move_map(|p| folder.fold_pat(p))),
             PatKind::Path(qself, pth) => {
                 let (qself, pth) = folder.fold_qpath(qself, pth);
                 PatKind::Path(qself, pth)

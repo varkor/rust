@@ -517,6 +517,7 @@ impl Pat {
             PatKind::TupleStruct(_, ref s, _) | PatKind::Tuple(ref s, _) => {
                 s.iter().all(|p| p.walk(it))
             }
+            PatKind::Or(ref pats) => pats.iter().all(|p| p.walk(it)),
             PatKind::Box(ref s) | PatKind::Ref(ref s, _) | PatKind::Paren(ref s) => s.walk(it),
             PatKind::Slice(ref before, ref slice, ref after) => {
                 before.iter().all(|p| p.walk(it))
@@ -586,6 +587,9 @@ pub enum PatKind {
     /// `0 <= position <= subpats.len()`.
     TupleStruct(Path, Vec<P<Pat>>, Option<usize>),
 
+    /// An or-pattern `A | B | C`.
+    Or(Vec<P<Pat>>),
+
     /// A possibly qualified path pattern.
     /// Unqualified path patterns `A::B::C` can legally refer to variants, structs, constants
     /// or associated constants. Qualified path patterns `<A>::B::C`/`<A as Trait>::B::C` can
@@ -596,19 +600,26 @@ pub enum PatKind {
     /// If the `..` pattern fragment is present, then `Option<usize>` denotes its position.
     /// `0 <= position <= subpats.len()`.
     Tuple(Vec<P<Pat>>, Option<usize>),
+
     /// A `box` pattern.
     Box(P<Pat>),
+
     /// A reference pattern (e.g., `&mut (a, b)`).
     Ref(P<Pat>, Mutability),
+
     /// A literal.
     Lit(P<Expr>),
+
     /// A range pattern (e.g., `1...2`, `1..=2` or `1..2`).
     Range(P<Expr>, P<Expr>, Spanned<RangeEnd>),
+
     /// `[a, b, ..i, y, z]` is represented as:
     ///     `PatKind::Slice(box [a, b], Some(i), box [y, z])`
     Slice(Vec<P<Pat>>, Option<P<Pat>>, Vec<P<Pat>>),
+
     /// Parentheses in patterns used for grouping (i.e., `(PAT)`).
     Paren(P<Pat>),
+    
     /// A macro pattern; pre-expansion.
     Mac(Mac),
 }

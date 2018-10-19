@@ -1320,11 +1320,11 @@ impl<'a, 'gcx, 'tcx> MemCategorizationContext<'a, 'gcx, 'tcx> {
                     Def::Err => {
                         debug!("access to unresolvable pattern {:?}", pat);
                         return Err(())
-                    },
+                    }
                     Def::Variant(variant_did) |
                     Def::VariantCtor(variant_did, ..) => {
                         self.cat_downcast_if_needed(pat, cmt, variant_did)
-                    },
+                    }
                     _ => cmt
                 };
 
@@ -1334,6 +1334,12 @@ impl<'a, 'gcx, 'tcx> MemCategorizationContext<'a, 'gcx, 'tcx> {
                     let cmt_field = Rc::new(self.cat_field(pat, cmt.clone(), f_index,
                                                            fp.node.ident, field_ty));
                     self.cat_pattern_(cmt_field, &fp.node.pat, op)?;
+                }
+            }
+
+            PatKind::Or(ref pats) => {
+                for pat in pats {
+                    self.cat_pattern_(cmt.clone(), &pat, op)?;
                 }
             }
 
@@ -1356,7 +1362,7 @@ impl<'a, 'gcx, 'tcx> MemCategorizationContext<'a, 'gcx, 'tcx> {
                 }
             }
 
-                PatKind::Box(ref subpat) | PatKind::Ref(ref subpat, _) => {
+            PatKind::Box(ref subpat) | PatKind::Ref(ref subpat, _) => {
                 // box p1, &p1, &mut p1.  we can ignore the mutability of
                 // PatKind::Ref since that information is already contained
                 // in the type.

@@ -45,8 +45,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                 }
             }
 
-            PatternKind::Constant { .. }
-            if is_switch_ty(match_pair.pattern.ty) => {
+            PatternKind::Constant { .. } if is_switch_ty(match_pair.pattern.ty) => {
                 // for integers, we use a SwitchInt match, which allows
                 // us to handle more cases
                 Test {
@@ -98,6 +97,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
             PatternKind::Array { .. } |
             PatternKind::Slice { .. } |
             PatternKind::Wild |
+            PatternKind::Or { .. } |
             PatternKind::Binding { .. } |
             PatternKind::Leaf { .. } |
             PatternKind::Deref { .. } => {
@@ -140,6 +140,7 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
             PatternKind::Slice { .. } |
             PatternKind::Array { .. } |
             PatternKind::Wild |
+            PatternKind::Or { .. } |
             PatternKind::Binding { .. } |
             PatternKind::AscribeUserType { .. } |
             PatternKind::Leaf { .. } |

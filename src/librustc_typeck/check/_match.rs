@@ -47,6 +47,7 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
         let is_non_ref_pat = match pat.node {
             PatKind::Struct(..) |
             PatKind::TupleStruct(..) |
+            PatKind::Or(_) |
             PatKind::Tuple(..) |
             PatKind::Box(_) |
             PatKind::Range(..) |
@@ -279,6 +280,13 @@ impl<'a, 'gcx, 'tcx> FnCtxt<'a, 'gcx, 'tcx> {
             }
             PatKind::Struct(ref qpath, ref fields, etc) => {
                 self.check_pat_struct(pat, qpath, fields, etc, expected, def_bm)
+            }
+            PatKind::Or(ref pats) => {
+                let expected_ty = self.structurally_resolved_type(pat.span, expected);
+                for pat in pats {
+                    self.check_pat_walk(pat, expected, def_bm, false);
+                }
+                expected_ty
             }
             PatKind::Tuple(ref elements, ddpos) => {
                 let mut expected_len = elements.len();

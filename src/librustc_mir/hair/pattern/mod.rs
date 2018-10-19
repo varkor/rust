@@ -236,6 +236,11 @@ pub enum PatternKind<'tcx> {
         slice: Option<Pattern<'tcx>>,
         suffix: Vec<Pattern<'tcx>>,
     },
+
+    /// or-pattern
+    Or {
+        pats: Vec<Pattern<'tcx>>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -248,6 +253,18 @@ pub struct PatternRange<'tcx> {
 
 impl<'tcx> fmt::Display for Pattern<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Printing lists is a chore.
+        let mut first = true;
+        let mut start_or_continue = |s| {
+            if first {
+                first = false;
+                ""
+            } else {
+                s
+            }
+        };
+        let mut start_or_comma = || start_or_continue(", ");
+
         match *self.kind {
             PatternKind::Wild => write!(f, "_"),
             PatternKind::AscribeUserType { ref subpattern, .. } =>
@@ -286,9 +303,6 @@ impl<'tcx> fmt::Display for Pattern<'tcx> {
                     }
                 };
 
-                let mut first = true;
-                let mut start_or_continue = || if first { first = false; "" } else { ", " };
-
                 if let Some(variant) = variant {
                     write!(f, "{}", variant.name)?;
 
@@ -303,12 +317,12 @@ impl<'tcx> fmt::Display for Pattern<'tcx> {
                                 continue;
                             }
                             let name = variant.fields[p.field.index()].ident;
-                            write!(f, "{}{}: {}", start_or_continue(), name, p.pattern)?;
+                            write!(f, "{}{}: {}", start_or_comma(), name, p.pattern)?;
                             printed += 1;
                         }
 
                         if printed < variant.fields.len() {
-                            write!(f, "{}..", start_or_continue())?;
+                            write!(f, "{}..", start_or_comma())?;
                         }
 
                         return write!(f, " }}");
@@ -319,7 +333,7 @@ impl<'tcx> fmt::Display for Pattern<'tcx> {
                 if num_fields != 0 || variant.is_none() {
                     write!(f, "(")?;
                     for i in 0..num_fields {
-                        write!(f, "{}", start_or_continue())?;
+                        write!(f, "{}", start_or_comma())?;
 
                         // Common case: the field is where we expect it.
                         if let Some(p) = subpatterns.get(i) {
@@ -367,14 +381,12 @@ impl<'tcx> fmt::Display for Pattern<'tcx> {
             }
             PatternKind::Slice { ref prefix, ref slice, ref suffix } |
             PatternKind::Array { ref prefix, ref slice, ref suffix } => {
-                let mut first = true;
-                let mut start_or_continue = || if first { first = false; "" } else { ", " };
                 write!(f, "[")?;
                 for p in prefix {
-                    write!(f, "{}{}", start_or_continue(), p)?;
+                    write!(f, "{}{}", start_or_comma(), p)?;
                 }
                 if let Some(ref slice) = *slice {
-                    write!(f, "{}", start_or_continue())?;
+                    write!(f, "{}", start_or_comma())?;
                     match *slice.kind {
                         PatternKind::Wild => {}
                         _ => write!(f, "{}", slice)?
@@ -382,9 +394,15 @@ impl<'tcx> fmt::Display for Pattern<'tcx> {
                     write!(f, "..")?;
                 }
                 for p in suffix {
-                    write!(f, "{}{}", start_or_continue(), p)?;
+                    write!(f, "{}{}", start_or_comma(), p)?;
                 }
                 write!(f, "]")
+            }
+            PatternKind::Or { ref pats } => {
+                for pat in pats {
+                    write!(f, "{}{}", start_or_continue(" | "), pat)?;
+                }
+                Ok(())
             }
         }
     }
@@ -667,6 +685,12 @@ impl<'a, 'tcx> PatternContext<'a, 'tcx> {
                           .collect();
 
                 self.lower_variant_or_leaf(def, pat.hir_id, pat.span, ty, subpatterns)
+            }
+
+            PatKind::Or(ref pats) => {
+                PatternKind::Or {
+                    pats: pats.iter().map(|p| self.lower_pattern(p)).collect(),
+                }
             }
         };
 
@@ -1209,6 +1233,7 @@ impl<'tcx> PatternFoldable<'tcx> for PatternKind<'tcx> {
                 slice: slice.fold_with(folder),
                 suffix: suffix.fold_with(folder)
             },
+            PatternKind::Or { ref pats } => PatternKind::Or { pats: pats.fold_with(folder) },
         }
     }
 }

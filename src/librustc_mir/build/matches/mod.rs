@@ -583,6 +583,12 @@ impl<'a, 'gcx, 'tcx> Builder<'a, 'gcx, 'tcx> {
                     self.visit_bindings(&subpattern.pattern, &subpattern_user_ty, f);
                 }
             }
+            PatternKind::Or { ref pats } => {
+                // FIXME(#47184): extract or handle `pattern_user_ty` somehow
+                for pat in pats {
+                    self.visit_bindings(&pat, None, f);
+                }
+            }
         }
     }
 }
