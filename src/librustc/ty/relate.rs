@@ -18,7 +18,7 @@ use mir::interpret::ConstValue;
 use ty::subst::{Kind, UnpackedKind, Substs};
 use ty::{self, Ty, TyCtxt, TypeFoldable, Const};
 use ty::error::{ExpectedFound, TypeError, ConstError};
-use mir::interpret::GlobalId;
+use mir::interpret::{GlobalId, Scalar};
 use util::common::ErrorReported;
 use syntax_pos::DUMMY_SP;
 use std::rc::Rc;
@@ -591,6 +591,7 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
                                            -> RelateResult<'tcx, &'tcx Const<'tcx>>
     where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
 {
+    // Only consts whose types are equal should be compared.
     assert_eq!(a.ty, b.ty);
 
     let tcx = relation.tcx();
@@ -606,16 +607,11 @@ pub fn super_relate_consts<'a, 'gcx, 'tcx, R>(relation: &mut R,
         (ConstValue::Param(a_p), ConstValue::Param(b_p)) if a_p.index == b_p.index => {
             Ok(a)
         }
-        (ConstValue::Param(_), _) | (_, ConstValue::Param(_)) => {
-            bug!("param types encountered in super_relate_consts: {:?} {:?}", a, b);
-        }
-        (ConstValue::Scalar(_), _) |
-        (ConstValue::ScalarPair(..), _) |
-        // TODO(const_generics): possibly need indirection for ByRef?
-        (ConstValue::ByRef(..), _)
-            if a == b =>
-        {
+        (ConstValue::Scalar(Scalar::Bits { .. }), _) if a == b => {
             Ok(a)
+        }
+        (ConstValue::ScalarPair(..), _) | (ConstValue::ByRef(..), _) => {
+            bug!("non-Scalar ConstValue encountered in super_relate_consts {:?} {:?}", a, b);
         }
         // TODO(const_generics): this is probably wrong (regarding TyProjection)
         (ConstValue::Unevaluated(a_def_id, a_substs), ConstValue::Unevaluated(b_def_id, b_substs))

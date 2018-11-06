@@ -14,10 +14,9 @@
 
 use rustc_data_structures::accumulate_vec::AccumulateVec;
 use rustc_data_structures::array_vec::ArrayVec;
-use hir::{self, GenericArg, GenericArgs};
+use hir::{self, GenericArg, GenericArgs, ExprKind, HirVec};
 use hir::def::Def;
 use hir::def_id::DefId;
-use hir::HirVec;
 use middle::resolve_lifetime as rl;
 use namespace::Namespace;
 use rustc::ty::subst::{Kind, Subst, Substs};
@@ -1572,16 +1571,20 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx>+'o {
 
         let mut val = ConstValue::Unevaluated(def_id, Substs::identity_for_item(tcx, def_id));
 
-        match tcx.describe_def(def_id) {
-            Some(Def::ConstParam(def_id)) => {
-                let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
-                let item_id = tcx.hir.get_parent_node(node_id);
-                let item_def_id = tcx.hir.local_def_id(item_id);
-                let generics = tcx.generics_of(item_def_id);
-                let index =
-                    generics.param_def_id_to_index[&tcx.hir.local_def_id(node_id)];
-                let name = tcx.hir.name(node_id).as_interned_str();
-                val = ConstValue::Param(ty::ParamConst::new(index, name));
+        let expr = &tcx.hir.body(ast_const.value.body).value;
+        match expr.node {
+            ExprKind::Path(ref qpath) => {
+                if let hir::QPath::Resolved(_, ref path) = qpath {
+                    if let Def::ConstParam(def_id) = path.def {
+                        let node_id = tcx.hir.as_local_node_id(def_id).unwrap();
+                        let item_id = tcx.hir.get_parent_node(node_id);
+                        let item_def_id = tcx.hir.local_def_id(item_id);
+                        let generics = tcx.generics_of(item_def_id);
+                        let index = generics.param_def_id_to_index[&tcx.hir.local_def_id(node_id)];
+                        let name = tcx.hir.name(node_id).as_interned_str();
+                        val = ConstValue::Param(ty::ParamConst::new(index, name));
+                    }
+                }
             }
             _ => {}
         }

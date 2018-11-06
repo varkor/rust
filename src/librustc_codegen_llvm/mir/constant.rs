@@ -9,7 +9,7 @@
 // except according to those terms.
 
 use llvm;
-use rustc::mir::interpret::{ConstEvalErr, read_target_uint};
+use rustc::mir::interpret::{ConstEvalErr, EvalErrorKind, read_target_uint};
 use rustc_mir::interpret::{const_field};
 use rustc::hir::def_id::DefId;
 use rustc::mir;
@@ -146,6 +146,7 @@ impl FunctionCx<'a, 'll, 'tcx> {
         bx: &Builder<'a, 'll, 'tcx>,
         constant: &'tcx ty::Const<'tcx>,
     ) -> Result<&'tcx ty::Const<'tcx>, Lrc<ConstEvalErr<'tcx>>> {
+        use syntax_pos::DUMMY_SP;
         match constant.val {
             ConstValue::Unevaluated(def_id, ref substs) => {
                 let tcx = bx.tcx();
@@ -157,7 +158,11 @@ impl FunctionCx<'a, 'll, 'tcx> {
                 };
                 tcx.const_eval(param_env.and(cid))
             }
-            ConstValue::Param(_) => bug!(),
+            ConstValue::Param(_) => Err(ConstEvalErr {
+                error: EvalErrorKind::TooGeneric.into(),
+                stacktrace: vec![],
+                span: DUMMY_SP,
+            }.into()),
             ConstValue::Infer(_) => bug!(),
             _ => Ok(constant),
         }

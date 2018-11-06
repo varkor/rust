@@ -483,7 +483,7 @@ impl<'a, 'mir, 'tcx, M: Machine<'mir, 'tcx>> EvalContext<'a, 'mir, 'tcx, M> {
                     promoted: None,
                 })
             }
-            ConstValue::Param(_) => bug!(),
+            ConstValue::Param(_) => Err(EvalErrorKind::TooGeneric.into()),
             ConstValue::Infer(_) => bug!(),
             ConstValue::ByRef(alloc, offset) => {
                 // FIXME: Allocate new AllocId for all constants inside

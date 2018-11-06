@@ -530,7 +530,7 @@ impl<'cx, 'gcx, 'tcx> InferCtxt<'cx, 'gcx, 'tcx> {
                         UnpackedKind::Const(_) => {
                             // Consts cannot outlive one another, so we don't have to do anything
                             // in this case.
-                            None
+                            span_bug!(cause.span, "unexpected const outlives {:?}", constraint);
                         }
                     }
                 }),

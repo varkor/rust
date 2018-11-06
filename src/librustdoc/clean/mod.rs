@@ -3754,9 +3754,6 @@ fn print_const(cx: &DocContext, n: &ty::Const) -> String {
             } else {
                 inline::print_inlined_const(cx, def_id)
             }
-        },
-        ConstValue::Param(..) => {
-            unimplemented!() // TODO(const_generics:rustdoc)
         }
         _ => {
             let mut s = String::new();

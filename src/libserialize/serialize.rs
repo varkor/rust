@@ -897,5 +897,5 @@ impl<'a, T: ?Sized + Encodable> UseSpecializedEncodable for &'a T {}
 impl<T: ?Sized + Encodable> UseSpecializedEncodable for Box<T> {}
 impl<T: Decodable> UseSpecializedDecodable for Box<T> {}
 
-impl<'tcx> UseSpecializedEncodable for PhantomData<&'tcx ()> {}
-impl<'tcx> UseSpecializedDecodable for PhantomData<&'tcx ()> {}
+impl<'a, T: ?Sized + Encodable> UseSpecializedEncodable for PhantomData<&'a T> {}
+impl<'a, T: Decodable> UseSpecializedDecodable for PhantomData<&'a T> {}
