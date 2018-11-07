@@ -11,8 +11,9 @@
 // Type substitutions.
 
 use hir::def_id::DefId;
-use ty::{self, Lift, List, Ty, TyCtxt};
+use ty::{self, Const, Lift, List, Ty, TyCtxt, ParamConst};
 use ty::fold::{TypeFoldable, TypeFolder, TypeVisitor};
+use mir::interpret::ConstValue;
 
 use serialize::{self, Encodable, Encoder, Decodable, Decoder};
 use syntax_pos::{Span, DUMMY_SP};
@@ -506,7 +507,33 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for SubstFolder<'a, 'gcx, 'tcx> {
     }
 
     fn fold_const(&mut self, c: &'tcx ty::Const<'tcx>) -> &'tcx ty::Const<'tcx> {
-        c.super_fold_with(self)
+        if !c.needs_subst() {
+            return c;
+        }
+
+        // track the type of the const we were asked to substitute
+        let depth = self.ty_stack_depth;
+        if depth == 0 {
+            self.root_ty = Some(c.ty);
+        }
+        self.ty_stack_depth += 1;
+
+        let c1 = match c.val {
+            ConstValue::Param(p) => {
+                self.const_for_param(p, c)
+            }
+            _ => {
+                c.super_fold_with(self)
+            }
+        };
+
+        assert_eq!(depth + 1, self.ty_stack_depth);
+        self.ty_stack_depth -= 1;
+        if depth == 0 {
+            self.root_ty = None;
+        }
+
+        return c1;
     }
 }
 
@@ -531,6 +558,28 @@ impl<'a, 'gcx, 'tcx> SubstFolder<'a, 'gcx, 'tcx> {
         };
 
         self.shift_regions_through_binders(ty)
+    }
+
+    fn const_for_param(&self, p: ParamConst, source_cn: &'tcx Const<'tcx>) -> &'tcx Const<'tcx> {
+        // Look up the const in the substitutions. It really should be in there.
+        let opt_cn = self.substs.get(p.index as usize).map(|k| k.unpack());
+        let cn = match opt_cn {
+            Some(UnpackedKind::Const(cn)) => cn,
+            _ => {
+                let span = self.span.unwrap_or(DUMMY_SP);
+                span_bug!(
+                    span,
+                    "Const parameter `{:?}` ({:?}/{}) out of range \
+                         when substituting (root type={:?}) substs={:?}",
+                    p,
+                    source_cn,
+                    p.index,
+                    self.root_ty,
+                    self.substs);
+            }
+        };
+
+        cn
     }
 
     /// It is sometimes necessary to adjust the debruijn indices during substitution. This occurs
