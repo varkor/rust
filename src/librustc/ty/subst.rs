@@ -511,29 +511,10 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for SubstFolder<'a, 'gcx, 'tcx> {
             return c;
         }
 
-        // track the type of the const we were asked to substitute
-        let depth = self.ty_stack_depth;
-        if depth == 0 {
-            self.root_ty = Some(c.ty);
+        match c.val {
+            ConstValue::Param(p) => self.const_for_param(p, c),
+            _ => c.super_fold_with(self)
         }
-        self.ty_stack_depth += 1;
-
-        let c1 = match c.val {
-            ConstValue::Param(p) => {
-                self.const_for_param(p, c)
-            }
-            _ => {
-                c.super_fold_with(self)
-            }
-        };
-
-        assert_eq!(depth + 1, self.ty_stack_depth);
-        self.ty_stack_depth -= 1;
-        if depth == 0 {
-            self.root_ty = None;
-        }
-
-        return c1;
     }
 }
 

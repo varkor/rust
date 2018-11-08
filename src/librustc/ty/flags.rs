@@ -272,5 +272,9 @@ impl FlagComputation {
         for r in substs.regions() {
             self.add_region(r);
         }
+
+        for ct in substs.consts() {
+            self.add_const(ct);
+        }
     }
 }
