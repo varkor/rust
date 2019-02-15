@@ -1499,7 +1499,7 @@ impl Clean<GenericParamDef> for hir::GenericParam {
                 };
                 (name, GenericParamDefKind::Lifetime)
             }
-            hir::GenericParamKind::Type { ref default, synthetic, .. } => {
+            hir::GenericParamKind::Type { ref default, synthetic } => {
                 (self.name.ident().name.clean(cx), GenericParamDefKind::Type {
                     did: cx.tcx.hir().local_def_id(self.id),
                     bounds: self.bounds.clean(cx),
@@ -2509,7 +2509,7 @@ impl Clean<Type> for hir::Ty {
                                     let mut j = 0;
                                     let lifetime = generic_args.args.iter().find_map(|arg| {
                                         match arg {
-                                            GenericArg::Lifetime(lt) => {
+                                            hir::GenericArg::Lifetime(lt) => {
                                                 if indices.lifetimes == j {
                                                     return Some(lt);
                                                 }
@@ -2534,7 +2534,7 @@ impl Clean<Type> for hir::Ty {
                                     let mut j = 0;
                                     let type_ = generic_args.args.iter().find_map(|arg| {
                                         match arg {
-                                            GenericArg::Type(ty) => {
+                                            hir::GenericArg::Type(ty) => {
                                                 if indices.types == j {
                                                     return Some(ty);
                                                 }
