@@ -839,7 +839,8 @@ fn compare_synthetic_generics<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
                         let bounds = impl_m.generics.params.iter().find_map(|param| {
                             match param.kind {
                                 GenericParamKind::Lifetime { .. } => None,
-                                GenericParamKind::Type { .. } => {
+                                GenericParamKind::Type { .. } |
+                                GenericParamKind::Const { .. } => {
                                     if param.id == impl_node_id {
                                         Some(&param.bounds)
                                     } else {
