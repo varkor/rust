@@ -46,7 +46,6 @@ use syntax::symbol::keywords;
 use syntax::errors::{Applicability, DiagnosticBuilder};
 use syntax::print::pprust::expr_to_string;
 use syntax::visit::FnKind;
-use syntax::struct_span_err;
 
 use rustc::hir::{self, GenericParamKind, PatKind};
 
@@ -1618,19 +1617,18 @@ impl EarlyLintPass for KeywordIdents {
                     && !cx.sess.features_untracked().async_await
                     && !is_raw_ident(ident)
                 {
-                    let mut err = struct_span_err!(
-                        cx.sess,
+                    let mut lint = cx.struct_span_lint(
+                        KEYWORD_IDENTS,
                         ident.span,
-                        E0721,
-                        "`await` is a keyword in the {} edition", cur_edition,
+                        &format!("`await` is a keyword in the {} edition", cur_edition),
                     );
-                    err.span_suggestion(
+                    lint.span_suggestion(
                         ident.span,
                         "you can use a raw identifier to stay compatible",
                         "r#await".to_string(),
                         Applicability::MachineApplicable,
                     );
-                    err.emit();
+                    lint.emit();
                 }
                 return
             },

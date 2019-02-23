@@ -1,9 +1,16 @@
-error[E0721]: `await` is a keyword in the 2018 edition
-  --> $DIR/post_expansion_error.rs:8:5
+error: `await` is a keyword in the 2018 edition
+  --> $DIR/post_expansion_error.rs:10:5
    |
 LL |     await!()
    |     ^^^^^ help: you can use a raw identifier to stay compatible: `r#await`
+   |
+note: lint level defined here
+  --> $DIR/post_expansion_error.rs:3:9
+   |
+LL | #![deny(keyword_idents)]
+   |         ^^^^^^^^^^^^^^
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in the 2018 edition!
+   = note: for more information, see issue #49716 <https://github.com/rust-lang/rust/issues/49716>
 
 error: aborting due to previous error
 
-For more information about this error, try `rustc --explain E0721`.
