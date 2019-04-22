@@ -358,6 +358,11 @@ impl<'tcx> TypeVisitor<'tcx> for BoundNamesCollector {
 
         r.super_visit_with(self)
     }
+
+    fn visit_const(&mut self, c: &'tcx ty::LazyConst<'tcx>) -> bool {
+        // Consts don't impose constraints.
+        c.super_visit_with(self)
+    }
 }
 
 impl<'tcx> fmt::Display for traits::Goal<'tcx> {

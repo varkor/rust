@@ -227,6 +227,8 @@ pub struct CommonTypes<'tcx> {
     pub re_empty: Region<'tcx>,
     pub re_static: Region<'tcx>,
     pub re_erased: Region<'tcx>,
+
+    pub ct_err: &'tcx LazyConst<'tcx>,
 }
 
 pub struct LocalTableInContext<'a, V: 'a> {
@@ -938,13 +940,20 @@ impl<'tcx> CommonTypes<'tcx> {
                 Interned(interners.arena.alloc(r))
             }).0
         };
+        let mk_lazy_const = |c| {
+            interners.lazy_const.borrow_mut().intern(c, |c| {
+                Interned(interners.arena.alloc(c))
+            }).0
+        };
+
+        let err = mk(Error);
 
         CommonTypes {
             unit: mk(Tuple(List::empty())),
             bool: mk(Bool),
             char: mk(Char),
             never: mk(Never),
-            err: mk(Error),
+            err,
             isize: mk(Int(ast::IntTy::Isize)),
             i8: mk(Int(ast::IntTy::I8)),
             i16: mk(Int(ast::IntTy::I16)),
@@ -965,6 +974,8 @@ impl<'tcx> CommonTypes<'tcx> {
             re_empty: mk_region(RegionKind::ReEmpty),
             re_static: mk_region(RegionKind::ReStatic),
             re_erased: mk_region(RegionKind::ReErased),
+
+            ct_err: mk_lazy_const(LazyConst::Evaluated(ty::Const::zero_sized(err))),
         }
     }
 }

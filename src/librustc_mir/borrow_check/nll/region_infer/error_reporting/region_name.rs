@@ -581,9 +581,9 @@ impl<'tcx> RegionInferenceContext<'tcx> {
     }
 
     /// We've found an enum/struct/union type with the substitutions
-    /// `substs` and -- in the HIR -- a path with the generic
-    /// arguments `args`. If `needle_fr` appears in the args, return
-    /// the `hir::Lifetime` that corresponds to it. If not, push onto
+    /// `substs` and, in the HIR, a path with the generic arguments
+    /// `args`. If `needle_fr` appears in the args, return the
+    /// `hir::Lifetime` that corresponds to it. If not, push on to
     /// `search_stack` the types+hir to search through.
     fn try_match_adt_and_generic_args<'hir>(
         &self,

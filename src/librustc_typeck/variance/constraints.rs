@@ -447,6 +447,26 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
         }
     }
 
+    fn add_constraints_from_const(
+        &mut self,
+        current: &CurrentItem,
+        ct: &ty::LazyConst<'tcx>,
+        variance: VarianceTermPtr<'a>
+    ) {
+        debug!(
+            "add_constraints_from_const(ct={:?}, variance={:?})",
+            ct,
+            variance
+        );
+
+        if let ty::LazyConst::Evaluated(ct) = ct {
+            self.add_constraints_from_ty(current, ct.ty, variance);
+            if let ConstValue::Param(ref data) = ct.val {
+                self.add_constraint(current, data.index, variance);
+            }
+        }
+    }
+
     /// Adds constraints appropriate for a mutability-type pair
     /// appearing in a context with ambient variance `variance`
     fn add_constraints_from_mt(&mut self,

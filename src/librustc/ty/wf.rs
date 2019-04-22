@@ -211,9 +211,7 @@ impl<'a, 'gcx, 'tcx> WfPredicates<'a, 'gcx, 'tcx> {
 
             let predicate = ty::Predicate::ConstEvaluatable(def_id, substs);
             let cause = self.cause(traits::MiscObligation);
-            self.out.push(traits::Obligation::new(cause,
-                                                  self.param_env,
-                                                  predicate));
+            self.out.push(traits::Obligation::new(cause, self.param_env, predicate));
         }
     }
 
@@ -406,7 +404,7 @@ impl<'a, 'gcx, 'tcx> WfPredicates<'a, 'gcx, 'tcx> {
                 //    moving. (Goal is that an "inductive hypothesis"
                 //    is satisfied to ensure termination.)
                 ty::Infer(_) => {
-                    let ty = self.infcx.shallow_resolve(ty);
+                    let ty = self.infcx.shallow_resolve_type(ty);
                     if let ty::Infer(_) = ty.sty { // not yet resolved...
                         if ty == ty0 { // ...this is the type we started from! no progress.
                             return false;

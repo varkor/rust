@@ -266,8 +266,7 @@ impl<'a, 'b, 'tcx> Instance<'tcx> {
                     let f = item_type.fn_sig(tcx);
                     f.abi() == Abi::RustIntrinsic ||
                         f.abi() == Abi::PlatformIntrinsic
-                } =>
-                {
+                } => {
                     debug!(" => intrinsic");
                     ty::InstanceDef::Intrinsic(def_id)
                 }

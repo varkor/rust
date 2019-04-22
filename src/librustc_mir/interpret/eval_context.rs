@@ -289,10 +289,8 @@ impl<'a, 'mir, 'tcx: 'mir, M: Machine<'a, 'mir, 'tcx>> InterpretCx<'a, 'mir, 'tc
     ) -> EvalResult<'tcx, &'tcx mir::Mir<'tcx>> {
         // do not continue if typeck errors occurred (can only occur in local crate)
         let did = instance.def_id();
-        if did.is_local()
-            && self.tcx.has_typeck_tables(did)
-            && self.tcx.typeck_tables_of(did).tainted_by_errors
-        {
+        if did.is_local() && self.tcx.has_typeck_tables(did)
+            && self.tcx.typeck_tables_of(did).tainted_by_errors {
             return err!(TypeckError);
         }
         trace!("load mir {:?}", instance);
@@ -503,7 +501,7 @@ impl<'a, 'mir, 'tcx: 'mir, M: Machine<'a, 'mir, 'tcx>> InterpretCx<'a, 'mir, 'tc
             // Now mark those locals as dead that we do not want to initialize
             match self.tcx.describe_def(instance.def_id()) {
                 // statics and constants don't have `Storage*` statements, no need to look for them
-                Some(Def::Static(..)) | Some(Def::Const(..)) | Some(Def::AssociatedConst(..)) => {},
+                Some(Def::Static(..)) | Some(Def::Const(..)) | Some(Def::AssociatedConst(..)) => {}
                 _ => {
                     trace!("push_stack_frame: {:?}: num_bbs: {}", span, mir.basic_blocks().len());
                     for block in mir.basic_blocks() {

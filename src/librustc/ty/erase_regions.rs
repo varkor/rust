@@ -70,4 +70,8 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for RegionEraserVisitor<'a, 'gcx, 't
             _ => self.tcx.types.re_erased
         }
     }
+
+    fn fold_const(&mut self, _c: &'tcx ty::LazyConst<'tcx>) -> &'tcx ty::LazyConst<'tcx> {
+        unimplemented!() // FIXME(const_generics)
+    }
 }

@@ -28,11 +28,13 @@ use super::{InferCtxt, MiscVariable, TypeTrace};
 use super::lub::Lub;
 use super::sub::Sub;
 use super::type_variable::TypeVariableValue;
+use super::const_variable::ConstVariableValue;
 
 use crate::hir::def_id::DefId;
+use crate::mir::interpret::ConstValue;
 use crate::ty::{IntType, UintType};
-use crate::ty::{self, Ty, TyCtxt};
-use crate::ty::error::TypeError;
+use crate::ty::{self, InferConst, LazyConst, Ty, TyCtxt};
+use crate::ty::error::{ConstError, TypeError};
 use crate::ty::relate::{self, Relate, RelateResult, TypeRelation};
 use crate::ty::subst::SubstsRef;
 use crate::traits::{Obligation, PredicateObligations};
@@ -107,11 +109,66 @@ impl<'infcx, 'gcx, 'tcx> InferCtxt<'infcx, 'gcx, 'tcx> {
                 Err(TypeError::Sorts(ty::relate::expected_found(relation, &a, &b)))
             }
 
-
             _ => {
                 ty::relate::super_relate_tys(relation, a, b)
             }
         }
+    }
+
+    pub fn super_combine_consts<R>(
+        &self,
+        relation: &mut R,
+        a: &'tcx LazyConst<'tcx>,
+        b: &'tcx LazyConst<'tcx>,
+    ) -> RelateResult<'tcx, &'tcx LazyConst<'tcx>>
+    where
+        R: TypeRelation<'infcx, 'gcx, 'tcx>,
+    {
+        let a_is_expected = relation.a_is_expected();
+
+        if let (&ty::LazyConst::Evaluated(a_eval), &ty::LazyConst::Evaluated(b_eval)) = (a, b) {
+            match (a_eval.val, b_eval.val) {
+                (ConstValue::Infer(InferConst::Var(a_vid)),
+                 ConstValue::Infer(InferConst::Var(b_vid))) => {
+                    self.const_unification_table
+                        .borrow_mut()
+                        .unify_var_var(a_vid, b_vid)
+                        .map_err(|e| const_unification_error(a_is_expected, e))?;
+                    return Ok(a);
+                }
+
+                // All other cases of inference with other variables are errors.
+                (ConstValue::Infer(InferConst::Var(_)), ConstValue::Infer(_)) |
+                (ConstValue::Infer(_), ConstValue::Infer(InferConst::Var(_))) => {
+                    bug!("tried to combine ConstValue::Infer/ConstValue::Infer(InferConst::Var)")
+                }
+
+                (ConstValue::Infer(InferConst::Var(vid)), _) => {
+                    return self.unify_const_variable(a_is_expected, vid, b);
+                }
+
+                (_, ConstValue::Infer(InferConst::Var(vid))) => {
+                    return self.unify_const_variable(!a_is_expected, vid, a);
+                }
+
+                _ => {}
+            }
+        }
+
+        ty::relate::super_relate_consts(relation, a, b)
+    }
+
+    pub fn unify_const_variable(
+        &self,
+        vid_is_expected: bool,
+        vid: ty::ConstVid<'tcx>,
+        value: &'tcx LazyConst<'tcx>,
+    ) -> RelateResult<'tcx, &'tcx LazyConst<'tcx>> {
+        self.const_unification_table
+            .borrow_mut()
+            .unify_var_value(vid, ConstVariableValue::Known { value })
+            .map_err(|e| const_unification_error(vid_is_expected, e))?;
+        Ok(value)
     }
 
     fn unify_integral_variable(&self,
@@ -407,7 +464,7 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
 
         debug!("generalize: t={:?}", t);
 
-        // Check to see whether the type we are genealizing references
+        // Check to see whether the type we are generalizing references
         // any other type variable related to `vid` via
         // subtyping. This is basically our "occurs check", preventing
         // us from creating infinitely sized types.
@@ -519,6 +576,32 @@ impl<'cx, 'gcx, 'tcx> TypeRelation<'cx, 'gcx, 'tcx> for Generalizer<'cx, 'gcx, '
         // very descriptive origin for this region variable.
         Ok(self.infcx.next_region_var_in_universe(MiscVariable(self.span), self.for_universe))
     }
+
+    fn consts(
+        &mut self,
+        c: &'tcx ty::LazyConst<'tcx>,
+        c2: &'tcx ty::LazyConst<'tcx>
+    ) -> RelateResult<'tcx, &'tcx ty::LazyConst<'tcx>> {
+        assert_eq!(c, c2); // we are abusing TypeRelation here; both LHS and RHS ought to be ==
+
+        match c {
+            LazyConst::Evaluated(ty::Const {
+                val: ConstValue::Infer(InferConst::Var(vid)),
+                ..
+            }) => {
+                let mut variable_table = self.infcx.const_unification_table.borrow_mut();
+                match variable_table.probe(*vid).known() {
+                    Some(u) => {
+                        self.relate(&u, &u)
+                    }
+                    None => Ok(c),
+                }
+            }
+            _ => {
+                relate::super_relate_consts(self, c, c)
+            }
+        }
+    }
 }
 
 pub trait RelateResultCompare<'tcx, T> {
@@ -538,6 +621,15 @@ impl<'tcx, T:Clone + PartialEq> RelateResultCompare<'tcx, T> for RelateResult<'t
             }
         })
     }
+}
+
+pub fn const_unification_error<'tcx>(
+    a_is_expected: bool,
+    (a, b): (&'tcx LazyConst<'tcx>, &'tcx LazyConst<'tcx>),
+) -> TypeError<'tcx> {
+    TypeError::ConstError(
+        ConstError::Mismatch(ty::relate::expected_found_bool(a_is_expected, &a, &b))
+    )
 }
 
 fn int_unification_error<'tcx>(a_is_expected: bool, v: (ty::IntVarValue, ty::IntVarValue))

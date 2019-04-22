@@ -2223,6 +2223,33 @@ impl<'tcx> Const<'tcx> {
         self.assert_usize(tcx).unwrap_or_else(||
             bug!("expected constant usize, got {:#?}", self))
     }
+
+    pub fn type_flags(&self) -> TypeFlags {
+        let mut flags = self.ty.flags;
+
+        match self.val {
+            ConstValue::Param(_) => {
+                flags |= TypeFlags::HAS_FREE_LOCAL_NAMES;
+                flags |= TypeFlags::HAS_PARAMS;
+            }
+            ConstValue::Infer(infer) => {
+                flags |= TypeFlags::HAS_FREE_LOCAL_NAMES;
+                flags |= TypeFlags::HAS_CT_INFER;
+                match infer {
+                    InferConst::Fresh(_) |
+                    InferConst::Canonical(_, _) => {}
+                    InferConst::Var(_) => {
+                        flags |= TypeFlags::KEEP_IN_LOCAL_TCX;
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        debug!("type_flags({:?}) = {:?}", self, flags);
+
+        flags
+    }
 }
 
 impl<'tcx> serialize::UseSpecializedDecodable for &'tcx Const<'tcx> {}

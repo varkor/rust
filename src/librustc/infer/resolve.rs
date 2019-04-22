@@ -1,5 +1,6 @@
 use super::{InferCtxt, FixupError, FixupResult};
-use crate::ty::{self, Ty, TyCtxt, TypeFoldable};
+use crate::mir::interpret::ConstValue;
+use crate::ty::{self, InferConst, Ty, TyCtxt, TypeFoldable};
 use crate::ty::fold::{TypeFolder, TypeVisitor};
 
 ///////////////////////////////////////////////////////////////////////////
@@ -7,7 +8,7 @@ use crate::ty::fold::{TypeFolder, TypeVisitor};
 
 /// The opportunistic type resolver can be used at any time. It simply replaces
 /// type variables that have been unified with the things they have
-/// been unified with (similar to `shallow_resolve`, but deep). This is
+/// been unified with (similar to `shallow_resolve_type`, but deep). This is
 /// useful for printing messages etc but also required at various
 /// points for correctness.
 pub struct OpportunisticTypeResolver<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
@@ -30,7 +31,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for OpportunisticTypeResolver<'a, 'g
         if !t.has_infer_types() {
             t // micro-optimize -- if there is nothing in this type that this fold affects...
         } else {
-            let t0 = self.infcx.shallow_resolve(t);
+            let t0 = self.infcx.shallow_resolve_type(t);
             t0.super_fold_with(self)
         }
     }
@@ -58,7 +59,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for OpportunisticTypeAndRegionResolv
         if !t.needs_infer() {
             t // micro-optimize -- if there is nothing in this type that this fold affects...
         } else {
-            let t0 = self.infcx.shallow_resolve(t);
+            let t0 = self.infcx.shallow_resolve_type(t);
             t0.super_fold_with(self)
         }
     }
@@ -71,6 +72,10 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for OpportunisticTypeAndRegionResolv
             _ =>
                 r,
         }
+    }
+
+    fn fold_const(&mut self, _c: &'tcx ty::LazyConst<'tcx>) -> &'tcx ty::LazyConst<'tcx> {
+        unimplemented!() // FIXME(const_generics)
     }
 }
 
@@ -93,10 +98,10 @@ impl<'a, 'gcx, 'tcx> UnresolvedTypeFinder<'a, 'gcx, 'tcx> {
 
 impl<'a, 'gcx, 'tcx> TypeVisitor<'tcx> for UnresolvedTypeFinder<'a, 'gcx, 'tcx> {
     fn visit_ty(&mut self, t: Ty<'tcx>) -> bool {
-        let t = self.infcx.shallow_resolve(t);
+        let t = self.infcx.shallow_resolve_type(t);
         if t.has_infer_types() {
             if let ty::Infer(_) = t.sty {
-                // Since we called `shallow_resolve` above, this must
+                // Since we called `shallow_resolve_type` above, this must
                 // be an (as yet...) unresolved inference variable.
                 true
             } else {
@@ -118,7 +123,7 @@ impl<'a, 'gcx, 'tcx> TypeVisitor<'tcx> for UnresolvedTypeFinder<'a, 'gcx, 'tcx> 
 /// their concrete results. If any variable cannot be replaced (never unified, etc)
 /// then an `Err` result is returned.
 pub fn fully_resolve<'a, 'gcx, 'tcx, T>(infcx: &InferCtxt<'a, 'gcx, 'tcx>,
-                                        value: &T) -> FixupResult<T>
+                                        value: &T) -> FixupResult<'tcx, T>
     where T : TypeFoldable<'tcx>
 {
     let mut full_resolver = FullTypeResolver { infcx: infcx, err: None };
@@ -133,7 +138,7 @@ pub fn fully_resolve<'a, 'gcx, 'tcx, T>(infcx: &InferCtxt<'a, 'gcx, 'tcx>,
 // `err` field is not enforcable otherwise.
 struct FullTypeResolver<'a, 'gcx: 'a+'tcx, 'tcx: 'a> {
     infcx: &'a InferCtxt<'a, 'gcx, 'tcx>,
-    err: Option<FixupError>,
+    err: Option<FixupError<'tcx>>,
 }
 
 impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for FullTypeResolver<'a, 'gcx, 'tcx> {
@@ -147,7 +152,7 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for FullTypeResolver<'a, 'gcx, 'tcx>
               // ^ we need to have the `keep_local` check to un-default
               // defaulted tuples.
         } else {
-            let t = self.infcx.shallow_resolve(t);
+            let t = self.infcx.shallow_resolve_type(t);
             match t.sty {
                 ty::Infer(ty::TyVar(vid)) => {
                     self.err = Some(FixupError::UnresolvedTy(vid));
@@ -179,6 +184,32 @@ impl<'a, 'gcx, 'tcx> TypeFolder<'gcx, 'tcx> for FullTypeResolver<'a, 'gcx, 'tcx>
                                         .expect("region resolution not performed")
                                         .resolve_var(rid),
             _ => r,
+        }
+    }
+
+    fn fold_const(&mut self, c: &'tcx ty::LazyConst<'tcx>) -> &'tcx ty::LazyConst<'tcx> {
+        if !c.needs_infer() && !ty::keep_local(&c) {
+            c // micro-optimize -- if there is nothing in this const that this fold affects...
+              // ^ we need to have the `keep_local` check to un-default
+              // defaulted tuples.
+        } else {
+            let c = self.infcx.shallow_resolve_const(c);
+            match c {
+                ty::LazyConst::Evaluated(ty::Const { val, .. }) => {
+                    match val {
+                        ConstValue::Infer(InferConst::Var(vid)) => {
+                            self.err = Some(FixupError::UnresolvedConst(*vid));
+                            return self.tcx().types.ct_err;
+                        }
+                        ConstValue::Infer(InferConst::Fresh(_)) => {
+                            bug!("Unexpected const in full const resolver: {:?}", c);
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            }
+            c.super_fold_with(self)
         }
     }
 }

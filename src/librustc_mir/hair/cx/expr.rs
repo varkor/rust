@@ -680,7 +680,7 @@ fn make_mirror_unadjusted<'a, 'gcx, 'tcx>(cx: &mut Cx<'a, 'gcx, 'tcx>,
                 };
 
                 let source = if let Some((did, offset, var_ty)) = var {
-                    let mk_const = |literal| Expr {
+                    let mk_lazy_const = |literal| Expr {
                         temp_lifetime,
                         ty: var_ty,
                         span: expr.span,

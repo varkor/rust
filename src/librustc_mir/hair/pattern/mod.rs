@@ -32,6 +32,7 @@ use syntax_pos::Span;
 #[derive(Clone, Debug)]
 pub enum PatternError {
     AssociatedConstInPattern(Span),
+    // FIXME(const_generics): figure out what we should do about const generics in patterns
     StaticInPattern(Span),
     FloatBug,
     NonConstPath(Span),
@@ -804,10 +805,7 @@ impl<'a, 'tcx> PatternContext<'a, 'tcx> {
                   -> Pattern<'tcx> {
         let ty = self.tables.node_type(id);
         let def = self.tables.qpath_def(qpath, id);
-        let is_associated_const = match def {
-            Def::AssociatedConst(_) => true,
-            _ => false,
-        };
+        let is_associated_const = if let Def::AssociatedConst(_) = def { true } else { false };
         let kind = match def {
             Def::Const(def_id) | Def::AssociatedConst(def_id) => {
                 let substs = self.tables.node_substs(id);
