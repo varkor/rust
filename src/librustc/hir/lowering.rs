@@ -2745,9 +2745,18 @@ impl<'a> LoweringContext<'a> {
                 (hir::ParamName::Plain(ident), kind)
             }
             GenericParamKind::Const { ref ty } => {
-                (hir::ParamName::Plain(param.ident), hir::GenericParamKind::Const {
-                    ty: self.lower_ty(&ty, ImplTraitContext::disallowed()),
-                })
+                let ty = self.lower_ty(&ty, ImplTraitContext::disallowed());
+                let def_id = self.resolver.definitions().local_def_id_from_hir_id(ty.hir_id);
+                if !self.tcx.has_attr(def_id, "structural_match") {
+                    struct_span_err!(
+                        self.tcx.sess,
+                        ty.span,
+                        E0726,
+                        "only types that are annotated with #[derive(PartialEq, Eq)] may be used \
+                         as the types of const parameters",
+                    ).emit();
+                }
+                (hir::ParamName::Plain(param.ident), hir::GenericParamKind::Const { ty })
             }
         };
 

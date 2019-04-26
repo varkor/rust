@@ -2148,6 +2148,22 @@ static X: u32 = 42;
 ```
 "##,
 
+E0726: r##"
+Const parameters may only be of types that can be structurally mapped.
+
+Examples of erroneous code:
+
+```compile_fail,E0726
+#![feature(const_generics)]
+
+struct S;
+
+fn foo<const X: S>() {} // error
+```
+
+Add `#[derive(PartialEq, Eq)]` to the type to make it structurally mappable.
+"##,
+
 }
 
 

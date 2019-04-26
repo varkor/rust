@@ -454,6 +454,11 @@ impl Definitions {
     }
 
     #[inline]
+    pub fn local_def_id_from_hir_id(&self, hir_id: hir::HirId) -> DefId {
+        self.opt_local_def_id(node).unwrap()
+    }
+
+    #[inline]
     pub fn as_local_node_id(&self, def_id: DefId) -> Option<ast::NodeId> {
         if def_id.krate == LOCAL_CRATE {
             let space_index = def_id.index.address_space().index();
