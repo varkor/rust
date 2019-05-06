@@ -3,7 +3,7 @@ use rustc::hir;
 use rustc::hir::def_id::{DefId, LOCAL_CRATE};
 use rustc::mir::interpret::ConstValue;
 use rustc::session::config::OptLevel;
-use rustc::ty::{self, Ty, TyCtxt, Const, ClosureSubsts, GeneratorSubsts, ParamConst};
+use rustc::ty::{self, Ty, TyCtxt, Const, GeneratorSubsts, ParamConst};
 use rustc::ty::subst::{SubstsRef, InternalSubsts};
 use syntax::ast;
 use syntax::attr::InlineAttr;
@@ -369,7 +369,7 @@ impl<'a, 'tcx> DefPathBasedNames<'a, 'tcx> {
                 }
             },
             ty::Generator(def_id, GeneratorSubsts { ref substs }, _) |
-            ty::Closure(def_id, ClosureSubsts { ref substs }) => {
+            ty::Closure(def_id, ref substs) => {
                 self.push_def_path(def_id, output);
                 let generics = self.tcx.generics_of(self.tcx.closure_base_def_id(def_id));
                 let substs = substs.truncate_to(self.tcx, generics);

@@ -159,7 +159,7 @@ pub enum TyKind<'tcx> {
 
     /// The anonymous type of a closure. Used to represent the type of
     /// `|a| a`.
-    Closure(DefId, ClosureSubsts<'tcx>),
+    Closure(DefId, SubstsRef<'tcx>),
 
     /// The anonymous type of a generator. Used to represent the type of
     /// `|a| yield a`.
@@ -304,44 +304,37 @@ static_assert!(MEM_SIZE_OF_TY_KIND: ::std::mem::size_of::<TyKind<'_>>() == 24);
 /// type parameters is similar, but the role of CK and CS are
 /// different. CK represents the "yield type" and CS represents the
 /// "return type" of the generator.
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash,
-         Debug, RustcEncodable, RustcDecodable, HashStable)]
-pub struct ClosureSubsts<'tcx> {
-    /// Lifetime and type parameters from the enclosing function,
-    /// concatenated with the types of the upvars.
-    ///
-    /// These are separated out because codegen wants to pass them around
-    /// when monomorphizing.
-    pub substs: SubstsRef<'tcx>,
-}
+mod ClosureSubsts {
+    // Any `substs` here contains generic parameters from the enclosing function,
+    // concatenated with the types of the upvars.
+    //
+    // These are separated out because codegen wants to pass them around
+    // when monomorphizing.
 
-/// Struct returned by `split()`. Note that these are subslices of the
-/// parent slice and not canonical substs themselves.
-struct SplitClosureSubsts<'tcx> {
-    closure_kind_ty: Ty<'tcx>,
-    closure_sig_ty: Ty<'tcx>,
-    upvar_kinds: &'tcx [Kind<'tcx>],
-}
-
-impl<'tcx> ClosureSubsts<'tcx> {
     /// Divides the closure substs into their respective
     /// components. Single source of truth with respect to the
     /// ordering.
-    fn split(self, def_id: DefId, tcx: TyCtxt<'_, '_, '_>) -> SplitClosureSubsts<'tcx> {
+    fn split<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, '_, '_>,
+    ) -> SplitClosureSubsts<'tcx> {
         let generics = tcx.generics_of(def_id);
         let parent_len = generics.parent_count;
         SplitClosureSubsts {
-            closure_kind_ty: self.substs.type_at(parent_len),
-            closure_sig_ty: self.substs.type_at(parent_len + 1),
-            upvar_kinds: &self.substs[parent_len + 2..],
+            closure_kind_ty: substs.type_at(parent_len),
+            closure_sig_ty: substs.type_at(parent_len + 1),
+            upvar_kinds: &substs[parent_len + 2..],
         }
     }
 
     #[inline]
-    pub fn upvar_tys(self, def_id: DefId, tcx: TyCtxt<'_, '_, '_>) ->
-        impl Iterator<Item=Ty<'tcx>> + 'tcx
-    {
-        let SplitClosureSubsts { upvar_kinds, .. } = self.split(def_id, tcx);
+    pub fn upvar_tys<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, '_, '_>,
+    ) -> impl Iterator<Item=Ty<'tcx>> + 'tcx {
+        let SplitClosureSubsts { upvar_kinds, .. } = split(substs, def_id, tcx);
         upvar_kinds.iter().map(|t| {
             if let UnpackedKind::Type(ty) = t.unpack() {
                 ty
@@ -354,16 +347,24 @@ impl<'tcx> ClosureSubsts<'tcx> {
     /// Returns the closure kind for this closure; may return a type
     /// variable during inference. To get the closure kind during
     /// inference, use `infcx.closure_kind(def_id, substs)`.
-    pub fn closure_kind_ty(self, def_id: DefId, tcx: TyCtxt<'_, '_, '_>) -> Ty<'tcx> {
-        self.split(def_id, tcx).closure_kind_ty
+    pub fn closure_kind_ty<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, '_, '_>,
+    ) -> Ty<'tcx> {
+        split(substs, def_id, tcx).closure_kind_ty
     }
 
     /// Returns the type representing the closure signature for this
     /// closure; may contain type variables during inference. To get
     /// the closure signature during inference, use
     /// `infcx.fn_sig(def_id)`.
-    pub fn closure_sig_ty(self, def_id: DefId, tcx: TyCtxt<'_, '_, '_>) -> Ty<'tcx> {
-        self.split(def_id, tcx).closure_sig_ty
+    pub fn closure_sig_ty<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, '_, '_>,
+    ) -> Ty<'tcx> {
+        split(substs, def_id, tcx).closure_sig_ty
     }
 
     /// Returns the closure kind for this closure; only usable outside
@@ -371,8 +372,12 @@ impl<'tcx> ClosureSubsts<'tcx> {
     /// there are no type variables.
     ///
     /// If you have an inference context, use `infcx.closure_kind()`.
-    pub fn closure_kind(self, def_id: DefId, tcx: TyCtxt<'_, 'tcx, 'tcx>) -> ty::ClosureKind {
-        self.split(def_id, tcx).closure_kind_ty.to_opt_closure_kind().unwrap()
+    pub fn closure_kind<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, 'tcx, 'tcx>,
+    ) -> ty::ClosureKind {
+        split(substs, def_id, tcx).closure_kind_ty.to_opt_closure_kind().unwrap()
     }
 
     /// Extracts the signature from the closure; only usable outside
@@ -380,13 +385,25 @@ impl<'tcx> ClosureSubsts<'tcx> {
     /// there are no type variables.
     ///
     /// If you have an inference context, use `infcx.closure_sig()`.
-    pub fn closure_sig(self, def_id: DefId, tcx: TyCtxt<'_, 'tcx, 'tcx>) -> ty::PolyFnSig<'tcx> {
-        let ty = self.closure_sig_ty(def_id, tcx);
+    pub fn closure_sig<'tcx>(
+        substs: SubstsRef<'tcx>,
+        def_id: DefId,
+        tcx: TyCtxt<'_, 'tcx, 'tcx>,
+    ) -> ty::PolyFnSig<'tcx> {
+        let ty = closure_sig_ty(substs, def_id, tcx);
         match ty.sty {
             ty::FnPtr(sig) => sig,
             _ => bug!("closure_sig_ty is not a fn-ptr: {:?}", ty),
         }
     }
+}
+
+/// Struct returned by `split()`. Note that these are subslices of the
+/// parent slice and not canonical substs themselves.
+struct SplitClosureSubsts<'tcx> {
+    closure_kind_ty: Ty<'tcx>,
+    closure_sig_ty: Ty<'tcx>,
+    upvar_kinds: &'tcx [Kind<'tcx>],
 }
 
 /// Similar to `ClosureSubsts`; see the above documentation for more.
@@ -559,7 +576,7 @@ impl<'a, 'gcx, 'tcx> GeneratorSubsts<'tcx> {
 
 #[derive(Debug, Copy, Clone)]
 pub enum UpvarSubsts<'tcx> {
-    Closure(ClosureSubsts<'tcx>),
+    Closure(SubstsRef<'tcx>),
     Generator(GeneratorSubsts<'tcx>),
 }
 
@@ -569,7 +586,7 @@ impl<'tcx> UpvarSubsts<'tcx> {
         impl Iterator<Item=Ty<'tcx>> + 'tcx
     {
         let upvar_kinds = match self {
-            UpvarSubsts::Closure(substs) => substs.split(def_id, tcx).upvar_kinds,
+            UpvarSubsts::Closure(substs) => ClosureSubsts::split(substs, def_id, tcx).upvar_kinds,
             UpvarSubsts::Generator(substs) => substs.split(def_id, tcx).upvar_kinds,
         };
         upvar_kinds.iter().map(|t| {

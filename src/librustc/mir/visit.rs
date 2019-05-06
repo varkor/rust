@@ -819,10 +819,6 @@ macro_rules! make_mir_visitor {
                                       _substs: & $($mutability)? GeneratorSubsts<'tcx>) {
             }
 
-            fn super_closure_substs(&mut self,
-                                    _substs: & $($mutability)? ClosureSubsts<'tcx>) {
-            }
-
             // Convenience methods
 
             fn visit_location(&mut self, mir: & $($mutability)? Mir<'tcx>, location: Location) {

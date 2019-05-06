@@ -318,10 +318,9 @@ impl<'a, 'b, 'tcx> Instance<'tcx> {
     pub fn resolve_closure(
         tcx: TyCtxt<'a, 'tcx, 'tcx>,
         def_id: DefId,
-        substs: ty::ClosureSubsts<'tcx>,
-        requested_kind: ty::ClosureKind)
-        -> Instance<'tcx>
-    {
+        substs: SubstsRef<'tcx>,
+        requested_kind: ty::ClosureKind,
+    ) -> Instance<'tcx> {
         let actual_kind = substs.closure_kind(def_id, tcx);
 
         match needs_fn_once_adapter_shim(actual_kind, requested_kind) {
@@ -442,7 +441,7 @@ fn needs_fn_once_adapter_shim<'a, 'tcx>(actual_closure_kind: ty::ClosureKind,
 fn fn_once_adapter_instance<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     closure_did: DefId,
-    substs: ty::ClosureSubsts<'tcx>)
+    substs: SubstsRef<'tcx>)
     -> Instance<'tcx>
 {
     debug!("fn_once_adapter_shim({:?}, {:?})",
@@ -456,7 +455,7 @@ fn fn_once_adapter_instance<'a, 'tcx>(
 
     let self_ty = tcx.mk_closure(closure_did, substs);
 
-    let sig = substs.closure_sig(closure_did, tcx);
+    let sig = ClosureSubsts::closure_sig(substs, closure_did, tcx);
     let sig = tcx.normalize_erasing_late_bound_regions(ty::ParamEnv::reveal_all(), &sig);
     assert_eq!(sig.inputs().len(), 1);
     let substs = tcx.mk_substs_trait(self_ty, &[sig.inputs()[0].into()]);

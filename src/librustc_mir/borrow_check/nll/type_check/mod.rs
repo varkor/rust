@@ -2482,7 +2482,7 @@ impl<'a, 'gcx, 'tcx> TypeChecker<'a, 'gcx, 'tcx> {
             // desugaring. A closure gets desugared to a struct, and
             // these extra requirements are basically like where
             // clauses on the struct.
-            AggregateKind::Closure(def_id, ty::ClosureSubsts { substs })
+            AggregateKind::Closure(def_id, substs)
             | AggregateKind::Generator(def_id, ty::GeneratorSubsts { substs }, _) => {
                 self.prove_closure_bounds(tcx, *def_id, substs, location)
             }

@@ -666,18 +666,6 @@ impl<'tcx> Relate<'tcx> for &'tcx ty::List<ty::ExistentialPredicate<'tcx>> {
     }
 }
 
-impl<'tcx> Relate<'tcx> for ty::ClosureSubsts<'tcx> {
-    fn relate<'a, 'gcx, R>(relation: &mut R,
-                           a: &ty::ClosureSubsts<'tcx>,
-                           b: &ty::ClosureSubsts<'tcx>)
-                           -> RelateResult<'tcx, ty::ClosureSubsts<'tcx>>
-        where R: TypeRelation<'a, 'gcx, 'tcx>, 'gcx: 'a+'tcx, 'tcx: 'a
-    {
-        let substs = relate_substs(relation, None, a.substs, b.substs)?;
-        Ok(ty::ClosureSubsts { substs })
-    }
-}
-
 impl<'tcx> Relate<'tcx> for ty::GeneratorSubsts<'tcx> {
     fn relate<'a, 'gcx, R>(relation: &mut R,
                            a: &ty::GeneratorSubsts<'tcx>,

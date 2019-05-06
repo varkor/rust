@@ -10,7 +10,7 @@ use rustc::mir::{BasicBlock, BasicBlockData, Location, Mir, Place, PlaceBase, Rv
 use rustc::mir::{SourceInfo, Statement, Terminator};
 use rustc::mir::UserTypeProjection;
 use rustc::ty::fold::TypeFoldable;
-use rustc::ty::{self, ClosureSubsts, GeneratorSubsts, RegionVid, Ty};
+use rustc::ty::{self, GeneratorSubsts, RegionVid, Ty};
 use rustc::ty::subst::SubstsRef;
 
 pub(super) fn generate_constraints<'cx, 'gcx, 'tcx>(
@@ -93,8 +93,8 @@ impl<'cg, 'cx, 'gcx, 'tcx> Visitor<'tcx> for ConstraintGeneration<'cg, 'cx, 'gcx
 
     /// We sometimes have `closure_substs` within an rvalue, or within a
     /// call. Make them live at the location where they appear.
-    fn visit_closure_substs(&mut self, substs: &ClosureSubsts<'tcx>, location: Location) {
-        self.add_regular_live_constraint(*substs, location);
+    fn visit_closure_substs(&mut self, substs: SubstsRef<'tcx>, location: Location) {
+        self.add_regular_live_constraint(substs, location);
         self.super_closure_substs(substs);
     }
 

@@ -572,14 +572,14 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     ///
     /// Note that the return value is a late-bound region and hence
     /// wrapped in a binder.
-    pub fn closure_env_ty(self,
-                          closure_def_id: DefId,
-                          closure_substs: ty::ClosureSubsts<'tcx>)
-                          -> Option<ty::Binder<Ty<'tcx>>>
-    {
-        let closure_ty = self.mk_closure(closure_def_id, closure_substs);
+    pub fn closure_env_ty(
+        self,
+        def_id: DefId,
+        substs: ty::ClosureSubsts<'tcx>,
+    ) -> Option<ty::Binder<Ty<'tcx>>> {
+        let closure_ty = self.mk_closure(def_id, substs);
         let env_region = ty::ReLateBound(ty::INNERMOST, ty::BrEnv);
-        let closure_kind_ty = closure_substs.closure_kind_ty(closure_def_id, self);
+        let closure_kind_ty = ClosureSubsts::closure_kind_ty(substs, def_id, self);
         let closure_kind = closure_kind_ty.to_opt_closure_kind()?;
         let env_ty = match closure_kind {
             ty::ClosureKind::Fn => self.mk_imm_ref(self.mk_region(env_region), closure_ty),

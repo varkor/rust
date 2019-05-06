@@ -1,5 +1,5 @@
 use rustc::ty::subst::SubstsRef;
-use rustc::ty::{self, ClosureSubsts, GeneratorSubsts, Ty, TypeFoldable};
+use rustc::ty::{self, GeneratorSubsts, Ty, TypeFoldable};
 use rustc::mir::{Location, Mir};
 use rustc::mir::visit::{MutVisitor, TyContext};
 use rustc::infer::{InferCtxt, NLLRegionVariableOrigin};

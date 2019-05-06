@@ -18,7 +18,7 @@ use rustc::hir::{self, BodyOwnerKind, HirId};
 use rustc::infer::{InferCtxt, NLLRegionVariableOrigin};
 use rustc::ty::fold::TypeFoldable;
 use rustc::ty::subst::{InternalSubsts, SubstsRef};
-use rustc::ty::{self, ClosureSubsts, GeneratorSubsts, RegionVid, Ty, TyCtxt};
+use rustc::ty::{self, GeneratorSubsts, RegionVid, Ty, TyCtxt};
 use rustc::util::nodemap::FxHashMap;
 use rustc_data_structures::indexed_vec::{Idx, IndexVec};
 use rustc_errors::DiagnosticBuilder;
@@ -84,7 +84,7 @@ pub struct UniversalRegions<'tcx> {
 pub enum DefiningTy<'tcx> {
     /// The MIR is a closure. The signature is found via
     /// `ClosureSubsts::closure_sig_ty`.
-    Closure(DefId, ty::ClosureSubsts<'tcx>),
+    Closure(DefId, SubstsRef<'tcx>),
 
     /// The MIR is a generator. The signature is that generators take
     /// no parameters and return the result of
@@ -525,7 +525,7 @@ impl<'cx, 'gcx, 'tcx> UniversalRegionsBuilder<'cx, 'gcx, 'tcx> {
         let closure_base_def_id = tcx.closure_base_def_id(self.mir_def_id);
         let identity_substs = InternalSubsts::identity_for_item(gcx, closure_base_def_id);
         let fr_substs = match defining_ty {
-            DefiningTy::Closure(_, ClosureSubsts { ref substs })
+            DefiningTy::Closure(_, ref substs)
             | DefiningTy::Generator(_, GeneratorSubsts { ref substs }, _) => {
                 // In the case of closures, we rely on the fact that
                 // the first N elements in the ClosureSubsts are

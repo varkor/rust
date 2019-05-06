@@ -592,15 +592,6 @@ impl<'a, 'tcx, T: Lift<'tcx>> Lift<'tcx> for ty::ParamEnvAnd<'a, T> {
     }
 }
 
-impl<'a, 'tcx> Lift<'tcx> for ty::ClosureSubsts<'a> {
-    type Lifted = ty::ClosureSubsts<'tcx>;
-    fn lift_to_tcx<'b, 'gcx>(&self, tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
-        tcx.lift(&self.substs).map(|substs| {
-            ty::ClosureSubsts { substs }
-        })
-    }
-}
-
 impl<'a, 'tcx> Lift<'tcx> for ty::GeneratorSubsts<'a> {
     type Lifted = ty::GeneratorSubsts<'tcx>;
     fn lift_to_tcx<'b, 'gcx>(&self, tcx: TyCtxt<'b, 'gcx, 'tcx>) -> Option<Self::Lifted> {
@@ -1154,12 +1145,6 @@ impl<'tcx> TypeFoldable<'tcx> for ty::Region<'tcx> {
 
     fn visit_with<V: TypeVisitor<'tcx>>(&self, visitor: &mut V) -> bool {
         visitor.visit_region(*self)
-    }
-}
-
-BraceStructTypeFoldableImpl! {
-    impl<'tcx> TypeFoldable<'tcx> for ty::ClosureSubsts<'tcx> {
-        substs,
     }
 }
 

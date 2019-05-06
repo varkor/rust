@@ -3698,7 +3698,7 @@ impl<'cx, 'gcx, 'tcx> SelectionContext<'cx, 'gcx, 'tcx> {
         &mut self,
         obligation: &TraitObligation<'tcx>,
         closure_def_id: DefId,
-        substs: ty::ClosureSubsts<'tcx>,
+        substs: SubstsRef<'tcx>,
     ) -> ty::PolyTraitRef<'tcx> {
         debug!(
             "closure_trait_ref_unnormalized(obligation={:?}, closure_def_id={:?}, substs={:?})",

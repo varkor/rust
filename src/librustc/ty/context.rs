@@ -2655,9 +2655,8 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
         }
 
     #[inline]
-    pub fn mk_closure(self, closure_id: DefId, closure_substs: ClosureSubsts<'tcx>)
-                      -> Ty<'tcx> {
-        self.mk_ty(Closure(closure_id, closure_substs))
+    pub fn mk_closure(self, def_id: DefId, substs: SubstsRef<'tcx>) -> Ty<'tcx> {
+        self.mk_ty(Closure(def_id, substs))
     }
 
     #[inline]

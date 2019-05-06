@@ -2411,7 +2411,7 @@ pub enum AggregateKind<'tcx> {
         Option<usize>,
     ),
 
-    Closure(DefId, ClosureSubsts<'tcx>),
+    Closure(DefId, SubstsRef<'tcx>),
     Generator(DefId, GeneratorSubsts<'tcx>, hir::GeneratorMovability),
 }
 
@@ -3083,7 +3083,7 @@ pub struct BorrowCheckResult<'gcx> {
 /// Example: If type check produces a closure with the closure substs:
 ///
 /// ```text
-/// ClosureSubsts = [
+/// Subst = [
 ///     i8,                                  // the "closure kind"
 ///     for<'x> fn(&'a &'x u32) -> &'x u32,  // the "closure signature"
 ///     &'a String,                          // some upvar
@@ -3094,7 +3094,7 @@ pub struct BorrowCheckResult<'gcx> {
 /// twice. We would "renumber" each occurrence to a unique vid, as follows:
 ///
 /// ```text
-/// ClosureSubsts = [
+/// Subst = [
 ///     i8,                                  // the "closure kind"
 ///     for<'x> fn(&'1 &'x u32) -> &'x u32,  // the "closure signature"
 ///     &'2 String,                          // some upvar

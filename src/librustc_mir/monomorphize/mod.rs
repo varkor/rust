@@ -58,7 +58,7 @@ pub fn assert_symbols_are_distinct<'a, 'tcx, I>(tcx: TyCtxt<'a, 'tcx, 'tcx>, mon
 fn fn_once_adapter_instance<'a, 'tcx>(
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     closure_did: DefId,
-    substs: ty::ClosureSubsts<'tcx>,
+    substs: SubstRef<'tcx>,
     ) -> Instance<'tcx> {
     debug!("fn_once_adapter_shim({:?}, {:?})",
            closure_did,
@@ -116,7 +116,7 @@ fn needs_fn_once_adapter_shim(actual_closure_kind: ty::ClosureKind,
 pub fn resolve_closure<'a, 'tcx> (
     tcx: TyCtxt<'a, 'tcx, 'tcx>,
     def_id: DefId,
-    substs: ty::ClosureSubsts<'tcx>,
+    substs: SubstRef<'tcx>,
     requested_kind: ty::ClosureKind)
     -> Instance<'tcx>
 {

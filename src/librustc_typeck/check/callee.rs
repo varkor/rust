@@ -496,7 +496,7 @@ pub struct DeferredCallResolution<'gcx: 'tcx, 'tcx> {
     adjustments: Vec<Adjustment<'tcx>>,
     fn_sig: ty::FnSig<'tcx>,
     closure_def_id: DefId,
-    closure_substs: ty::ClosureSubsts<'tcx>,
+    closure_substs: ty::SubstRef<'tcx>,
 }
 
 impl<'a, 'gcx, 'tcx> DeferredCallResolution<'gcx, 'tcx> {
