@@ -426,7 +426,7 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
     let is_our_default = |def: &ty::GenericParamDef| {
         match def.kind {
             GenericParamDefKind::Type { has_default, .. } => {
-                has_default && def.index >= generics.parent_count as u32
+                has_default && def.index >= generics.parent_count
             }
             _ => unreachable!()
         }
@@ -490,7 +490,7 @@ fn check_where_clauses<'a, 'gcx, 'fcx, 'tcx>(
     // Now we build the substituted predicates.
     let default_obligations = predicates.predicates.iter().flat_map(|&(pred, _)| {
         #[derive(Default)]
-        struct CountParams { params: FxHashSet<u32> }
+        struct CountParams { params: FxHashSet<usize> }
         impl<'tcx> ty::fold::TypeVisitor<'tcx> for CountParams {
             fn visit_ty(&mut self, t: Ty<'tcx>) -> bool {
                 if let ty::Param(param) = t.sty {
@@ -936,7 +936,7 @@ fn check_variances_for_type_defn<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     let mut constrained_parameters: FxHashSet<_> =
         variances.iter().enumerate()
                         .filter(|&(_, &variance)| variance != ty::Bivariant)
-                        .map(|(index, _)| Parameter(index as u32))
+                        .map(|(index, _)| Parameter(index))
                         .collect();
 
     identify_constrained_generic_params(
@@ -947,7 +947,7 @@ fn check_variances_for_type_defn<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     );
 
     for (index, _) in variances.iter().enumerate() {
-        if constrained_parameters.contains(&Parameter(index as u32)) {
+        if constrained_parameters.contains(&Parameter(index)) {
             continue;
         }
 

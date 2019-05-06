@@ -968,12 +968,12 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
 
     let has_self = opt_self.is_some();
     let mut parent_has_self = false;
-    let mut own_start = has_self as u32;
+    let mut own_start = has_self as usize;
     let parent_count = parent_def_id.map_or(0, |def_id| {
         let generics = tcx.generics_of(def_id);
         assert_eq!(has_self, false);
         parent_has_self = generics.has_self;
-        own_start = generics.count() as u32;
+        own_start = generics.count();
         generics.parent_count + generics.params.len()
     });
 
@@ -985,7 +985,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
             .enumerate()
             .map(|(i, param)| ty::GenericParamDef {
                 name: param.name.ident().as_interned_str(),
-                index: own_start + i as u32,
+                index: own_start + i,
                 def_id: tcx.hir().local_def_id_from_hir_id(param.hir_id),
                 pure_wrt_drop: param.pure_wrt_drop,
                 kind: ty::GenericParamDefKind::Lifetime,
@@ -995,7 +995,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
     let object_lifetime_defaults = tcx.object_lifetime_defaults(hir_id);
 
     // Now create the real type parameters.
-    let type_start = own_start - has_self as u32 + params.len() as u32;
+    let type_start = own_start - has_self as usize + params.len();
     let mut i = 0;
     params.extend(
         ast_generics
@@ -1051,7 +1051,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
                 };
 
                 let param_def = ty::GenericParamDef {
-                    index: type_start + i as u32,
+                    index: type_start + i,
                     name: param.name.ident().as_interned_str(),
                     def_id: tcx.hir().local_def_id_from_hir_id(param.hir_id),
                     pure_wrt_drop: param.pure_wrt_drop,
@@ -1081,7 +1081,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
                 .iter()
                 .enumerate()
                 .map(|(i, &arg)| ty::GenericParamDef {
-                    index: type_start + i as u32,
+                    index: type_start + i,
                     name: Symbol::intern(arg).as_interned_str(),
                     def_id,
                     pure_wrt_drop: false,
@@ -1094,7 +1094,7 @@ fn generics_of<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>, def_id: DefId) -> &'tcx ty
         );
 
         if let Some(upvars) = tcx.upvars(def_id) {
-            params.extend(upvars.iter().zip((dummy_args.len() as u32)..).map(|(_, i)| {
+            params.extend(upvars.iter().zip((dummy_args.len())..).map(|(_, i)| {
                 ty::GenericParamDef {
                     index: type_start + i,
                     name: Symbol::intern("<upvar>").as_interned_str(),
@@ -2024,7 +2024,7 @@ fn explicit_predicates_of<'a, 'tcx>(
     };
 
     let generics = tcx.generics_of(def_id);
-    let parent_count = generics.parent_count as u32;
+    let parent_count = generics.parent_count;
     let has_own_self = generics.has_self && parent_count == 0;
 
     // Below we'll consider the bounds on the type parameters (including `Self`)
@@ -2050,7 +2050,7 @@ fn explicit_predicates_of<'a, 'tcx>(
     // Collect the region predicates that were declared inline as
     // well. In the case of parameters declared on a fn or method, we
     // have to be careful to only iterate over early-bound regions.
-    let mut index = parent_count + has_own_self as u32;
+    let mut index = parent_count + has_own_self as usize;
     for param in early_bound_lifetimes_from_generics(tcx, ast_generics) {
         let region = tcx.mk_region(ty::ReEarlyBound(ty::EarlyBoundRegion {
             def_id: tcx.hir().local_def_id_from_hir_id(param.hir_id),

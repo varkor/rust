@@ -2715,14 +2715,14 @@ impl<'a, 'gcx, 'tcx> TyCtxt<'a, 'gcx, 'tcx> {
     }
 
     #[inline]
-    pub fn mk_ty_param(self, index: u32, name: InternedString) -> Ty<'tcx> {
+    pub fn mk_ty_param(self, index: usize, name: InternedString) -> Ty<'tcx> {
         self.mk_ty(Param(ParamTy { index, name: name }))
     }
 
     #[inline]
     pub fn mk_const_param(
         self,
-        index: u32,
+        index: usize,
         name: InternedString,
         ty: Ty<'tcx>
     ) -> &'tcx Const<'tcx> {

@@ -854,7 +854,7 @@ pub enum GenericParamDefKind {
 pub struct GenericParamDef {
     pub name: InternedString,
     pub def_id: DefId,
-    pub index: u32,
+    pub index: usize,
 
     /// `pure_wrt_drop`, set by the (unsafe) `#[may_dangle]` attribute
     /// on generic parameter `'a`/`T`, asserts data behind the parameter
@@ -906,7 +906,7 @@ pub struct Generics {
 
     /// Reverse map to the `index` field of each `GenericParamDef`
     #[stable_hasher(ignore)]
-    pub param_def_id_to_index: FxHashMap<DefId, u32>,
+    pub param_def_id_to_index: FxHashMap<DefId, usize>,
 
     pub has_self: bool,
     pub has_late_bound_regions: Option<Span>,
@@ -962,8 +962,8 @@ impl<'a, 'gcx, 'tcx> Generics {
                         tcx: TyCtxt<'a, 'gcx, 'tcx>)
                         -> &'tcx GenericParamDef
     {
-        if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
-            let param = &self.params[index as usize];
+        if let Some(index) = param.index.checked_sub(self.parent_count) {
+            let param = &self.params[index];
             match param.kind {
                 GenericParamDefKind::Lifetime => param,
                 _ => bug!("expected lifetime parameter, but found another generic parameter")
@@ -979,8 +979,8 @@ impl<'a, 'gcx, 'tcx> Generics {
                       param: &ParamTy,
                       tcx: TyCtxt<'a, 'gcx, 'tcx>)
                       -> &'tcx GenericParamDef {
-        if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
-            let param = &self.params[index as usize];
+        if let Some(index) = param.index.checked_sub(self.parent_count) {
+            let param = &self.params[index];
             match param.kind {
                 GenericParamDefKind::Type { .. } => param,
                 _ => bug!("expected type parameter, but found another generic parameter")
@@ -996,8 +996,8 @@ impl<'a, 'gcx, 'tcx> Generics {
                        param: &ParamConst,
                        tcx: TyCtxt<'a, 'gcx, 'tcx>)
                        -> &GenericParamDef {
-        if let Some(index) = param.index.checked_sub(self.parent_count as u32) {
-            let param = &self.params[index as usize];
+        if let Some(index) = param.index.checked_sub(self.parent_count) {
+            let param = &self.params[index];
             match param.kind {
                 GenericParamDefKind::Const => param,
                 _ => bug!("expected const parameter, but found another generic parameter")

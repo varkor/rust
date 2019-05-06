@@ -534,11 +534,11 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx, 'tcx> {
         };
 
         // the type `U` in the query
-        // use a bogus type parameter to mimick a forall(U) query using u32::MAX for now.
+        // use a bogus type parameter to mimick a forall(U) query using usize::MAX for now.
         // FIXME(mikeyhew) this is a total hack, and we should replace it when real forall queries
         // are implemented
         let unsized_self_ty: Ty<'tcx> = self.mk_ty_param(
-            ::std::u32::MAX,
+            ::std::usize::MAX,
             Name::intern("RustaceansAreAwesome").as_interned_str(),
         );
 

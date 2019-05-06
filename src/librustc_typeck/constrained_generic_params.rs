@@ -5,7 +5,7 @@ use rustc::mir::interpret::ConstValue;
 use syntax::source_map::Span;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct Parameter(pub u32);
+pub struct Parameter(pub usize);
 
 impl From<ty::ParamTy> for Parameter {
     fn from(param: ty::ParamTy) -> Self { Parameter(param.index) }

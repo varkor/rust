@@ -1111,12 +1111,12 @@ pub type CanonicalPolyFnSig<'tcx> = Canonical<'tcx, Binder<FnSig<'tcx>>>;
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord,
          Hash, RustcEncodable, RustcDecodable, HashStable)]
 pub struct ParamTy {
-    pub index: u32,
+    pub index: usize,
     pub name: InternedString,
 }
 
 impl<'a, 'gcx, 'tcx> ParamTy {
-    pub fn new(index: u32, name: InternedString) -> ParamTy {
+    pub fn new(index: usize, name: InternedString) -> ParamTy {
         ParamTy { index, name: name }
     }
 
@@ -1143,12 +1143,12 @@ impl<'a, 'gcx, 'tcx> ParamTy {
 #[derive(Copy, Clone, Hash, RustcEncodable, RustcDecodable,
          Eq, PartialEq, Ord, PartialOrd, HashStable)]
 pub struct ParamConst {
-    pub index: u32,
+    pub index: usize,
     pub name: InternedString,
 }
 
 impl<'a, 'gcx, 'tcx> ParamConst {
-    pub fn new(index: u32, name: InternedString) -> ParamConst {
+    pub fn new(index: usize, name: InternedString) -> ParamConst {
         ParamConst { index, name }
     }
 
@@ -1320,7 +1320,7 @@ impl<'tcx> serialize::UseSpecializedDecodable for Region<'tcx> {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, RustcEncodable, RustcDecodable, Debug, PartialOrd, Ord)]
 pub struct EarlyBoundRegion {
     pub def_id: DefId,
-    pub index: u32,
+    pub index: usize,
     pub name: InternedString,
 }
 
@@ -1761,7 +1761,7 @@ impl<'a, 'gcx, 'tcx> TyS<'tcx> {
 
     pub fn is_bool(&self) -> bool { self.sty == Bool }
 
-    pub fn is_param(&self, index: u32) -> bool {
+    pub fn is_param(&self, index: usize) -> bool {
         match self.sty {
             ty::Param(ref data) => data.index == index,
             _ => false,

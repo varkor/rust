@@ -5797,7 +5797,7 @@ pub fn check_bounds_are_used<'a, 'tcx>(tcx: TyCtxt<'a, 'tcx, 'tcx>,
     for leaf_ty in ty.walk() {
         if let ty::Param(ty::ParamTy { index, .. }) = leaf_ty.sty {
             debug!("Found use of ty param num {}", index);
-            types_used[index as usize - own_counts.lifetimes] = true;
+            types_used[index - own_counts.lifetimes] = true;
         } else if let ty::Error = leaf_ty.sty {
             // If there is already another error, do not emit
             // an error for not using a type Parameter.

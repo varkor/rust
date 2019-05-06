@@ -129,7 +129,7 @@ impl<'o, 'gcx: 'tcx, 'tcx> dyn AstConv<'gcx, 'tcx> + 'o {
                 let name = lifetime_name(id);
                 tcx.mk_region(ty::ReEarlyBound(ty::EarlyBoundRegion {
                     def_id: id,
-                    index,
+                    index: index as usize,
                     name,
                 }))
             }

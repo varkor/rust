@@ -170,11 +170,11 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
 
     fn add_constraint(&mut self,
                       current: &CurrentItem,
-                      index: u32,
+                      index: usize,
                       variance: VarianceTermPtr<'a>) {
         debug!("add_constraint(index={}, variance={:?})", index, variance);
         self.constraints.push(Constraint {
-            inferred: InferredIndex(current.inferred_start.0 + index as usize),
+            inferred: InferredIndex(current.inferred_start.0 + index),
             variance,
         });
     }
