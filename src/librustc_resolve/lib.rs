@@ -152,7 +152,7 @@ impl Ord for BindingError {
 type Suggestion = (Vec<(Span, String)>, String, Applicability);
 
 enum ResolutionError<'a> {
-    /// Error E0401: can't use type or const parameters from outer function.
+    /// Error E0401: can't use type parameters from outer function.
     GenericParamsFromOuterFunction(Res),
     /// Error E0403: the name is already used for a type or const parameter in this generic
     /// parameter list.
@@ -4119,28 +4119,6 @@ impl<'a> Resolver<'a> {
                             }
                             return Res::Err;
                         }
-                    }
-                }
-            }
-            Res::Def(DefKind::ConstParam, _) => {
-                let mut ribs = ribs.iter().peekable();
-                if let Some(Rib { kind: FnItemRibKind, .. }) = ribs.peek() {
-                    // When declaring const parameters inside function signatures, the first rib
-                    // is always a `FnItemRibKind`. In this case, we can skip it, to avoid it
-                    // (spuriously) conflicting with the const param.
-                    ribs.next();
-                }
-                for rib in ribs {
-                    if let ItemRibKind | FnItemRibKind = rib.kind {
-                        // This was an attempt to use a const parameter outside its scope.
-                        if record_used {
-                            resolve_error(
-                                self,
-                                span,
-                                ResolutionError::GenericParamsFromOuterFunction(res),
-                            );
-                        }
-                        return Res::Err;
                     }
                 }
             }
