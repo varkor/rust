@@ -152,6 +152,8 @@ mod bar {
 "##,
 
 E0253: r##"
+#### Note: this error code is no longer emitted by the compiler.
+
 Attempt was made to import an unimportable value. This can happen when trying
 to import a method from a trait.
 

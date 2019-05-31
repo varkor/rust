@@ -1509,15 +1509,6 @@ impl<'a> NameBinding<'a> {
         }
     }
 
-    fn is_importable(&self) -> bool {
-        match self.res() {
-            Res::Def(DefKind::AssocConst, _)
-            | Res::Def(DefKind::Method, _)
-            | Res::Def(DefKind::AssocTy, _) => false,
-            _ => true,
-        }
-    }
-
     fn is_macro_def(&self) -> bool {
         match self.kind {
             NameBindingKind::Res(Res::Def(DefKind::Macro(..), _), _) => true,
@@ -4682,8 +4673,6 @@ impl<'a> Resolver<'a> {
             in_module.for_each_child_stable(|ident, ns, name_binding| {
                 // avoid imports entirely
                 if name_binding.is_import() && !name_binding.is_extern_crate() { return; }
-                // avoid non-importable candidates as well
-                if !name_binding.is_importable() { return; }
 
                 // collect results based on the filter function
                 if ident.name == lookup_ident.name && ns == namespace {

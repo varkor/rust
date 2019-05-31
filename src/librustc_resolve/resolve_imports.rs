@@ -875,15 +875,6 @@ impl<'a, 'b:'a> ImportResolver<'a, 'b> {
                         resolution.single_imports.remove(&PtrKey(directive));
                     });
                 }
-                Ok(binding) if !binding.is_importable() => {
-                    let msg = format!("`{}` is not directly importable", target);
-                    struct_span_err!(this.session, directive.span, E0253, "{}", &msg)
-                        .span_label(directive.span, "cannot be imported directly")
-                        .emit();
-                    // Do not import this illegal binding. Import a dummy binding and pretend
-                    // everything is fine
-                    this.import_dummy_binding(directive);
-                }
                 Ok(binding) => {
                     let imported_binding = this.import(binding, directive);
                     target_bindings[ns].set(Some(imported_binding));
