@@ -3278,6 +3278,10 @@ fn param_env<'tcx>(tcx: TyCtxt<'tcx, 'tcx>, def_id: DefId) -> ParamEnv<'tcx> {
         if tcx.sess.opts.debugging_opts.chalk { Some(def_id) } else { None }
     );
 
+    if tcx.features().defer_normalization {
+        return unnormalized_env;
+    }
+
     let body_id = tcx.hir().as_local_hir_id(def_id).map_or(hir::DUMMY_HIR_ID, |id| {
         tcx.hir().maybe_body_owned_by_by_hir_id(id).map_or(id, |body| body.hir_id)
     });

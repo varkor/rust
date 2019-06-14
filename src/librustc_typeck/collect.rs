@@ -891,9 +891,14 @@ fn generics_of<'tcx>(tcx: TyCtxt<'tcx, 'tcx>, def_id: DefId) -> &'tcx ty::Generi
     let node = tcx.hir().get_by_hir_id(hir_id);
     let parent_def_id = match node {
         Node::ImplItem(_) | Node::TraitItem(_) | Node::Variant(_) |
-        Node::Ctor(..) | Node::Field(_) => {
-            let parent_id = tcx.hir().get_parent_item(hir_id);
-            Some(tcx.hir().local_def_id_from_hir_id(parent_id))
+        Node::Ctor(..) | Node::Field(_) | Node::AnonConst(_) => {
+            match node {
+                Node::AnonConst(_) if !tcx.features().defer_normalization => None,
+                _ => {
+                    let parent_id = tcx.hir().get_parent_item(hir_id);
+                    Some(tcx.hir().local_def_id_from_hir_id(parent_id))
+                }
+            }
         }
         Node::Expr(&hir::Expr {
             node: hir::ExprKind::Closure(..),

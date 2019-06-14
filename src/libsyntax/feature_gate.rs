@@ -564,6 +564,9 @@ declare_features! (
     // FIXME Create issue
     (active, const_constructor, "1.37.0", Some(61456), None),
 
+    // Defer normalization for testing.
+    (active, defer_normalization, "1.37.0", Some(60471), None),
+
     // #[repr(transparent)] on enums.
     (active, transparent_enums, "1.37.0", Some(60405), None),
 

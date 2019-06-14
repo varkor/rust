@@ -217,6 +217,7 @@ symbols! {
         default_lib_allocator,
         default_type_parameter_fallback,
         default_type_params,
+        defer_normalization,
         deny,
         deprecated,
         deref,
