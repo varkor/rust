@@ -70,6 +70,14 @@ help: possible candidate is found in another module, you can import it into scop
 LL | use foo::Self;
    |
 
+warning: lifetime parameter `'Self` never used
+  --> $DIR/self_type_keyword.rs:6:12
+   |
+LL | struct Bar<'Self>;
+   |           -^^^^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0392]: parameter `'Self` is never used
   --> $DIR/self_type_keyword.rs:6:12
    |

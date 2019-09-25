@@ -1,3 +1,17 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/borrowck-borrow-overloaded-auto-deref-mut.rs:87:18
+   |
+LL | fn assign_field1<'a>(x: Own<Point>) {
+   |                 -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/borrowck-borrow-overloaded-auto-deref-mut.rs:128:19
+   |
+LL | fn assign_method1<'a>(x: Own<Point>) {
+   |                  -^^- help: elide the unused lifetime
+
 error[E0596]: cannot borrow `x` as mutable, as it is not declared as mutable
   --> $DIR/borrowck-borrow-overloaded-auto-deref-mut.rs:53:24
    |

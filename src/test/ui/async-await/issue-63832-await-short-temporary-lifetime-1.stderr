@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63832-await-short-temporary-lifetime-1.rs:7:27
+   |
+LL |     async fn borrow_async(&self) {}
+   |                           ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

@@ -1,3 +1,21 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-implied-bounds-projection-gap-hr-1.rs:13:18
+   |
+LL | trait Trait2<'a, 'b> {
+   |                --^^
+   |                |
+   |                help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-implied-bounds-projection-gap-hr-1.rs:13:14
+   |
+LL | trait Trait2<'a, 'b> {
+   |              ^^--
+   |              |
+   |              help: elide the unused lifetime
+
 error[E0491]: in type `&'x (dyn for<'z> Trait1<<T as Trait2<'y, 'z>>::Foo> + 'x)`, reference has a longer lifetime than the data it references
   --> $DIR/regions-implied-bounds-projection-gap-hr-1.rs:21:1
    |

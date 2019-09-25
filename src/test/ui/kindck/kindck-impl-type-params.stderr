@@ -1,3 +1,17 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/kindck-impl-type-params.rs:36:9
+   |
+LL | fn foo2<'a>() {
+   |        -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/kindck-impl-type-params.rs:42:9
+   |
+LL | fn foo3<'a>() {
+   |        -^^- help: elide the unused lifetime
+
 error[E0277]: `T` cannot be sent between threads safely
   --> $DIR/kindck-impl-type-params.rs:18:13
    |

@@ -1,3 +1,11 @@
+warning: lifetime parameter `'this` never used
+  --> $DIR/local-outlives-static-via-hrtb.rs:4:20
+   |
+LL | pub trait Outlives<'this> {}
+   |                   -^^^^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0597]: `local` does not live long enough
   --> $DIR/local-outlives-static-via-hrtb.rs:24:28
    |

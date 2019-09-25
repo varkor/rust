@@ -1,3 +1,11 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/dont-print-desugared-async.rs:5:31
+   |
+LL | async fn async_fn(&ref mut s: &[i32]) {}
+   |                               ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0596]: cannot borrow data in a `&` reference as mutable
   --> $DIR/dont-print-desugared-async.rs:5:20
    |

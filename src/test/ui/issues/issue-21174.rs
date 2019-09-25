@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait Trait<'a> {
     type A;
     type B;

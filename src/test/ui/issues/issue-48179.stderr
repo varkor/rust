@@ -1,0 +1,10 @@
+warning: lifetime parameter `'de` never used
+  --> $DIR/issue-48179.rs:20:10
+   |
+LL | impl<'a, 'de> Wrapper<'a> {
+   |        --^^^
+   |        |
+   |        help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

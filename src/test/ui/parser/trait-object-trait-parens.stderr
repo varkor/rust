@@ -30,6 +30,14 @@ warning: trait objects without an explicit `dyn` are deprecated
 LL |     let _: Box<(for<'a> Trait<'a>) + (Copy) + (?Sized)>;
    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use `dyn`: `dyn (for<'a> Trait<'a>) + (Copy) + (?Sized)`
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/trait-object-trait-parens.rs:1:13
+   |
+LL | trait Trait<'a> {}
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0261]: use of undeclared lifetime name `'a`
   --> $DIR/trait-object-trait-parens.rs:11:31
    |

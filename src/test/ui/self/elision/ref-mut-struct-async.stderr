@@ -1,3 +1,105 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:13:47
+   |
+LL |     async fn ref_Struct(self: &mut Struct, f: &u32) -> &u32 {
+   |                                               ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:13:31
+   |
+LL |     async fn ref_Struct(self: &mut Struct, f: &u32) -> &u32 {
+   |                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:13:56
+   |
+LL |     async fn ref_Struct(self: &mut Struct, f: &u32) -> &u32 {
+   |                               ----------------         ^
+   |                               |
+   |                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:17:56
+   |
+LL |     async fn box_ref_Struct(self: Box<&mut Struct>, f: &u32) -> &u32 {
+   |                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:17:39
+   |
+LL |     async fn box_ref_Struct(self: Box<&mut Struct>, f: &u32) -> &u32 {
+   |                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:17:65
+   |
+LL |     async fn box_ref_Struct(self: Box<&mut Struct>, f: &u32) -> &u32 {
+   |                                       -----------------         ^
+   |                                       |
+   |                                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:21:39
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&mut Struct>, f: &u32) -> &u32 {
+   |                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:21:56
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&mut Struct>, f: &u32) -> &u32 {
+   |                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:21:65
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&mut Struct>, f: &u32) -> &u32 {
+   |                                       -----------------         ^
+   |                                       |
+   |                                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:25:65
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&mut Struct>>, f: &u32) -> &u32 {
+   |                                                                 ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:25:47
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&mut Struct>>, f: &u32) -> &u32 {
+   |                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:25:74
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&mut Struct>>, f: &u32) -> &u32 {
+   |                                               ------------------         ^
+   |                                               |
+   |                                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:29:65
+   |
+LL |     async fn box_pin_ref_Struct(self: Box<Pin<&mut Struct>>, f: &u32) -> &u32 {
+   |                                                                 ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:29:47
+   |
+LL |     async fn box_pin_ref_Struct(self: Box<Pin<&mut Struct>>, f: &u32) -> &u32 {
+   |                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-struct-async.rs:29:74
+   |
+LL |     async fn box_pin_ref_Struct(self: Box<Pin<&mut Struct>>, f: &u32) -> &u32 {
+   |                                               ------------------         ^
+   |                                               |
+   |                                               help: elide the unused lifetime
+
 error[E0623]: lifetime mismatch
   --> $DIR/ref-mut-struct-async.rs:13:56
    |

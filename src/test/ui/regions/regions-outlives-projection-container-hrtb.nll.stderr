@@ -1,3 +1,11 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-outlives-projection-container-hrtb.rs:9:20
+   |
+LL | pub trait TheTrait<'b> {
+   |                   -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: lifetime may not live long enough
   --> $DIR/regions-outlives-projection-container-hrtb.rs:30:12
    |

@@ -1,0 +1,18 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-outlives-projection-hrtype.rs:19:11
+   |
+LL | fn foo<'a,'b,T>()
+   |           ^^-
+   |           |
+   |           help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-outlives-projection-hrtype.rs:19:8
+   |
+LL | fn foo<'a,'b,T>()
+   |        ^^-
+   |        |
+   |        help: elide the unused lifetime
+

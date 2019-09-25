@@ -22,5 +22,71 @@ error: lifetime parameters must be declared prior to type parameters
 LL | fn fourth<'a, T, 'b, U, 'c, V>() {}
    |          --------^^-----^^---- help: reorder the parameters: lifetimes, then types: `<'a, 'b, 'c, T, U, V>`
 
+warning: lifetime parameter `'b` never used
+  --> $DIR/lifetime-before-type-params.rs:2:17
+   |
+LL | fn first<T, 'a, 'b>() {}
+   |          -------^^
+   |          |
+   |          help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-before-type-params.rs:2:13
+   |
+LL | fn first<T, 'a, 'b>() {}
+   |             ^^--
+   |             |
+   |             help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-before-type-params.rs:4:11
+   |
+LL | fn second<'a, T, 'b>() {}
+   |           ^^-----
+   |           |
+   |           help: elide the unused lifetime
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/lifetime-before-type-params.rs:4:18
+   |
+LL | fn second<'a, T, 'b>() {}
+   |               ---^^
+   |               |
+   |               help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-before-type-params.rs:6:16
+   |
+LL | fn third<T, U, 'a>() {}
+   |          ------^^
+   |          |
+   |          help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-before-type-params.rs:8:11
+   |
+LL | fn fourth<'a, T, 'b, U, 'c, V>() {}
+   |           ^^-----
+   |           |
+   |           help: elide the unused lifetime
+
+warning: lifetime parameter `'c` never used
+  --> $DIR/lifetime-before-type-params.rs:8:25
+   |
+LL | fn fourth<'a, T, 'b, U, 'c, V>() {}
+   |               ----------^^
+   |               |
+   |               help: elide the unused lifetime
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/lifetime-before-type-params.rs:8:18
+   |
+LL | fn fourth<'a, T, 'b, U, 'c, V>() {}
+   |                  ^^-----
+   |                  |
+   |                  help: elide the unused lifetime
+
 error: aborting due to 4 previous errors
 

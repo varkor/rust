@@ -1,0 +1,102 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:19:30
+   |
+LL |     async fn ref_Alias(self: &Alias, f: &u32) -> &u32 {
+   |                              ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:19:41
+   |
+LL |     async fn ref_Alias(self: &Alias, f: &u32) -> &u32 {
+   |                                         ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:19:50
+   |
+LL |     async fn ref_Alias(self: &Alias, f: &u32) -> &u32 {
+   |                              -----------         ^
+   |                              |
+   |                              help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:23:50
+   |
+LL |     async fn box_ref_Alias(self: Box<&Alias>, f: &u32) -> &u32 {
+   |                                                  ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:23:38
+   |
+LL |     async fn box_ref_Alias(self: Box<&Alias>, f: &u32) -> &u32 {
+   |                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:23:59
+   |
+LL |     async fn box_ref_Alias(self: Box<&Alias>, f: &u32) -> &u32 {
+   |                                      ------------         ^
+   |                                      |
+   |                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:27:50
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&Alias>, f: &u32) -> &u32 {
+   |                                                  ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:27:38
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&Alias>, f: &u32) -> &u32 {
+   |                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:27:59
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&Alias>, f: &u32) -> &u32 {
+   |                                      ------------         ^
+   |                                      |
+   |                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:31:46
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&Alias>>, f: &u32) -> &u32 {
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:31:59
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&Alias>>, f: &u32) -> &u32 {
+   |                                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:31:68
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&Alias>>, f: &u32) -> &u32 {
+   |                                              -------------         ^
+   |                                              |
+   |                                              help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:35:46
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&Alias>>, f: &u32) -> &u32 {
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:35:59
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&Alias>>, f: &u32) -> &u32 {
+   |                                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-alias-async.rs:35:68
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&Alias>>, f: &u32) -> &u32 {
+   |                                              -------------         ^
+   |                                              |
+   |                                              help: elide the unused lifetime
+

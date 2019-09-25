@@ -1,3 +1,29 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-struct-not-wf.rs:5:13
+   |
+LL | trait Trait<'a, T> {
+   |             ^^--
+   |             |
+   |             help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-struct-not-wf.rs:8:18
+   |
+LL | trait Trait1<'a, 'b, T> {
+   |                  ^^--
+   |                  |
+   |                  help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-struct-not-wf.rs:8:14
+   |
+LL | trait Trait1<'a, 'b, T> {
+   |              ^^--
+   |              |
+   |              help: elide the unused lifetime
+
 error[E0309]: the parameter type `T` may not live long enough
   --> $DIR/regions-struct-not-wf.rs:13:5
    |

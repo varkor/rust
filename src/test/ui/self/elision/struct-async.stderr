@@ -1,0 +1,72 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:12:42
+   |
+LL |     async fn ref_Struct(self: Struct, f: &u32) -> &u32 {
+   |                                          ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:12:51
+   |
+LL |     async fn ref_Struct(self: Struct, f: &u32) -> &u32 {
+   |                                          ---------^
+   |                                          |
+   |                                          help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:16:47
+   |
+LL |     async fn box_Struct(self: Box<Struct>, f: &u32) -> &u32 {
+   |                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:16:56
+   |
+LL |     async fn box_Struct(self: Box<Struct>, f: &u32) -> &u32 {
+   |                                               ---------^
+   |                                               |
+   |                                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:20:45
+   |
+LL |     async fn rc_Struct(self: Rc<Struct>, f: &u32) -> &u32 {
+   |                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:20:54
+   |
+LL |     async fn rc_Struct(self: Rc<Struct>, f: &u32) -> &u32 {
+   |                                             ---------^
+   |                                             |
+   |                                             help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:24:56
+   |
+LL |     async fn box_box_Struct(self: Box<Box<Struct>>, f: &u32) -> &u32 {
+   |                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:24:65
+   |
+LL |     async fn box_box_Struct(self: Box<Box<Struct>>, f: &u32) -> &u32 {
+   |                                                        ---------^
+   |                                                        |
+   |                                                        help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:28:54
+   |
+LL |     async fn box_rc_Struct(self: Box<Rc<Struct>>, f: &u32) -> &u32 {
+   |                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/struct-async.rs:28:63
+   |
+LL |     async fn box_rc_Struct(self: Box<Rc<Struct>>, f: &u32) -> &u32 {
+   |                                                      ---------^
+   |                                                      |
+   |                                                      help: elide the unused lifetime
+

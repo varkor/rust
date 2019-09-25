@@ -6,3 +6,11 @@ LL |     'a: loop {
 LL |         let b = Box::new(|x: &i8| *x) as Box<dyn for <'a> Fn(&'a i8) -> i8>;
    |                                                       ^^ lifetime 'a already in scope
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/loops-reject-lifetime-shadowing-label.rs:16:31
+   |
+LL |     struct S2; impl S2 { fn m<'a>(&self) {} }
+   |                              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

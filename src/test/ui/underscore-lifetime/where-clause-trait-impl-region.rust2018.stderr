@@ -4,5 +4,13 @@ error[E0637]: `&` without an explicit lifetime name cannot be used here
 LL |     T: WithType<&u32>
    |                 ^ explicit lifetime name needed here
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/where-clause-trait-impl-region.rs:5:18
+   |
+LL | trait WithRegion<'a> { }
+   |                 -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to previous error
 

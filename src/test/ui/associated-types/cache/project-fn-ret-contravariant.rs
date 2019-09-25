@@ -8,7 +8,9 @@
 
 // revisions: ok oneuse transmute krisskross
 
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_lifetimes)]
 
 fn foo<'a>() -> &'a u32 { loop { } }
 

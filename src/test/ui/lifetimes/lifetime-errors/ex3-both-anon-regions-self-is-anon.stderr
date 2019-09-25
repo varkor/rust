@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/ex3-both-anon-regions-self-is-anon.rs:6:12
+   |
+LL |     fn foo<'a>(&self, x: &Foo) -> &Foo {
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0623]: lifetime mismatch
   --> $DIR/ex3-both-anon-regions-self-is-anon.rs:7:19
    |

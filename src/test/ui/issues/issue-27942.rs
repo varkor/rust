@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 pub trait Resources<'a> {}
 
 pub trait Buffer<'a, R: Resources<'a>> {

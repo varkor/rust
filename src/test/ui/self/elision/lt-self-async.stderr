@@ -1,0 +1,98 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/lt-self-async.rs:14:6
+   |
+LL | impl<'a> Struct<'a> {
+   |      ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:15:33
+   |
+LL |     async fn take_self(self, f: &u32) -> &u32 {
+   |                                 ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:15:42
+   |
+LL |     async fn take_self(self, f: &u32) -> &u32 {
+   |                                 ---------^
+   |                                 |
+   |                                 help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lt-self-async.rs:14:6
+   |
+LL | impl<'a> Struct<'a> {
+   |      ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:19:39
+   |
+LL |     async fn take_Self(self: Self, f: &u32) -> &u32 {
+   |                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:19:48
+   |
+LL |     async fn take_Self(self: Self, f: &u32) -> &u32 {
+   |                                       ---------^
+   |                                       |
+   |                                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:23:48
+   |
+LL |     async fn take_Box_Self(self: Box<Self>, f: &u32) -> &u32 {
+   |                                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:23:57
+   |
+LL |     async fn take_Box_Self(self: Box<Self>, f: &u32) -> &u32 {
+   |                                                ---------^
+   |                                                |
+   |                                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:27:57
+   |
+LL |     async fn take_Box_Box_Self(self: Box<Box<Self>>, f: &u32) -> &u32 {
+   |                                                         ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:27:66
+   |
+LL |     async fn take_Box_Box_Self(self: Box<Box<Self>>, f: &u32) -> &u32 {
+   |                                                         ---------^
+   |                                                         |
+   |                                                         help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:31:46
+   |
+LL |     async fn take_Rc_Self(self: Rc<Self>, f: &u32) -> &u32 {
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:31:55
+   |
+LL |     async fn take_Rc_Self(self: Rc<Self>, f: &u32) -> &u32 {
+   |                                              ---------^
+   |                                              |
+   |                                              help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:35:55
+   |
+LL |     async fn take_Box_Rc_Self(self: Box<Rc<Self>>, f: &u32) -> &u32 {
+   |                                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-self-async.rs:35:64
+   |
+LL |     async fn take_Box_Rc_Self(self: Box<Rc<Self>>, f: &u32) -> &u32 {
+   |                                                       ---------^
+   |                                                       |
+   |                                                       help: elide the unused lifetime
+

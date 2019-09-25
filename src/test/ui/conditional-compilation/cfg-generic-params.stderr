@@ -46,5 +46,73 @@ error: cannot find attribute `unknown` in this scope
 LL | fn f_lt_yes<#[cfg_attr(yes, unknown)] 'a>() {}
    |                             ^^^^^^^
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:6:31
+   |
+LL | type FnGood = for<#[cfg(yes)] 'a, #[cfg(no)] T> fn(); // OK
+   |                               ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:10:37
+   |
+LL | type PolyGood = dyn for<#[cfg(yes)] 'a, #[cfg(no)] T> Copy; // OK
+   |                                     ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:14:40
+   |
+LL | struct WhereGood where for<#[cfg(yes)] 'a, #[cfg(no)] T> u8: Copy; // OK
+   |                                        ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:18:37
+   |
+LL | fn f_lt_no<#[cfg_attr(no, unknown)] 'a>() {} // OK
+   |           --------------------------^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:19:39
+   |
+LL | fn f_lt_yes<#[cfg_attr(yes, unknown)] 'a>() {}
+   |            ---------------------------^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:25:42
+   |
+LL | type FnNo = for<#[cfg_attr(no, unknown)] 'a> fn(); // OK
+   |                                          ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:26:44
+   |
+LL | type FnYes = for<#[cfg_attr(yes, unknown)] 'a> fn();
+   |                                            ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:29:48
+   |
+LL | type PolyNo = dyn for<#[cfg_attr(no, unknown)] 'a> Copy; // OK
+   |                                                ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:30:50
+   |
+LL | type PolyYes = dyn for<#[cfg_attr(yes, unknown)] 'a> Copy;
+   |                                                  ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:33:51
+   |
+LL | struct WhereNo where for<#[cfg_attr(no, unknown)] 'a> u8: Copy; // OK
+   |                                                   ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/cfg-generic-params.rs:34:53
+   |
+LL | struct WhereYes where for<#[cfg_attr(yes, unknown)] 'a> u8: Copy;
+   |                                                     ^^
+
 error: aborting due to 8 previous errors
 

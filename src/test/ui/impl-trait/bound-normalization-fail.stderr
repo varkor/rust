@@ -6,6 +6,14 @@ LL | #![feature(impl_trait_in_bindings)]
    |
    = note: `#[warn(incomplete_features)]` on by default
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/bound-normalization-fail.rs:39:17
+   |
+LL |     trait Trait<'a> {
+   |                -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0271]: type mismatch resolving `<Foo<()> as FooLike>::Output == <T as impl_trait::Trait>::Assoc`
   --> $DIR/bound-normalization-fail.rs:28:32
    |

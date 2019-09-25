@@ -2,6 +2,6 @@
 
 struct SomeStruct<'a> { x: u32 } //~ ERROR parameter `'a` is never used
 enum SomeEnum<'a> { Nothing } //~ ERROR parameter `'a` is never used
-trait SomeTrait<'a> { fn foo(&self); } // OK on traits.
+trait SomeTrait<'a> { fn foo(&self); } //~ WARN parameter `'a` is never used
 
 fn main() {}

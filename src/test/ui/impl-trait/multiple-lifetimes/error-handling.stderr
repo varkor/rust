@@ -1,3 +1,17 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/error-handling.rs:11:8
+   |
+LL | type E<'a, 'b> = impl Sized;
+   |        ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/error-handling.rs:11:12
+   |
+LL | type E<'a, 'b> = impl Sized;
+   |            ^^
+
 error: lifetime may not live long enough
   --> $DIR/error-handling.rs:13:56
    |

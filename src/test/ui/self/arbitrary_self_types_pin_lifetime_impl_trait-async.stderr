@@ -1,3 +1,11 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_impl_trait-async.rs:8:26
+   |
+LL |     async fn f(self: Pin<&Self>) -> impl Clone { self }
+   |                          ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: cannot infer an appropriate lifetime
   --> $DIR/arbitrary_self_types_pin_lifetime_impl_trait-async.rs:8:16
    |

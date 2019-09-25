@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-62517-1.rs:13:17
+   |
+LL | async fn foo(x: &str) -> impl SecondTrait<Item = dyn FirstTrait> {
+   |                 ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

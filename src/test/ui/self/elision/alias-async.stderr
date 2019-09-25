@@ -1,0 +1,72 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:16:36
+   |
+LL |     async fn alias(self: Alias, f: &u32) -> &u32 {
+   |                                    ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:16:45
+   |
+LL |     async fn alias(self: Alias, f: &u32) -> &u32 {
+   |                                    ---------^
+   |                                    |
+   |                                    help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:20:45
+   |
+LL |     async fn box_Alias(self: Box<Alias>, f: &u32) -> &u32 {
+   |                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:20:54
+   |
+LL |     async fn box_Alias(self: Box<Alias>, f: &u32) -> &u32 {
+   |                                             ---------^
+   |                                             |
+   |                                             help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:24:43
+   |
+LL |     async fn rc_Alias(self: Rc<Alias>, f: &u32) -> &u32 {
+   |                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:24:52
+   |
+LL |     async fn rc_Alias(self: Rc<Alias>, f: &u32) -> &u32 {
+   |                                           ---------^
+   |                                           |
+   |                                           help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:28:54
+   |
+LL |     async fn box_box_Alias(self: Box<Box<Alias>>, f: &u32) -> &u32 {
+   |                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:28:63
+   |
+LL |     async fn box_box_Alias(self: Box<Box<Alias>>, f: &u32) -> &u32 {
+   |                                                      ---------^
+   |                                                      |
+   |                                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:32:52
+   |
+LL |     async fn box_rc_Alias(self: Box<Rc<Alias>>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/alias-async.rs:32:61
+   |
+LL |     async fn box_rc_Alias(self: Box<Rc<Alias>>, f: &u32) -> &u32 {
+   |                                                    ---------^
+   |                                                    |
+   |                                                    help: elide the unused lifetime
+

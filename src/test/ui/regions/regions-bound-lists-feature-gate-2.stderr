@@ -1,0 +1,18 @@
+warning: lifetime parameter `'c` never used
+  --> $DIR/regions-bound-lists-feature-gate-2.rs:11:16
+   |
+LL | fn foo<'a, 'b, 'c:'a+'b, 'd>() {
+   |                ^^--------
+   |                |
+   |                help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'d` never used
+  --> $DIR/regions-bound-lists-feature-gate-2.rs:11:26
+   |
+LL | fn foo<'a, 'b, 'c:'a+'b, 'd>() {
+   |                  --------^^
+   |                  |
+   |                  help: elide the unused lifetime
+

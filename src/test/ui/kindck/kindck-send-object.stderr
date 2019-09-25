@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/kindck-send-object.rs:16:36
+   |
+LL | fn box_object_with_no_bound_not_ok<'a>() {
+   |                                   -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0277]: `(dyn Dummy + 'static)` cannot be shared between threads safely
   --> $DIR/kindck-send-object.rs:12:5
    |

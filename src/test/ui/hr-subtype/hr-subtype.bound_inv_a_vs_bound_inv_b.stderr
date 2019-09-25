@@ -1,3 +1,29 @@
+warning: lifetime parameter `'z` never used
+  --> $DIR/hr-subtype.rs:32:29
+   |
+LL |           fn subtype<'x,'y:'x,'z:'y>() {
+   |                           ----^^
+   |                           |
+   |                           help: elide the unused lifetime
+...
+LL | / check! { bound_inv_a_vs_bound_inv_b: (for<'a> fn(Inv<'a>),
+LL | |                                       for<'b> fn(Inv<'b>)) }
+   | |____________________________________________________________- in this macro invocation
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'z` never used
+  --> $DIR/hr-subtype.rs:38:31
+   |
+LL |           fn supertype<'x,'y:'x,'z:'y>() {
+   |                             ----^^
+   |                             |
+   |                             help: elide the unused lifetime
+...
+LL | / check! { bound_inv_a_vs_bound_inv_b: (for<'a> fn(Inv<'a>),
+LL | |                                       for<'b> fn(Inv<'b>)) }
+   | |____________________________________________________________- in this macro invocation
+
 error: compilation successful
   --> $DIR/hr-subtype.rs:100:1
    |

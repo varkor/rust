@@ -1,0 +1,32 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/async-await.rs:85:34
+   |
+LL | async fn async_fn_with_borrow(x: &u8) -> u8 {
+   |                                  ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/async-await.rs:90:46
+   |
+LL | async fn async_fn_with_borrow_named_lifetime<'a>(x: &'a u8) -> u8 {
+   |                                              ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/async-await.rs:102:36
+   |
+LL | async fn async_fn_multiple_args(x: &u8, _y: &u8) -> u8 {
+   |                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/async-await.rs:102:45
+   |
+LL | async fn async_fn_multiple_args(x: &u8, _y: &u8) -> u8 {
+   |                                             ^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/async-await.rs:107:48
+   |
+LL | async fn async_fn_multiple_args_named_lifetime<'a>(x: &'a u8, _y: &'a u8) -> u8 {
+   |                                                ^^
+

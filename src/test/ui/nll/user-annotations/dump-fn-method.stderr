@@ -1,3 +1,13 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/dump-fn-method.rs:17:8
+   |
+LL | fn foo<'a, T>(_: T) { }
+   |        ^^--
+   |        |
+   |        help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: user substs: UserSubsts { substs: [&ReStatic u32], user_self_ty: None }
   --> $DIR/dump-fn-method.rs:30:13
    |

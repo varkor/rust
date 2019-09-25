@@ -6,6 +6,14 @@ LL | #![feature(generic_associated_types)]
    |
    = note: `#[warn(incomplete_features)]` on by default
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/generic_associated_type_undeclared_lifetimes.rs:10:15
+   |
+LL |     type Item<'a>;
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0261]: use of undeclared lifetime name `'b`
   --> $DIR/generic_associated_type_undeclared_lifetimes.rs:13:37
    |

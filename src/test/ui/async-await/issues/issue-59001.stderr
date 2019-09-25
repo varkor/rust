@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-59001.rs:6:16
+   |
+LL | async fn enter<'a, F, R>(mut callback: F)
+   |                ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

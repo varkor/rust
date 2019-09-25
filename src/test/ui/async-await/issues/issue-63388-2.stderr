@@ -6,6 +6,30 @@ LL |     ) -> &dyn Foo
    |
    = help: this function's return type contains a borrowed value, but the signature does not say whether it is borrowed from `foo` or `bar`
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-63388-2.rs:10:21
+   |
+LL |     async fn do_sth<'a>(
+   |                     ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-2.rs:11:14
+   |
+LL |         foo: &dyn Foo, bar: &'a dyn Foo
+   |              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-2.rs:12:10
+   |
+LL |           foo: &dyn Foo, bar: &'a dyn Foo
+   |  ______________-
+LL | |     ) -> &dyn Foo
+   | |         -^
+   | |_________|
+   |           help: elide the unused lifetime
+
 error: cannot infer an appropriate lifetime
   --> $DIR/issue-63388-2.rs:11:9
    |

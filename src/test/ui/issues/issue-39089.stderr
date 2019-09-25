@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-39089.rs:3:14
+   |
+LL | fn f<T: ?for<'a> Sized>() {}
+   |              ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

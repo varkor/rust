@@ -1,3 +1,105 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:13:43
+   |
+LL |     async fn ref_Struct(self: &Struct, f: &u32) -> &u32 {
+   |                                           ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:13:31
+   |
+LL |     async fn ref_Struct(self: &Struct, f: &u32) -> &u32 {
+   |                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:13:52
+   |
+LL |     async fn ref_Struct(self: &Struct, f: &u32) -> &u32 {
+   |                               ------------         ^
+   |                               |
+   |                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:17:39
+   |
+LL |     async fn box_ref_Struct(self: Box<&Struct>, f: &u32) -> &u32 {
+   |                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:17:52
+   |
+LL |     async fn box_ref_Struct(self: Box<&Struct>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:17:61
+   |
+LL |     async fn box_ref_Struct(self: Box<&Struct>, f: &u32) -> &u32 {
+   |                                       -------------         ^
+   |                                       |
+   |                                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:21:39
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&Struct>, f: &u32) -> &u32 {
+   |                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:21:52
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&Struct>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:21:61
+   |
+LL |     async fn pin_ref_Struct(self: Pin<&Struct>, f: &u32) -> &u32 {
+   |                                       -------------         ^
+   |                                       |
+   |                                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:25:47
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&Struct>>, f: &u32) -> &u32 {
+   |                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:25:61
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&Struct>>, f: &u32) -> &u32 {
+   |                                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:25:70
+   |
+LL |     async fn box_box_ref_Struct(self: Box<Box<&Struct>>, f: &u32) -> &u32 {
+   |                                               --------------         ^
+   |                                               |
+   |                                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:29:43
+   |
+LL |     async fn box_pin_Struct(self: Box<Pin<&Struct>>, f: &u32) -> &u32 {
+   |                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:29:57
+   |
+LL |     async fn box_pin_Struct(self: Box<Pin<&Struct>>, f: &u32) -> &u32 {
+   |                                                         ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-struct-async.rs:29:66
+   |
+LL |     async fn box_pin_Struct(self: Box<Pin<&Struct>>, f: &u32) -> &u32 {
+   |                                           --------------         ^
+   |                                           |
+   |                                           help: elide the unused lifetime
+
 error[E0623]: lifetime mismatch
   --> $DIR/ref-struct-async.rs:13:52
    |

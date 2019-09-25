@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/edition-lint-uninferable-outlives.rs:12:15
+   |
+LL | trait MakeRef<'a> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

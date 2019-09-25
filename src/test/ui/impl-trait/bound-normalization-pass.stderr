@@ -6,3 +6,11 @@ LL | #![feature(impl_trait_in_bindings)]
    |
    = note: `#[warn(incomplete_features)]` on by default
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/bound-normalization-pass.rs:38:17
+   |
+LL |     trait Trait<'a> {
+   |                -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

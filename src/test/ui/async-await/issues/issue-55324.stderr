@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-55324.rs:6:42
+   |
+LL | async fn foo<F: Future<Output = i32>>(x: &i32, future: F) -> i32 {
+   |                                          ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

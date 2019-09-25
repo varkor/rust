@@ -1,3 +1,21 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-outlives-nominal-type-type-rev.rs:13:17
+   |
+LL |     trait Trait<'a, 'b> {
+   |                 ^^--
+   |                 |
+   |                 help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-outlives-nominal-type-type-rev.rs:13:21
+   |
+LL |     trait Trait<'a, 'b> {
+   |                   --^^
+   |                   |
+   |                   help: elide the unused lifetime
+
 error[E0491]: in type `&'a variant_struct_type::Foo<&'b i32>`, reference has a longer lifetime than the data it references
   --> $DIR/regions-outlives-nominal-type-type-rev.rs:17:9
    |

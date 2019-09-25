@@ -1,0 +1,10 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/unboxed-closures-unique-type-id.rs:16:20
+   |
+LL | pub fn replace_map<'a, T, F>(src: &mut T, prod: F) where F: FnOnce(T) -> T {
+   |                    ^^--
+   |                    |
+   |                    help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

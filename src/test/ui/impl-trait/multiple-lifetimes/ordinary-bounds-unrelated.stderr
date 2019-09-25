@@ -1,3 +1,29 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/ordinary-bounds-unrelated.rs:5:17
+   |
+LL | trait Trait<'a, 'b> {}
+   |               --^^
+   |               |
+   |               help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/ordinary-bounds-unrelated.rs:5:13
+   |
+LL | trait Trait<'a, 'b> {}
+   |             ^^--
+   |             |
+   |             help: elide the unused lifetime
+
+warning: lifetime parameter `'c` never used
+  --> $DIR/ordinary-bounds-unrelated.rs:18:25
+   |
+LL | fn upper_bounds<'a, 'b, 'c, 'd, 'e>(a: Ordinary<'a>, b: Ordinary<'b>) -> impl Trait<'d, 'e>
+   |                         ^^--
+   |                         |
+   |                         help: elide the unused lifetime
+
 error[E0700]: hidden type for `impl Trait` captures lifetime that does not appear in bounds
   --> $DIR/ordinary-bounds-unrelated.rs:18:74
    |

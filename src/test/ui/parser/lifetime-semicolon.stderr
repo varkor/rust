@@ -4,5 +4,23 @@ error: expected one of `,` or `>`, found `;`
 LL | fn foo<'a, 'b>(x: &mut Foo<'a; 'b>) {}
    |                              ^ expected one of `,` or `>` here
 
+warning: lifetime parameter `'b` never used
+  --> $DIR/lifetime-semicolon.rs:5:12
+   |
+LL | fn foo<'a, 'b>(x: &mut Foo<'a; 'b>) {}
+   |          --^^
+   |          |
+   |          help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-semicolon.rs:5:8
+   |
+LL | fn foo<'a, 'b>(x: &mut Foo<'a; 'b>) {}
+   |        ^^--
+   |        |
+   |        help: elide the unused lifetime
+
 error: aborting due to previous error
 

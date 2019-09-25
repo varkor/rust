@@ -1,0 +1,14 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/where-for-self.rs:8:11
+   |
+LL | trait Bar<'a> {
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/where-for-self.rs:12:11
+   |
+LL | trait Baz<'a>
+   |          -^^- help: elide the unused lifetime
+

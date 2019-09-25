@@ -2,6 +2,8 @@
 // was erroneously assuming that all projections outlived the current
 // fn body, causing this (invalid) code to be accepted.
 
+#![allow(unused_lifetimes)]
+
 pub trait Foo<'a> {
     type Bar;
 }

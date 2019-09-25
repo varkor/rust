@@ -1,3 +1,21 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/unboxed-closure-sugar-region.rs:21:9
+   |
+LL | fn test<'a,'b>() {
+   |         ^^-
+   |         |
+   |         help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/unboxed-closure-sugar-region.rs:21:12
+   |
+LL | fn test<'a,'b>() {
+   |           -^^
+   |           |
+   |           help: elide the unused lifetime
+
 error[E0107]: wrong number of lifetime arguments: expected 1, found 0
   --> $DIR/unboxed-closure-sugar-region.rs:30:51
    |

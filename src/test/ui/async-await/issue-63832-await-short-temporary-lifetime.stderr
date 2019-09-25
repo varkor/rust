@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63832-await-short-temporary-lifetime.rs:4:17
+   |
+LL | async fn foo(x: &[Vec<u32>]) -> u32 {
+   |                 ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

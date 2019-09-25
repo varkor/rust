@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait Deserialize<'de> {}
 
 trait DeserializeOwned: for<'de> Deserialize<'de> {}

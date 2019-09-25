@@ -1,0 +1,8 @@
+warning: lifetime parameter `'x` never used
+  --> $DIR/mir-typeck-normalize-fn-sig.rs:12:11
+   |
+LL | trait Foo<'x> {
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

@@ -1,3 +1,13 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/method-ufcs-inherent-4.rs:8:12
+   |
+LL |     fn new<'b, T>(x: &'a u32, y: T) -> Self {
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0597]: `v` does not live long enough
   --> $DIR/method-ufcs-inherent-4.rs:15:37
    |

@@ -4,6 +4,16 @@ error[E0226]: only a single explicit lifetime bound is permitted
 LL |     z: Box<dyn Is<'a>+'b+'c>,
    |                          ^^
 
+warning: lifetime parameter `'c` never used
+  --> $DIR/region-bounds-on-objects-and-type-parameters.rs:11:18
+   |
+LL | struct Foo<'a,'b,'c> {
+   |                 -^^
+   |                 |
+   |                 help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0478]: lifetime bound not satisfied
   --> $DIR/region-bounds-on-objects-and-type-parameters.rs:21:5
    |

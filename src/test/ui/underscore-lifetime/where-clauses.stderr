@@ -10,5 +10,13 @@ error[E0637]: `'_` cannot be used here
 LL | impl<T: '_> Foo<'static> for Vec<T> {}
    |         ^^ `'_` is a reserved lifetime name
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/where-clauses.rs:1:11
+   |
+LL | trait Foo<'a> {}
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to 2 previous errors
 

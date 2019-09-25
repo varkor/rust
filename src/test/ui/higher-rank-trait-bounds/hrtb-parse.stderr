@@ -1,0 +1,38 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:27:25
+   |
+LL | fn foo10(t: Box<dyn for<'a> Get<i32, i32>>) { }
+   |                         ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:28:25
+   |
+LL | fn foo11(t: Box<dyn for<'a> Fn(i32) -> i32>) { }
+   |                         ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:30:17
+   |
+LL | fn foo20(t: for<'a> fn(i32) -> i32) { }
+   |                 ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:31:17
+   |
+LL | fn foo21(t: for<'a> unsafe fn(i32) -> i32) { }
+   |                 ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:32:17
+   |
+LL | fn foo22(t: for<'a> extern "C" fn(i32) -> i32) { }
+   |                 ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/hrtb-parse.rs:33:17
+   |
+LL | fn foo23(t: for<'a> unsafe extern "C" fn(i32) -> i32) { }
+   |                 ^^
+

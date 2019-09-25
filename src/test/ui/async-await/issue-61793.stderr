@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-61793.rs:9:20
+   |
+LL | async fn foo<F>(_: &(), _: F) {}
+   |                    ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

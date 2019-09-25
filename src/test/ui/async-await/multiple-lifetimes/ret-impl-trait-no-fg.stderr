@@ -1,3 +1,21 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/ret-impl-trait-no-fg.rs:6:17
+   |
+LL | trait Trait<'a, 'b> { }
+   |               --^^
+   |               |
+   |               help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/ret-impl-trait-no-fg.rs:6:13
+   |
+LL | trait Trait<'a, 'b> { }
+   |             ^^--
+   |             |
+   |             help: elide the unused lifetime
+
 error: ambiguous lifetime bound in `impl Trait`
   --> $DIR/ret-impl-trait-no-fg.rs:9:64
    |

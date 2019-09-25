@@ -239,7 +239,7 @@ declare_lint! {
 
 declare_lint! {
     pub UNUSED_LIFETIMES,
-    Allow,
+    Warn,
     "detects lifetime parameters that are never used"
 }
 

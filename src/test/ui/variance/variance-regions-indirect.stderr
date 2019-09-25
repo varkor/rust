@@ -1,3 +1,13 @@
+warning: lifetime parameter `'d` never used
+  --> $DIR/variance-regions-indirect.rs:8:26
+   |
+LL | enum Base<'a, 'b, 'c:'b, 'd> {
+   |                     -----^^
+   |                     |
+   |                     help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0208]: [+, -, o, *]
   --> $DIR/variance-regions-indirect.rs:8:1
    |

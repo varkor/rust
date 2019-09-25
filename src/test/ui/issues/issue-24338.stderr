@@ -1,0 +1,14 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-24338.rs:4:16
+   |
+LL | trait DictLike<'a> {
+   |               -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-24338.rs:11:17
+   |
+LL | trait DictLike2<'a> {
+   |                -^^- help: elide the unused lifetime
+

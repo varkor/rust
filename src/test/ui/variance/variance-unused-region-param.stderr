@@ -1,3 +1,23 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance-unused-region-param.rs:3:19
+   |
+LL | struct SomeStruct<'a> { x: u32 }
+   |                  -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance-unused-region-param.rs:4:15
+   |
+LL | enum SomeEnum<'a> { Nothing }
+   |              -^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance-unused-region-param.rs:5:17
+   |
+LL | trait SomeTrait<'a> { fn foo(&self); }
+   |                -^^- help: elide the unused lifetime
+
 error[E0392]: parameter `'a` is never used
   --> $DIR/variance-unused-region-param.rs:3:19
    |

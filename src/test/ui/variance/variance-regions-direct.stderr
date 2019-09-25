@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance-regions-direct.rs:52:14
+   |
+LL | struct Test7<'a> {
+   |             -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0208]: [-, -, -]
   --> $DIR/variance-regions-direct.rs:9:1
    |

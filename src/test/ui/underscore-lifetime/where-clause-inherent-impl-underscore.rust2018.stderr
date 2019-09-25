@@ -4,5 +4,13 @@ error[E0637]: `'_` cannot be used here
 LL |     T: WithRegion<'_>
    |                   ^^ `'_` is a reserved lifetime name
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/where-clause-inherent-impl-underscore.rs:5:18
+   |
+LL | trait WithRegion<'a> { }
+   |                 -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to previous error
 

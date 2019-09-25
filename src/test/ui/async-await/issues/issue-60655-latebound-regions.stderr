@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-60655-latebound-regions.rs:18:23
+   |
+LL | async fn async_nop(_: &u8) {}
+   |                       ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

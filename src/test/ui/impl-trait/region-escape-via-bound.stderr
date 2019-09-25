@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/region-escape-via-bound.rs:11:13
+   |
+LL | trait Trait<'a> { }
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0700]: hidden type for `impl Trait` captures lifetime that does not appear in bounds
   --> $DIR/region-escape-via-bound.rs:15:29
    |

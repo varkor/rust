@@ -1,3 +1,11 @@
+warning: lifetime parameter `'de` never used
+  --> $DIR/hrtb-cache-issue-54302.rs:8:19
+   |
+LL | trait Deserialize<'de> {}
+   |                  -^^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: implementation of `Deserialize` is not general enough
   --> $DIR/hrtb-cache-issue-54302.rs:19:5
    |

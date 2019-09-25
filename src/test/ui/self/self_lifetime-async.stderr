@@ -1,0 +1,42 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/self_lifetime-async.rs:5:6
+   |
+LL | impl<'a> Foo<'a> {
+   |      ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/self_lifetime-async.rs:6:18
+   |
+LL |     async fn foo<'b>(self: &'b Foo<'a>) -> &() { self.0 }
+   |                  ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/self_lifetime-async.rs:6:44
+   |
+LL |     async fn foo<'b>(self: &'b Foo<'a>) -> &() { self.0 }
+   |                    ------------------------^
+   |                    |
+   |                    help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/self_lifetime-async.rs:11:18
+   |
+LL |     async fn bar<'a>(self: &Alias, arg: &'a ()) -> &() { arg }
+   |                  ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/self_lifetime-async.rs:11:28
+   |
+LL |     async fn bar<'a>(self: &Alias, arg: &'a ()) -> &() { arg }
+   |                            ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/self_lifetime-async.rs:11:52
+   |
+LL |     async fn bar<'a>(self: &Alias, arg: &'a ()) -> &() { arg }
+   |                            ------------------------^
+   |                            |
+   |                            help: elide the unused lifetime
+

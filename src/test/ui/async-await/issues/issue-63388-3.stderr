@@ -1,0 +1,14 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-3.rs:12:9
+   |
+LL |         &self, foo: &dyn Foo
+   |         ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-3.rs:12:21
+   |
+LL |         &self, foo: &dyn Foo
+   |                     ^
+

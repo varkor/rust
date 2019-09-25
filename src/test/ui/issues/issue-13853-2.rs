@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait FromStructReader<'a> { }
 trait ResponseHook {
      fn get(&self);

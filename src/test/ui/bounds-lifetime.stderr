@@ -28,5 +28,31 @@ error: only lifetime parameters can be used in this context
 LL | type E = dyn for<T> Fn();
    |                  ^
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/bounds-lifetime.rs:1:18
+   |
+LL | type A = for<'b, 'a: 'b> fn();
+   |                  ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/bounds-lifetime.rs:2:18
+   |
+LL | type B = for<'b, 'a: 'b,> fn();
+   |                  ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/bounds-lifetime.rs:3:18
+   |
+LL | type C = for<'b, 'a: 'b +> fn();
+   |                  ^^
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/bounds-lifetime.rs:4:14
+   |
+LL | type D = for<'a, T> fn();
+   |              ^^
+
 error: aborting due to 5 previous errors
 

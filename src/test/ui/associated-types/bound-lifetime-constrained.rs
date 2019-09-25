@@ -1,7 +1,9 @@
 // revisions: func object clause
 
-#![allow(dead_code)]
 #![feature(rustc_attrs)]
+
+#![allow(dead_code)]
+#![allow(unused_lifetimes)]
 
 trait Foo<'a> {
     type Item;

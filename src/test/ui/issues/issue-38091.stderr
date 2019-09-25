@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-38091.rs:4:15
+   |
+LL | trait Iterate<'a> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

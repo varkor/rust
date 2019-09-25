@@ -1,0 +1,4 @@
+warning: lifetime parameter `'_` never used
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

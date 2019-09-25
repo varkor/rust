@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 pub trait Trait<'a> {
     type Assoc;
 }

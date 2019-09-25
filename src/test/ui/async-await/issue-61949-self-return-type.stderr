@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-61949-self-return-type.rs:10:6
+   |
+LL | impl<'a> Foo<'a> {
+   |      ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: `async fn` return type cannot contain a projection or `Self` that references lifetimes from a parent scope
   --> $DIR/issue-61949-self-return-type.rs:11:40
    |

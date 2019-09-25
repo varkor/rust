@@ -1,0 +1,26 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/overloaded-calls-param-vtables.rs:14:6
+   |
+LL | impl<'a, A: Add<i32, Output=i32>> Fn<(A,)> for G<A> {
+   |      ^^--
+   |      |
+   |      help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/overloaded-calls-param-vtables.rs:20:6
+   |
+LL | impl<'a, A: Add<i32, Output=i32>> FnMut<(A,)> for G<A> {
+   |      ^^--
+   |      |
+   |      help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/overloaded-calls-param-vtables.rs:24:6
+   |
+LL | impl<'a, A: Add<i32, Output=i32>> FnOnce<(A,)> for G<A> {
+   |      ^^--
+   |      |
+   |      help: elide the unused lifetime
+

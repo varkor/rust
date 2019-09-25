@@ -1,0 +1,132 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:23:55
+   |
+LL |     async fn wrap_ref_Self_ref_Self(self: Wrap<&Self, &Self>, f: &u8) -> &u8 {
+   |                                                       ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:23:66
+   |
+LL |     async fn wrap_ref_Self_ref_Self(self: Wrap<&Self, &Self>, f: &u8) -> &u8 {
+   |                                                                  ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:23:48
+   |
+LL |     async fn wrap_ref_Self_ref_Self(self: Wrap<&Self, &Self>, f: &u8) -> &u8 {
+   |                                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:23:74
+   |
+LL |     async fn wrap_ref_Self_ref_Self(self: Wrap<&Self, &Self>, f: &u8) -> &u8 {
+   |                                                -------                   ^
+   |                                                |
+   |                                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:27:63
+   |
+LL |     async fn box_wrap_ref_Self_ref_Self(self: Box<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:27:56
+   |
+LL |     async fn box_wrap_ref_Self_ref_Self(self: Box<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:27:75
+   |
+LL |     async fn box_wrap_ref_Self_ref_Self(self: Box<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:27:84
+   |
+LL |     async fn box_wrap_ref_Self_ref_Self(self: Box<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                        -------                     ^
+   |                                                        |
+   |                                                        help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:31:56
+   |
+LL |     async fn pin_wrap_ref_Self_ref_Self(self: Pin<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:31:75
+   |
+LL |     async fn pin_wrap_ref_Self_ref_Self(self: Pin<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:31:63
+   |
+LL |     async fn pin_wrap_ref_Self_ref_Self(self: Pin<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:31:84
+   |
+LL |     async fn pin_wrap_ref_Self_ref_Self(self: Pin<Wrap<&Self, &Self>>, f: &u32) -> &u32 {
+   |                                                        -------                     ^
+   |                                                        |
+   |                                                        help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:35:64
+   |
+LL |     async fn box_box_wrap_ref_Self_ref_Self(self: Box<Box<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:35:71
+   |
+LL |     async fn box_box_wrap_ref_Self_ref_Self(self: Box<Box<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:35:84
+   |
+LL |     async fn box_box_wrap_ref_Self_ref_Self(self: Box<Box<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:35:93
+   |
+LL |     async fn box_box_wrap_ref_Self_ref_Self(self: Box<Box<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                -------                      ^
+   |                                                                |
+   |                                                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:39:84
+   |
+LL |     async fn box_pin_wrap_ref_Self_ref_Self(self: Box<Pin<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:39:71
+   |
+LL |     async fn box_pin_wrap_ref_Self_ref_Self(self: Box<Pin<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:39:64
+   |
+LL |     async fn box_pin_wrap_ref_Self_ref_Self(self: Box<Pin<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/multiple-ref-self-async.rs:39:93
+   |
+LL |     async fn box_pin_wrap_ref_Self_ref_Self(self: Box<Pin<Wrap<&Self, &Self>>>, f: &u32) -> &u32 {
+   |                                                                -------                      ^
+   |                                                                |
+   |                                                                help: elide the unused lifetime
+

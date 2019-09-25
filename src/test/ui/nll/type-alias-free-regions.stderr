@@ -1,3 +1,17 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/type-alias-free-regions.rs:11:15
+   |
+LL | trait FromBox<'a> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/type-alias-free-regions.rs:21:17
+   |
+LL | trait FromTuple<'a> {
+   |                -^^- help: elide the unused lifetime
+
 error[E0495]: cannot infer an appropriate lifetime for lifetime parameter `'a` due to conflicting requirements
   --> $DIR/type-alias-free-regions.rs:17:9
    |

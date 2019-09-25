@@ -1,0 +1,14 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/drop-order-for-async-fn-parameters-by-ref-binding.rs:129:6
+   |
+LL | impl<'a> Bar<'a> {
+   |      ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/drop-order-for-async-fn-parameters-by-ref-binding.rs:129:6
+   |
+LL | impl<'a> Bar<'a> {
+   |      ^^
+

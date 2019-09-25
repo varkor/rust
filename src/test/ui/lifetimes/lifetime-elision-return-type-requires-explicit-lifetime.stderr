@@ -30,6 +30,14 @@ LL | fn i(_x: isize) -> &isize {
    |
    = help: this function's return type contains a borrowed value with an elided lifetime, but the lifetime cannot be derived from the arguments
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/lifetime-elision-return-type-requires-explicit-lifetime.rs:28:20
+   |
+LL | trait WithLifetime<'a> {
+   |                   -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0106]: missing lifetime specifier
   --> $DIR/lifetime-elision-return-type-requires-explicit-lifetime.rs:34:24
    |

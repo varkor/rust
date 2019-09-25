@@ -6,6 +6,88 @@ LL | #![feature(generic_associated_types)]
    |
    = note: `#[warn(incomplete_features)]` on by default
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:11:12
+   |
+LL |     type A<'a>;
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/parameter_number_and_kind.rs:12:16
+   |
+LL |     type B<'a, 'b>;
+   |              --^^
+   |              |
+   |              help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:12:12
+   |
+LL |     type B<'a, 'b>;
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:15:12
+   |
+LL |     type E<'a, T>;
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:31:12
+   |
+LL |     type B<'a, T> = Vec<T>; // Error: lifetime param expected
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:32:12
+   |
+LL |     type C<'a> = u32; // Error: no param expected
+   |           -^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:33:12
+   |
+LL |     type D<'a> = u32; // Error: type param expected
+   |           -^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:41:12
+   |
+LL |     type B<'a> = u32; // Error: another lifetime param expected
+   |           -^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/parameter_number_and_kind.rs:43:12
+   |
+LL |     type D<'b, T> = u32; // Error: unexpected lifetime param
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/parameter_number_and_kind.rs:44:12
+   |
+LL |     type E<'a, 'b> = u32; // Error: type expected as the second param
+   |            ^^--
+   |            |
+   |            help: elide the unused lifetime
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/parameter_number_and_kind.rs:44:16
+   |
+LL |     type E<'a, 'b> = u32; // Error: type expected as the second param
+   |              --^^
+   |              |
+   |              help: elide the unused lifetime
+
 error[E0109]: lifetime arguments are not allowed for this type
   --> $DIR/parameter_number_and_kind.rs:17:27
    |

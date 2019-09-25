@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 pub trait Tr<'a> {
     type Out;
 }

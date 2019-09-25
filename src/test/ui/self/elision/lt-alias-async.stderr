@@ -1,0 +1,92 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:14:33
+   |
+LL |     async fn take_self(self, f: &u32) -> &u32 {
+   |                                 ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/lt-alias-async.rs:13:6
+   |
+LL | impl<'a> Alias<'a> {
+   |      ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:14:42
+   |
+LL |     async fn take_self(self, f: &u32) -> &u32 {
+   |                                 ---------^
+   |                                 |
+   |                                 help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:18:45
+   |
+LL |     async fn take_Alias(self: Alias<'a>, f: &u32) -> &u32 {
+   |                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:18:54
+   |
+LL |     async fn take_Alias(self: Alias<'a>, f: &u32) -> &u32 {
+   |                                             ---------^
+   |                                             |
+   |                                             help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:22:54
+   |
+LL |     async fn take_Box_Alias(self: Box<Alias<'a>>, f: &u32) -> &u32 {
+   |                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:22:63
+   |
+LL |     async fn take_Box_Alias(self: Box<Alias<'a>>, f: &u32) -> &u32 {
+   |                                                      ---------^
+   |                                                      |
+   |                                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:26:63
+   |
+LL |     async fn take_Box_Box_Alias(self: Box<Box<Alias<'a>>>, f: &u32) -> &u32 {
+   |                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:26:72
+   |
+LL |     async fn take_Box_Box_Alias(self: Box<Box<Alias<'a>>>, f: &u32) -> &u32 {
+   |                                                               ---------^
+   |                                                               |
+   |                                                               help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:30:52
+   |
+LL |     async fn take_Rc_Alias(self: Rc<Alias<'a>>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:30:61
+   |
+LL |     async fn take_Rc_Alias(self: Rc<Alias<'a>>, f: &u32) -> &u32 {
+   |                                                    ---------^
+   |                                                    |
+   |                                                    help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:34:61
+   |
+LL |     async fn take_Box_Rc_Alias(self: Box<Rc<Alias<'a>>>, f: &u32) -> &u32 {
+   |                                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/lt-alias-async.rs:34:70
+   |
+LL |     async fn take_Box_Rc_Alias(self: Box<Rc<Alias<'a>>>, f: &u32) -> &u32 {
+   |                                                             ---------^
+   |                                                             |
+   |                                                             help: elide the unused lifetime
+

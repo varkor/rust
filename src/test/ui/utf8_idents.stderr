@@ -42,6 +42,16 @@ LL |     γ
    |
    = note: `#[warn(non_camel_case_types)]` on by default
 
+warning: lifetime parameter `'β` never used
+  --> $DIR/utf8_idents.rs:2:5
+   |
+LL |       'β,
+   |  _____-^
+LL | |     γ
+   | |____- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to 4 previous errors
 
 For more information about this error, try `rustc --explain E0658`.

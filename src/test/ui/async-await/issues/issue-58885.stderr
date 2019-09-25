@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-58885.rs:11:21
+   |
+LL |     async fn do_sth<'a>(
+   |                     ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

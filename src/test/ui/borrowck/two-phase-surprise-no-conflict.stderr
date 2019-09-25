@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/two-phase-surprise-no-conflict.rs:67:20
+   |
+LL | trait LateLintPass<'a> { }
+   |                   -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0503]: cannot use `self.cx` because it was mutably borrowed
   --> $DIR/two-phase-surprise-no-conflict.rs:21:23
    |

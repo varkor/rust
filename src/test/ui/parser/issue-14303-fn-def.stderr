@@ -4,5 +4,15 @@ error: lifetime parameters must be declared prior to type parameters
 LL | fn foo<'a, T, 'b>(x: &'a T) {}
    |       --------^^- help: reorder the parameters: lifetimes, then types: `<'a, 'b, T>`
 
+warning: lifetime parameter `'b` never used
+  --> $DIR/issue-14303-fn-def.rs:1:15
+   |
+LL | fn foo<'a, T, 'b>(x: &'a T) {}
+   |            ---^^
+   |            |
+   |            help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to previous error
 

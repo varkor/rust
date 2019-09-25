@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-53789-1.rs:56:17
+   |
+LL | trait Arbitrary<'a>: Sized {
+   |                -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

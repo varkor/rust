@@ -1,3 +1,125 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:13:37
+   |
+LL |     async fn ref_self(&mut self, f: &u32) -> &u32 {
+   |                                     ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:13:23
+   |
+LL |     async fn ref_self(&mut self, f: &u32) -> &u32 {
+   |                       ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:13:46
+   |
+LL |     async fn ref_self(&mut self, f: &u32) -> &u32 {
+   |                       --------------         ^
+   |                       |
+   |                       help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:19:29
+   |
+LL |     async fn ref_Self(self: &mut Self, f: &u32) -> &u32 {
+   |                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:19:43
+   |
+LL |     async fn ref_Self(self: &mut Self, f: &u32) -> &u32 {
+   |                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:19:52
+   |
+LL |     async fn ref_Self(self: &mut Self, f: &u32) -> &u32 {
+   |                             --------------         ^
+   |                             |
+   |                             help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:23:37
+   |
+LL |     async fn box_ref_Self(self: Box<&mut Self>, f: &u32) -> &u32 {
+   |                                     ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:23:52
+   |
+LL |     async fn box_ref_Self(self: Box<&mut Self>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:23:61
+   |
+LL |     async fn box_ref_Self(self: Box<&mut Self>, f: &u32) -> &u32 {
+   |                                     ---------------         ^
+   |                                     |
+   |                                     help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:27:52
+   |
+LL |     async fn pin_ref_Self(self: Pin<&mut Self>, f: &u32) -> &u32 {
+   |                                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:27:37
+   |
+LL |     async fn pin_ref_Self(self: Pin<&mut Self>, f: &u32) -> &u32 {
+   |                                     ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:27:61
+   |
+LL |     async fn pin_ref_Self(self: Pin<&mut Self>, f: &u32) -> &u32 {
+   |                                     ---------------         ^
+   |                                     |
+   |                                     help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:31:61
+   |
+LL |     async fn box_box_ref_Self(self: Box<Box<&mut Self>>, f: &u32) -> &u32 {
+   |                                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:31:45
+   |
+LL |     async fn box_box_ref_Self(self: Box<Box<&mut Self>>, f: &u32) -> &u32 {
+   |                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:31:70
+   |
+LL |     async fn box_box_ref_Self(self: Box<Box<&mut Self>>, f: &u32) -> &u32 {
+   |                                             ----------------         ^
+   |                                             |
+   |                                             help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:35:45
+   |
+LL |     async fn box_pin_ref_Self(self: Box<Pin<&mut Self>>, f: &u32) -> &u32 {
+   |                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:35:61
+   |
+LL |     async fn box_pin_ref_Self(self: Box<Pin<&mut Self>>, f: &u32) -> &u32 {
+   |                                                             ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-self-async.rs:35:70
+   |
+LL |     async fn box_pin_ref_Self(self: Box<Pin<&mut Self>>, f: &u32) -> &u32 {
+   |                                             ----------------         ^
+   |                                             |
+   |                                             help: elide the unused lifetime
+
 error[E0623]: lifetime mismatch
   --> $DIR/ref-mut-self-async.rs:13:46
    |

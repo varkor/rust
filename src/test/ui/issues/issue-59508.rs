@@ -1,6 +1,7 @@
 // run-rustfix
 
 #![allow(dead_code)]
+#![allow(unused_lifetimes)]
 
 // This test checks that generic parameter re-ordering diagnostic suggestions contain bounds.
 

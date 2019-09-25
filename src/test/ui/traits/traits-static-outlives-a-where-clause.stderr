@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/traits-static-outlives-a-where-clause.rs:3:11
+   |
+LL | trait Foo<'a> {
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/borrowck-borrow-overloaded-deref.rs:31:12
+   |
+LL | fn assign1<'a>(x: Rc<isize>) {
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0596]: cannot borrow data in an `Rc` as mutable
   --> $DIR/borrowck-borrow-overloaded-deref.rs:12:19
    |

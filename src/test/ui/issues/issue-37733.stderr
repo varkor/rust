@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-37733.rs:5:14
+   |
+LL | type B = for<'a,> fn();
+   |              ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

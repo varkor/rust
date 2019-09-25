@@ -2,7 +2,9 @@
 //[rust2018] edition:2018
 
 trait WithType<T> {}
-trait WithRegion<'a> { }
+
+#[allow(unused_lifetimes)]
+trait WithRegion<'a> {}
 
 trait Foo { }
 

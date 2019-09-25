@@ -1,0 +1,20 @@
+warning: lifetime parameter `'c` never used
+  --> $DIR/variance.rs:7:34
+   |
+LL | async fn lotsa_lifetimes<'a, 'b, 'c>(_: fn(&'a u8), _: fn(&'b u8) -> &'b u8, _: fn() -> &'c u8) { }
+   |                                  ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance.rs:7:26
+   |
+LL | async fn lotsa_lifetimes<'a, 'b, 'c>(_: fn(&'a u8), _: fn(&'b u8) -> &'b u8, _: fn() -> &'c u8) { }
+   |                          ^^
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/variance.rs:7:30
+   |
+LL | async fn lotsa_lifetimes<'a, 'b, 'c>(_: fn(&'a u8), _: fn(&'b u8) -> &'b u8, _: fn() -> &'c u8) { }
+   |                              ^^
+

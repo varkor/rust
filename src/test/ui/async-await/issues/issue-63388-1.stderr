@@ -1,3 +1,27 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-1.rs:11:24
+   |
+LL |         &'a self, foo: &dyn Foo
+   |                        ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-63388-1.rs:10:21
+   |
+LL |     async fn do_sth<'a>(
+   |                     ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-1.rs:12:10
+   |
+LL |           &'a self, foo: &dyn Foo
+   |  ________________________-
+LL | |     ) -> &dyn Foo
+   | |         -^
+   | |_________|
+   |           help: elide the unused lifetime
+
 error[E0623]: lifetime mismatch
   --> $DIR/issue-63388-1.rs:12:10
    |

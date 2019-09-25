@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/generic_lifetime_param.rs:7:13
+   |
+LL | type Region<'a> = impl std::fmt::Debug;
+   |             ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

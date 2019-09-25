@@ -1,3 +1,29 @@
+warning: lifetime parameter `'z` never used
+  --> $DIR/hr-subtype.rs:32:29
+   |
+LL |           fn subtype<'x,'y:'x,'z:'y>() {
+   |                           ----^^
+   |                           |
+   |                           help: elide the unused lifetime
+...
+LL | / check! { bound_contra_a_contra_b_ret_co_a: (for<'a,'b> fn(Contra<'a>, Contra<'b>) -> Co<'a>,
+LL | |                                             for<'a>    fn(Contra<'a>, Contra<'a>) -> Co<'a>) }
+   | |______________________________________________________________________________________________- in this macro invocation
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'z` never used
+  --> $DIR/hr-subtype.rs:38:31
+   |
+LL |           fn supertype<'x,'y:'x,'z:'y>() {
+   |                             ----^^
+   |                             |
+   |                             help: elide the unused lifetime
+...
+LL | / check! { bound_contra_a_contra_b_ret_co_a: (for<'a,'b> fn(Contra<'a>, Contra<'b>) -> Co<'a>,
+LL | |                                             for<'a>    fn(Contra<'a>, Contra<'a>) -> Co<'a>) }
+   | |______________________________________________________________________________________________- in this macro invocation
+
 error[E0308]: mismatched types
   --> $DIR/hr-subtype.rs:39:26
    |

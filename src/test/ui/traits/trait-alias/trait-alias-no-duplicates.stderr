@@ -1,3 +1,11 @@
+warning: lifetime parameter `'l` never used
+  --> $DIR/trait-alias-no-duplicates.rs:114:12
+   |
+LL | trait ObjL<'l> {}
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0225]: only auto traits can be used as additional traits in a trait object
   --> $DIR/trait-alias-no-duplicates.rs:16:22
    |

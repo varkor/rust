@@ -1,0 +1,8 @@
+warning: lifetime parameter `'c` never used
+  --> $DIR/hrtb.rs:8:53
+   |
+LL | async fn multiple_hrtb_and_single_named_lifetime_ok<'c>(
+   |                                                     ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

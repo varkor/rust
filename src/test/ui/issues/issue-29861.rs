@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 pub trait MakeRef<'a> {
     type Ref;
 }

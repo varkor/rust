@@ -1,3 +1,27 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/variance-regions-unused-direct.rs:5:18
+   |
+LL | struct Bivariant<'a>;
+   |                 -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'d` never used
+  --> $DIR/variance-regions-unused-direct.rs:7:19
+   |
+LL | struct Struct<'a, 'd> {
+   |                 --^^
+   |                 |
+   |                 help: elide the unused lifetime
+
+warning: lifetime parameter `'d` never used
+  --> $DIR/variance-regions-unused-direct.rs:11:17
+   |
+LL | trait Trait<'a, 'd> {
+   |               --^^
+   |               |
+   |               help: elide the unused lifetime
+
 error[E0392]: parameter `'a` is never used
   --> $DIR/variance-regions-unused-direct.rs:5:18
    |

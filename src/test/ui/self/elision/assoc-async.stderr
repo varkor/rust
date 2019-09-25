@@ -1,0 +1,72 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:20:59
+   |
+LL |     async fn assoc(self: <Struct as Trait>::AssocType, f: &u32) -> &u32 {
+   |                                                           ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:20:68
+   |
+LL |     async fn assoc(self: <Struct as Trait>::AssocType, f: &u32) -> &u32 {
+   |                                                           ---------^
+   |                                                           |
+   |                                                           help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:24:72
+   |
+LL |     async fn box_AssocType(self: Box<<Struct as Trait>::AssocType>, f: &u32) -> &u32 {
+   |                                                                        ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:24:81
+   |
+LL |     async fn box_AssocType(self: Box<<Struct as Trait>::AssocType>, f: &u32) -> &u32 {
+   |                                                                        ---------^
+   |                                                                        |
+   |                                                                        help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:28:70
+   |
+LL |     async fn rc_AssocType(self: Rc<<Struct as Trait>::AssocType>, f: &u32) -> &u32 {
+   |                                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:28:79
+   |
+LL |     async fn rc_AssocType(self: Rc<<Struct as Trait>::AssocType>, f: &u32) -> &u32 {
+   |                                                                      ---------^
+   |                                                                      |
+   |                                                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:32:81
+   |
+LL |     async fn box_box_AssocType(self: Box<Box<<Struct as Trait>::AssocType>>, f: &u32) -> &u32 {
+   |                                                                                 ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:32:90
+   |
+LL |     async fn box_box_AssocType(self: Box<Box<<Struct as Trait>::AssocType>>, f: &u32) -> &u32 {
+   |                                                                                 ---------^
+   |                                                                                 |
+   |                                                                                 help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:36:79
+   |
+LL |     async fn box_rc_AssocType(self: Box<Rc<<Struct as Trait>::AssocType>>, f: &u32) -> &u32 {
+   |                                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/assoc-async.rs:36:88
+   |
+LL |     async fn box_rc_AssocType(self: Box<Rc<<Struct as Trait>::AssocType>>, f: &u32) -> &u32 {
+   |                                                                               ---------^
+   |                                                                               |
+   |                                                                               help: elide the unused lifetime
+

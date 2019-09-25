@@ -6,6 +6,36 @@ LL | #![feature(generic_associated_types)]
    |
    = note: `#[warn(incomplete_features)]` on by default
 
+warning: lifetime parameter `'b` never used
+  --> $DIR/construct_with_other_type.rs:10:18
+   |
+LL |     type Bar<'a, 'b>;
+   |                --^^
+   |                |
+   |                help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/construct_with_other_type.rs:10:14
+   |
+LL |     type Bar<'a, 'b>;
+   |              ^^--
+   |              |
+   |              help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/construct_with_other_type.rs:14:15
+   |
+LL |     type Quux<'a>: Foo;
+   |              -^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/construct_with_other_type.rs:23:15
+   |
+LL |     type Quux<'a> = T;
+   |              -^^- help: elide the unused lifetime
+
 error[E0109]: lifetime arguments are not allowed for this type
   --> $DIR/construct_with_other_type.rs:17:46
    |

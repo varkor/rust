@@ -1,0 +1,8 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/generics-and-bounds.rs:31:31
+   |
+LL | pub async fn call_with_ref(f: &impl Foo) {
+   |                               ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

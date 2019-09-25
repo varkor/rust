@@ -1,3 +1,23 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/ret-impl-trait-one.rs:8:13
+   |
+LL | trait Trait<'a> { }
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/ret-impl-trait-one.rs:12:36
+   |
+LL | async fn async_ret_impl_trait1<'a, 'b>(a: &'a u8, b: &'b u8) -> impl Trait<'a> {
+   |                                    ^^
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/ret-impl-trait-one.rs:19:36
+   |
+LL | async fn async_ret_impl_trait2<'a, 'b>(a: &'a u8, b: &'b u8) -> impl Trait<'a>
+   |                                    ^^
+
 error[E0623]: lifetime mismatch
   --> $DIR/ret-impl-trait-one.rs:12:65
    |

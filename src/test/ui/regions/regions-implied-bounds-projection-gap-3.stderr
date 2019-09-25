@@ -1,0 +1,8 @@
+warning: lifetime parameter `'x` never used
+  --> $DIR/regions-implied-bounds-projection-gap-3.rs:9:14
+   |
+LL | trait Trait1<'x> {
+   |             -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

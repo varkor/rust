@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/enum-bounds.rs:8:11
+   |
+LL | trait Tr4<'a> { type As4; }
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

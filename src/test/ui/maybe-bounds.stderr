@@ -18,5 +18,13 @@ error: `?Trait` is not permitted in trait object types
 LL | type A2 = dyn for<'a> Tr + (?Sized);
    |                            ^^^^^^^^
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/maybe-bounds.rs:6:19
+   |
+LL | type A2 = dyn for<'a> Tr + (?Sized);
+   |                   ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to 3 previous errors
 

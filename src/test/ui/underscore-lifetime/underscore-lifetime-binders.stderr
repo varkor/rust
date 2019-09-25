@@ -16,6 +16,20 @@ error[E0106]: missing lifetime specifier
 LL | struct Baz<'a>(&'_ &'a u8);
    |                 ^^ expected lifetime parameter
 
+warning: lifetime parameter `'_` never used
+  --> $DIR/underscore-lifetime-binders.rs:4:8
+   |
+LL | fn foo<'_>
+   |       -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/underscore-lifetime-binders.rs:7:11
+   |
+LL | trait Meh<'a> {}
+   |          -^^- help: elide the unused lifetime
+
 error[E0106]: missing lifetime specifier
   --> $DIR/underscore-lifetime-binders.rs:10:33
    |
@@ -23,6 +37,12 @@ LL | fn meh() -> Box<dyn for<'_> Meh<'_>>
    |                                 ^^ help: consider giving it a 'static lifetime: `'static`
    |
    = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/underscore-lifetime-binders.rs:10:25
+   |
+LL | fn meh() -> Box<dyn for<'_> Meh<'_>>
+   |                         ^^
 
 error[E0106]: missing lifetime specifier
   --> $DIR/underscore-lifetime-binders.rs:16:35

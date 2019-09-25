@@ -28,6 +28,20 @@ error: `?Trait` bounds are only permitted at the point where a type parameter is
 LL |     fn f() where T: ?Sized {}
    |                  ^
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/maybe-bounds-where.rs:10:13
+   |
+LL | trait Trait<'a> {}
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/maybe-bounds-where.rs:12:27
+   |
+LL | struct S4<T>(T) where for<'a> T: ?Trait<'a>;
+   |                           ^^
+
 error[E0203]: type parameter has more than one relaxed default bound, only one is supported
   --> $DIR/maybe-bounds-where.rs:15:11
    |

@@ -8,7 +8,9 @@ struct Struct<'a, 'd> { //~ ERROR parameter `'d` is never used
     field: &'a [i32]
 }
 
-trait Trait<'a, 'd> { // OK on traits
+trait Trait<'a, 'd> {
+    //~^ WARN parameter `'a` is never used
+    //~^^ WARN parameter `'a` is never used
     fn method(&'a self);
 }
 

@@ -1,0 +1,14 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/fn-ptr.rs:6:39
+   |
+LL | async fn multiple_named_lifetimes<'a, 'b>(_: &'a u8, _: &'b u8, _: fn(&u8)) {}
+   |                                       ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/fn-ptr.rs:6:35
+   |
+LL | async fn multiple_named_lifetimes<'a, 'b>(_: &'a u8, _: &'b u8, _: fn(&u8)) {}
+   |                                   ^^
+

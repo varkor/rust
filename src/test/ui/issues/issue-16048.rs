@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait NoLifetime {
     fn get<'p, T : Test<'p>>(&self) -> T;
     //~^ NOTE lifetimes in impl do not match this method in trait

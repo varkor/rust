@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/entails-sized-object-safety.rs:6:11
+   |
+LL | trait Tr2<'a>: Sized { type As2; }
+   |          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

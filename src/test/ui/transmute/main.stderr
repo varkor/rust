@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/main.rs:9:27
+   |
+LL | pub trait TypeConstructor<'a> {
+   |                          -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0512]: cannot transmute between types of different sizes, or dependently-sized types
   --> $DIR/main.rs:16:5
    |

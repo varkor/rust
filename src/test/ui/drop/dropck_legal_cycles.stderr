@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/dropck_legal_cycles.rs:931:16
+   |
+LL | trait Children<'a> {
+   |               -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

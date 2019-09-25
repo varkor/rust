@@ -1,6 +1,8 @@
 // Test how overloaded deref interacts with borrows when only
 // Deref and not DerefMut is implemented.
 
+#![allow(unused_lifetimes)]
+
 use std::ops::Deref;
 use std::rc::Rc;
 

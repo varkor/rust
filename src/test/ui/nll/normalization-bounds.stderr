@@ -1,0 +1,8 @@
+warning: lifetime parameter `'d` never used
+  --> $DIR/normalization-bounds.rs:5:15
+   |
+LL | trait Visitor<'d> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

@@ -1,3 +1,13 @@
+warning: lifetime parameter `'late` never used
+  --> $DIR/method-call-lifetime-args-lint-fail.rs:79:18
+   |
+LL |     fn f<'early, 'late, T: 'early>() {}
+   |                  ^^^^^--
+   |                  |
+   |                  help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: cannot specify lifetime arguments explicitly if late bound lifetime parameters are present
   --> $DIR/method-call-lifetime-args-lint-fail.rs:23:14
    |

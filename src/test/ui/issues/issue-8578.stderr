@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-8578.rs:11:6
+   |
+LL | impl<'a> UninterpretedOption_NamePart {
+   |     -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

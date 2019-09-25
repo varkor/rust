@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait Deserializer<'a> { }
 
 trait Deserializable {

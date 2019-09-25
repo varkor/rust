@@ -1,0 +1,10 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/associated-types-conditional-dispatch.rs:28:6
+   |
+LL | impl<'a, A, B, Lhs> MyEq<[B; 0]> for Lhs
+   |      ^^--
+   |      |
+   |      help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

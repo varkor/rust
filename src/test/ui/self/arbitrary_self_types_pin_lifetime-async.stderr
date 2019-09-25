@@ -1,0 +1,78 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:10:32
+   |
+LL |     async fn pin_ref(self: Pin<&Self>) -> Pin<&Self> { self }
+   |                                ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:10:47
+   |
+LL |     async fn pin_ref(self: Pin<&Self>) -> Pin<&Self> { self }
+   |                                ---------------^
+   |                                |
+   |                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:12:32
+   |
+LL |     async fn pin_mut(self: Pin<&mut Self>) -> Pin<&mut Self> { self }
+   |                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:12:51
+   |
+LL |     async fn pin_mut(self: Pin<&mut Self>) -> Pin<&mut Self> { self }
+   |                                -------------------^
+   |                                |
+   |                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:14:48
+   |
+LL |     async fn pin_pin_pin_ref(self: Pin<Pin<Pin<&Self>>>) -> Pin<Pin<Pin<&Self>>> { self }
+   |                                                ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:14:73
+   |
+LL |     async fn pin_pin_pin_ref(self: Pin<Pin<Pin<&Self>>>) -> Pin<Pin<Pin<&Self>>> { self }
+   |                                                -------------------------^
+   |                                                |
+   |                                                help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:16:43
+   |
+LL |     async fn pin_ref_impl_trait(self: Pin<&Self>) -> impl Clone + '_ { self }
+   |                                           ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:16:67
+   |
+LL |     async fn pin_ref_impl_trait(self: Pin<&Self>) -> impl Clone + '_ { self }
+   |                                           ------------------------^^
+   |                                           |
+   |                                           help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:23:18
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> Alias<&Self> { self }
+   |                  ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:23:34
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> Alias<&Self> { self }
+   |                                  ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime-async.rs:23:64
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> Alias<&Self> { self }
+   |                                  ------------------------------^
+   |                                  |
+   |                                  help: elide the unused lifetime
+

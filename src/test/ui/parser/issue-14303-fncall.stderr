@@ -4,5 +4,15 @@ error: lifetime arguments must be declared prior to type arguments
 LL |         .collect::<Vec<S<_, 'a>>>();
    |                             ^^
 
+warning: lifetime parameter `'b` never used
+  --> $DIR/issue-14303-fncall.rs:10:12
+   |
+LL | fn foo<'a, 'b>(start: &'a usize, end: &'a usize) {
+   |          --^^
+   |          |
+   |          help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to previous error
 

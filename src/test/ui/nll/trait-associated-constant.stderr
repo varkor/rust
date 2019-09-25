@@ -1,3 +1,13 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/trait-associated-constant.rs:8:16
+   |
+LL | trait Anything<'a: 'b, 'b> {
+   |                ^^------
+   |                |
+   |                help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0308]: mismatched types
   --> $DIR/trait-associated-constant.rs:21:5
    |

@@ -10,11 +10,61 @@ error[E0261]: use of undeclared lifetime name `'a`
 LL |    pub fn life4<'b>(x: for<'c> fn(&'a i32));
    |                                    ^^ undeclared lifetime
 
+warning: lifetime parameter `'c` never used
+  --> $DIR/generic-extern-lifetime.rs:8:28
+   |
+LL |    pub fn life4<'b>(x: for<'c> fn(&'a i32));
+   |                            ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/generic-extern-lifetime.rs:8:17
+   |
+LL |    pub fn life4<'b>(x: for<'c> fn(&'a i32));
+   |                 ^^
+
+warning: lifetime parameter `'c` never used
+  --> $DIR/generic-extern-lifetime.rs:9:28
+   |
+LL |    pub fn life5<'b>(x: for<'c> fn(&'b i32));
+   |                            ^^
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/generic-extern-lifetime.rs:10:17
+   |
+LL |    pub fn life6<'b>(x: for<'c> fn(&'c i32));
+   |                 ^^
+
 error[E0261]: use of undeclared lifetime name `'a`
   --> $DIR/generic-extern-lifetime.rs:11:38
    |
 LL |    pub fn life7<'b>() -> for<'c> fn(&'a i32);
    |                                      ^^ undeclared lifetime
+
+warning: lifetime parameter `'c` never used
+  --> $DIR/generic-extern-lifetime.rs:11:30
+   |
+LL |    pub fn life7<'b>() -> for<'c> fn(&'a i32);
+   |                              ^^
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/generic-extern-lifetime.rs:11:17
+   |
+LL |    pub fn life7<'b>() -> for<'c> fn(&'a i32);
+   |                 ^^
+
+warning: lifetime parameter `'c` never used
+  --> $DIR/generic-extern-lifetime.rs:12:30
+   |
+LL |    pub fn life8<'b>() -> for<'c> fn(&'b i32);
+   |                              ^^
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/generic-extern-lifetime.rs:13:17
+   |
+LL |    pub fn life9<'b>() -> for<'c> fn(&'c i32);
+   |                 ^^
 
 error: aborting due to 3 previous errors
 

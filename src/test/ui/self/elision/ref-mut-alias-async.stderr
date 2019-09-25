@@ -1,0 +1,102 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:16:45
+   |
+LL |     async fn ref_Alias(self: &mut Alias, f: &u32) -> &u32 {
+   |                                             ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:16:30
+   |
+LL |     async fn ref_Alias(self: &mut Alias, f: &u32) -> &u32 {
+   |                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:16:54
+   |
+LL |     async fn ref_Alias(self: &mut Alias, f: &u32) -> &u32 {
+   |                              ---------------         ^
+   |                              |
+   |                              help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:20:54
+   |
+LL |     async fn box_ref_Alias(self: Box<&mut Alias>, f: &u32) -> &u32 {
+   |                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:20:38
+   |
+LL |     async fn box_ref_Alias(self: Box<&mut Alias>, f: &u32) -> &u32 {
+   |                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:20:63
+   |
+LL |     async fn box_ref_Alias(self: Box<&mut Alias>, f: &u32) -> &u32 {
+   |                                      ----------------         ^
+   |                                      |
+   |                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:24:54
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&mut Alias>, f: &u32) -> &u32 {
+   |                                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:24:38
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&mut Alias>, f: &u32) -> &u32 {
+   |                                      ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:24:63
+   |
+LL |     async fn pin_ref_Alias(self: Pin<&mut Alias>, f: &u32) -> &u32 {
+   |                                      ----------------         ^
+   |                                      |
+   |                                      help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:28:46
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&mut Alias>>, f: &u32) -> &u32 {
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:28:63
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&mut Alias>>, f: &u32) -> &u32 {
+   |                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:28:72
+   |
+LL |     async fn box_box_ref_Alias(self: Box<Box<&mut Alias>>, f: &u32) -> &u32 {
+   |                                              -----------------         ^
+   |                                              |
+   |                                              help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:32:63
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&mut Alias>>, f: &u32) -> &u32 {
+   |                                                               ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:32:46
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&mut Alias>>, f: &u32) -> &u32 {
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/ref-mut-alias-async.rs:32:72
+   |
+LL |     async fn box_pin_ref_Alias(self: Box<Pin<&mut Alias>>, f: &u32) -> &u32 {
+   |                                              -----------------         ^
+   |                                              |
+   |                                              help: elide the unused lifetime
+

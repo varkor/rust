@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-62517-2.rs:12:14
+   |
+LL | async fn foo<'a>(_: &'a ()) -> impl Alpha<dyn Object> {}
+   |              ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

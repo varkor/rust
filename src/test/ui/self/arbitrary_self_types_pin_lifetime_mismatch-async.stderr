@@ -1,3 +1,79 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:8:26
+   |
+LL |     async fn a(self: Pin<&Foo>, f: &Foo) -> &Foo { f }
+   |                          ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:8:36
+   |
+LL |     async fn a(self: Pin<&Foo>, f: &Foo) -> &Foo { f }
+   |                                    ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:8:45
+   |
+LL |     async fn a(self: Pin<&Foo>, f: &Foo) -> &Foo { f }
+   |                          ----------         ^
+   |                          |
+   |                          help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:11:37
+   |
+LL |     async fn c(self: Pin<&Self>, f: &Foo, g: &Foo) -> (Pin<&Foo>, &Foo) { (self, f) }
+   |                                     ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:11:26
+   |
+LL |     async fn c(self: Pin<&Self>, f: &Foo, g: &Foo) -> (Pin<&Foo>, &Foo) { (self, f) }
+   |                          ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:11:46
+   |
+LL |     async fn c(self: Pin<&Self>, f: &Foo, g: &Foo) -> (Pin<&Foo>, &Foo) { (self, f) }
+   |                                              ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:11:60
+   |
+LL |     async fn c(self: Pin<&Self>, f: &Foo, g: &Foo) -> (Pin<&Foo>, &Foo) { (self, f) }
+   |                          -----------                       ^
+   |                          |
+   |                          help: elide the unused lifetime
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:11:67
+   |
+LL |     async fn c(self: Pin<&Self>, f: &Foo, g: &Foo) -> (Pin<&Foo>, &Foo) { (self, f) }
+   |                          -----------                              ^
+   |                          |
+   |                          help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:17:18
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> &() { arg }
+   |                  ^^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:17:34
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> &() { arg }
+   |                                  ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:17:58
+   |
+LL |     async fn bar<'a>(self: Alias<&Self>, arg: &'a ()) -> &() { arg }
+   |                                  ------------------------^
+   |                                  |
+   |                                  help: elide the unused lifetime
+
 error[E0623]: lifetime mismatch
   --> $DIR/arbitrary_self_types_pin_lifetime_mismatch-async.rs:8:45
    |

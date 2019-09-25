@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/ex3-both-anon-regions-using-impl-items.rs:2:12
+   |
+LL |     fn foo<'a>(x: &mut Vec<&u8>, y: &u8);
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0623]: lifetime mismatch
   --> $DIR/ex3-both-anon-regions-using-impl-items.rs:6:16
    |

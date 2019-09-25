@@ -1,3 +1,21 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/wf-unreachable.rs:41:9
+   |
+LL | trait X<'a, 'b> {}
+   |         ^^--
+   |         |
+   |         help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/wf-unreachable.rs:41:13
+   |
+LL | trait X<'a, 'b> {}
+   |           --^^
+   |           |
+   |           help: elide the unused lifetime
+
 error: lifetime may not live long enough
   --> $DIR/wf-unreachable.rs:8:12
    |

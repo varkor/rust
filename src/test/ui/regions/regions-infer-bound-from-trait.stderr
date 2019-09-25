@@ -1,3 +1,13 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-infer-bound-from-trait.rs:21:9
+   |
+LL | fn foo2<'a,A:Static>(x: Inv<'static>, a: A) {
+   |         ^^-
+   |         |
+   |         help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0309]: the parameter type `A` may not live long enough
   --> $DIR/regions-infer-bound-from-trait.rs:33:5
    |

@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/projection-body.rs:6:15
+   |
+LL | trait MyTrait<'a> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/borrowck-borrow-overloaded-deref-mut.rs:48:12
+   |
+LL | fn assign1<'a>(x: Own<isize>) {
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0596]: cannot borrow `x` as mutable, as it is not declared as mutable
   --> $DIR/borrowck-borrow-overloaded-deref-mut.rs:29:25
    |

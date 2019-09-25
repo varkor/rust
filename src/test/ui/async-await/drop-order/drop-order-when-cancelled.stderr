@@ -1,0 +1,14 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/drop-order-when-cancelled.rs:143:6
+   |
+LL | impl<'a> Bar<'a> {
+   |      ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/drop-order-when-cancelled.rs:143:6
+   |
+LL | impl<'a> Bar<'a> {
+   |      ^^
+

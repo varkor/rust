@@ -1,3 +1,11 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/lint-unused-variables.rs:21:9
+   |
+LL |         &self,
+   |         ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: unused variable: `a`
   --> $DIR/lint-unused-variables.rs:8:5
    |

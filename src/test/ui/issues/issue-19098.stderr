@@ -1,0 +1,8 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/issue-19098.rs:6:40
+   |
+LL | impl<F> Handler for F where F: for<'a, 'b> Fn(&'a mut String) {
+   |                                        ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

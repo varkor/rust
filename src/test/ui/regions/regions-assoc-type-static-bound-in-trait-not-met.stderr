@@ -1,3 +1,11 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-assoc-type-static-bound-in-trait-not-met.rs:14:6
+   |
+LL | impl<'a> Foo for i32 {
+   |     -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0495]: cannot infer an appropriate lifetime for lifetime parameter `'a` due to conflicting requirements
   --> $DIR/regions-assoc-type-static-bound-in-trait-not-met.rs:9:10
    |

@@ -1,5 +1,7 @@
 // Check that projections don't count as constraining type parameters.
 
+#![allow(unused_lifetimes)]
+
 struct S<T>(T);
 
 trait Tr { type Assoc; fn test(); }

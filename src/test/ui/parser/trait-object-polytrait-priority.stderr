@@ -4,6 +4,14 @@ error[E0178]: expected a path on the left-hand side of `+`, not `&for<'a> Trait<
 LL |     let _: &for<'a> Trait<'a> + 'static;
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try adding parentheses: `&(for<'a> Trait<'a> + 'static)`
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/trait-object-polytrait-priority.rs:3:13
+   |
+LL | trait Trait<'a> {}
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error: aborting due to previous error
 
 For more information about this error, try `rustc --explain E0178`.

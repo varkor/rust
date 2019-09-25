@@ -1,3 +1,21 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/unboxed-closure-sugar-default.rs:16:12
+   |
+LL | fn test<'a,'b>() {
+   |           -^^
+   |           |
+   |           help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/unboxed-closure-sugar-default.rs:16:9
+   |
+LL | fn test<'a,'b>() {
+   |         ^^-
+   |         |
+   |         help: elide the unused lifetime
+
 error[E0277]: the trait bound `dyn Foo<(isize,), isize, Output = ()>: Eq<dyn Foo<(isize,), Output = ()>>` is not satisfied
   --> $DIR/unboxed-closure-sugar-default.rs:21:5
    |

@@ -1,3 +1,21 @@
+warning: lifetime parameter `'b` never used
+  --> $DIR/ordinary-bounds-unsuited.rs:5:17
+   |
+LL | trait Trait<'a, 'b> {}
+   |               --^^
+   |               |
+   |               help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/ordinary-bounds-unsuited.rs:5:13
+   |
+LL | trait Trait<'a, 'b> {}
+   |             ^^--
+   |             |
+   |             help: elide the unused lifetime
+
 error[E0700]: hidden type for `impl Trait` captures lifetime that does not appear in bounds
   --> $DIR/ordinary-bounds-unsuited.rs:20:62
    |

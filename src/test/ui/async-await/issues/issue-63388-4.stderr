@@ -1,0 +1,22 @@
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-4.rs:7:18
+   |
+LL |     async fn foo(&self, f: &u32) -> &A { self }
+   |                  ^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-4.rs:7:28
+   |
+LL |     async fn foo(&self, f: &u32) -> &A { self }
+   |                            ^
+
+warning: lifetime parameter `'_` never used
+  --> $DIR/issue-63388-4.rs:7:37
+   |
+LL |     async fn foo(&self, f: &u32) -> &A { self }
+   |                  ----------         ^
+   |                  |
+   |                  help: elide the unused lifetime
+

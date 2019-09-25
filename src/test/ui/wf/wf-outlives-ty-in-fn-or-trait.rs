@@ -1,5 +1,7 @@
 #![feature(rustc_attrs)]
+
 #![allow(dead_code)]
+#![allow(unused_lifetimes)]
 
 trait Trait<'a, T> {
     type Out;

@@ -1,0 +1,8 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/type-id-higher-rank.rs:8:13
+   |
+LL | trait Trait<'a> {}
+   |            -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+

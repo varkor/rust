@@ -1,6 +1,6 @@
 // Check that we require that associated types in an impl are well-formed.
 
-
+#![allow(unused_lifetimes)]
 
 pub trait Foo<'a> {
     type Bar;

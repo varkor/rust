@@ -6,6 +6,14 @@ LL |     fn foo<'a>() {
 LL |         'a: loop { break 'a; }
    |         ^^ lifetime 'a already in scope
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:9:12
+   |
+LL |     fn foo<'a>() {
+   |           -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 warning: label name `'bad` shadows a lifetime name that is already in scope
   --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:35:13
    |
@@ -74,6 +82,14 @@ LL |         fn meth_bad4<'a,'bad>(x: &'bad i8) {
 LL |             'bad: loop { break 'bad; }
    |             ^^^^ lifetime 'bad already in scope
 
+warning: lifetime parameter `'a` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:77:22
+   |
+LL |         fn meth_bad4<'a,'bad>(x: &'bad i8) {
+   |                      ^^-
+   |                      |
+   |                      help: elide the unused lifetime
+
 warning: label name `'bad` shadows a lifetime name that is already in scope
   --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:88:13
    |
@@ -82,6 +98,12 @@ LL |     trait HasDefaultMethod1<'bad> {
 ...
 LL |             'bad: loop { break 'bad; }
    |             ^^^^ lifetime 'bad already in scope
+
+warning: lifetime parameter `'bad` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:83:29
+   |
+LL |     trait HasDefaultMethod1<'bad> {
+   |                            -^^^^- help: elide the unused lifetime
 
 warning: label name `'bad` shadows a lifetime name that is already in scope
   --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:94:13
@@ -92,6 +114,22 @@ LL |         fn meth_bad(&self) {
 LL |             'bad: loop { break 'bad; }
    |             ^^^^ lifetime 'bad already in scope
 
+warning: lifetime parameter `'bad` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:92:32
+   |
+LL |     trait HasDefaultMethod2<'a,'bad> {
+   |                               -^^^^
+   |                               |
+   |                               help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:92:29
+   |
+LL |     trait HasDefaultMethod2<'a,'bad> {
+   |                             ^^-
+   |                             |
+   |                             help: elide the unused lifetime
+
 warning: label name `'bad` shadows a lifetime name that is already in scope
   --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:100:13
    |
@@ -99,4 +137,26 @@ LL |         fn meth_bad<'bad>(&self) {
    |                     ---- first declared here
 LL |             'bad: loop { break 'bad; }
    |             ^^^^ lifetime 'bad already in scope
+
+warning: lifetime parameter `'bad` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:99:21
+   |
+LL |         fn meth_bad<'bad>(&self) {
+   |                    -^^^^- help: elide the unused lifetime
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:98:29
+   |
+LL |     trait HasDefaultMethod3<'a,'b> {
+   |                             ^^-
+   |                             |
+   |                             help: elide the unused lifetime
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/loops-reject-labels-shadowing-lifetimes.rs:98:32
+   |
+LL |     trait HasDefaultMethod3<'a,'b> {
+   |                               -^^
+   |                               |
+   |                               help: elide the unused lifetime
 

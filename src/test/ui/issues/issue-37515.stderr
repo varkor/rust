@@ -1,3 +1,11 @@
+warning: lifetime parameter `'x` never used
+  --> $DIR/issue-37515.rs:5:18
+   |
+LL | type Z = dyn for<'x> Send;
+   |                  ^^
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 warning: type alias is never used: `Z`
   --> $DIR/issue-37515.rs:5:1
    |

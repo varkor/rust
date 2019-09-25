@@ -1,3 +1,21 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/regions-normalize-in-where-clause-list.rs:4:15
+   |
+LL | trait Project<'a, 'b> {
+   |               ^^--
+   |               |
+   |               help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'b` never used
+  --> $DIR/regions-normalize-in-where-clause-list.rs:4:19
+   |
+LL | trait Project<'a, 'b> {
+   |                 --^^
+   |                 |
+   |                 help: elide the unused lifetime
+
 error[E0495]: cannot infer an appropriate lifetime for lifetime parameter `'a` due to conflicting requirements
   --> $DIR/regions-normalize-in-where-clause-list.rs:22:1
    |

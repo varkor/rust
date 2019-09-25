@@ -1,3 +1,11 @@
+warning: lifetime parameter `'d` never used
+  --> $DIR/normalization-bounds-error.rs:4:15
+   |
+LL | trait Visitor<'d> {
+   |              -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
 error[E0495]: cannot infer an appropriate lifetime for lifetime parameter `'d` due to conflicting requirements
   --> $DIR/normalization-bounds-error.rs:12:1
    |

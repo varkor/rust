@@ -1,3 +1,19 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-62203-hrtb-ice.rs:1:10
+   |
+LL | trait T0<'a, A> {
+   |          ^^--
+   |          |
+   |          help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-62203-hrtb-ice.rs:33:10
+   |
+LL | trait Ty<'a> {
+   |         -^^- help: elide the unused lifetime
+
 error[E0271]: type mismatch resolving `for<'r> <L<[closure@$DIR/issue-62203-hrtb-ice.rs:42:17: 42:39]> as T0<'r, (<Unit2 as Ty<'r>>::V,)>>::O == <_ as Ty<'r>>::V`
   --> $DIR/issue-62203-hrtb-ice.rs:38:19
    |

@@ -1,3 +1,5 @@
+#![allow(unused_lifetimes)]
+
 trait Trait1<'l0, T0> {}
 trait Trait0<'l0>  {}
 

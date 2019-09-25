@@ -1,0 +1,14 @@
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-35570.rs:6:14
+   |
+LL | trait Trait2<'a> {
+   |             -^^- help: elide the unused lifetime
+   |
+   = note: `#[warn(unused_lifetimes)]` on by default
+
+warning: lifetime parameter `'a` never used
+  --> $DIR/issue-35570.rs:14:16
+   |
+LL | trait Lifetime<'a> {
+   |               -^^- help: elide the unused lifetime
+
