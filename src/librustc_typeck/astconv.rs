@@ -219,7 +219,9 @@ impl<'o, 'tcx> dyn AstConv<'tcx> + 'o {
         seg: &hir::PathSegment,
         generics: &ty::Generics,
     ) -> bool {
-        let explicit = !seg.infer_args;
+        let explicit = seg.args.iter().map(|args| args.args.iter()).flatten().any(|arg| {
+            if let GenericArg::Type(_) = arg { true } else { false }
+        });
         let impl_trait = generics.params.iter().any(|param| match param.kind {
             ty::GenericParamDefKind::Type {
                 synthetic: Some(hir::SyntheticTyParamKind::ImplTrait), ..
