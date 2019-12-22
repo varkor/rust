@@ -418,6 +418,7 @@ symbols! {
         deref,
         deref_mut,
         derive,
+        destructuring_assignment,
         diagnostic,
         direct,
         discriminant_kind,
