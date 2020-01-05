@@ -2047,8 +2047,8 @@ impl<'o, 'tcx> dyn AstConv<'tcx> + 'o {
     // For a path `A::B::C::D`, `qself_ty` and `qself_def` are the type and def for `A::B::C`
     // and item_segment is the path segment for `D`. We return a type and a def for
     // the whole path.
-    // Will fail except for `T::A` and `Self::A`; i.e., if `qself_ty`/`qself_def` are not a type
-    // parameter or `Self`.
+    // Will fail if `qself_ty`/`qself_def` are not a type parameters or `Self` (e.g. only accepts
+    // paths of the form `T::A` and `Self::A`).
     pub fn associated_path_to_ty(
         &self,
         hir_ref_id: hir::HirId,

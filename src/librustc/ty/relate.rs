@@ -524,12 +524,15 @@ pub fn super_relate_consts<R: TypeRelation<'tcx>>(
             // The caller should handle these cases!
             bug!("var types encountered in super_relate_consts: {:?} {:?}", a, b)
         }
+
         (ty::ConstKind::Param(a_p), ty::ConstKind::Param(b_p)) if a_p.index == b_p.index => {
             return Ok(a);
         }
+
         (ty::ConstKind::Placeholder(p1), ty::ConstKind::Placeholder(p2)) if p1 == p2 => {
             return Ok(a);
         }
+
         (ty::ConstKind::Value(a_val), ty::ConstKind::Value(b_val)) => {
             let new_val = match (a_val, b_val) {
                 (ConstValue::Scalar(a_val), ConstValue::Scalar(b_val)) if a.ty == b.ty => {
@@ -575,6 +578,7 @@ pub fn super_relate_consts<R: TypeRelation<'tcx>>(
                 relation.relate_with_variance(ty::Variance::Invariant, &a_substs, &b_substs)?;
             Ok(ty::ConstKind::Unevaluated(a_def_id, &substs))
         }
+
         _ => Err(TypeError::ConstMismatch(expected_found(relation, &a, &b))),
     };
     new_const_val.map(|val| tcx.mk_const(ty::Const { val, ty: a.ty }))

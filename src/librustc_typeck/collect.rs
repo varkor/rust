@@ -1421,30 +1421,8 @@ fn type_of(tcx: TyCtxt<'_>, def_id: DefId) -> Ty<'_> {
                 | Node::Expr(&hir::Expr { kind: ExprKind::Struct(..), .. })
                 | Node::Expr(&hir::Expr { kind: ExprKind::Path(_), .. })
                 | Node::TraitRef(..) => {
-                    let path = match parent_node {
-                        Node::Ty(&hir::Ty {
-                            kind: hir::TyKind::Path(QPath::Resolved(_, ref path)),
-                            ..
-                        })
-                        | Node::Expr(&hir::Expr {
-                            kind: ExprKind::Path(QPath::Resolved(_, ref path)),
-                            ..
-                        }) => Some(&**path),
-                        Node::Expr(&hir::Expr { kind: ExprKind::Struct(ref path, ..), .. }) => {
-                            if let QPath::Resolved(_, ref path) = **path {
-                                Some(&**path)
-                            } else {
-                                None
-                            }
-                        }
-                        Node::TraitRef(&hir::TraitRef { ref path, .. }) => Some(&**path),
-                        _ => None,
-                    };
-
-                    if let Some(path) = path {
-                        let arg_index = path
-                            .segments
-                            .iter()
+                    fn arg_index_for_segs(hir_id: HirId, segs: &[PathSegment<'_>]) -> usize {
+                        segs.iter()
                             .filter_map(|seg| seg.args.as_ref())
                             .map(|generic_args| generic_args.args.as_ref())
                             .find_map(|args| {
@@ -1457,47 +1435,95 @@ fn type_of(tcx: TyCtxt<'_>, def_id: DefId) -> Ty<'_> {
                             })
                             .unwrap_or_else(|| {
                                 bug!("no arg matching AnonConst in path");
-                            });
-
-                        // We've encountered an `AnonConst` in some path, so we need to
-                        // figure out which generic parameter it corresponds to and return
-                        // the relevant type.
-                        let generics = match path.res {
-                            Res::Def(DefKind::Ctor(..), def_id) => {
-                                tcx.generics_of(tcx.parent(def_id).unwrap())
-                            }
-                            Res::Def(_, def_id) => tcx.generics_of(def_id),
-                            Res::Err => return tcx.types.err,
-                            res => {
-                                tcx.sess.delay_span_bug(
-                                    DUMMY_SP,
-                                    &format!("unexpected const parent path def {:?}", res,),
-                                );
-                                return tcx.types.err;
-                            }
-                        };
-
-                        generics
-                            .params
-                            .iter()
-                            .filter(|param| {
-                                if let ty::GenericParamDefKind::Const = param.kind {
-                                    true
-                                } else {
-                                    false
-                                }
                             })
-                            .nth(arg_index)
-                            .map(|param| tcx.type_of(param.def_id))
-                            // This is no generic parameter associated with the arg. This is
-                            // probably from an extra arg where one is not needed.
-                            .unwrap_or(tcx.types.err)
-                    } else {
-                        tcx.sess.delay_span_bug(
-                            DUMMY_SP,
-                            &format!("unexpected const parent path {:?}", parent_node,),
-                        );
-                        return tcx.types.err;
+                    }
+
+                    // Try to extract the path from the expression containing the `AnonConst`.
+                    match parent_node {
+                        Node::Ty(&hir::Ty {
+                            kind: hir::TyKind::Path(QPath::Resolved(_, ref path)),
+                            ..
+                        })
+                        | Node::Expr(&hir::Expr {
+                            kind: ExprKind::Path(QPath::Resolved(_, ref path)),
+                            ..
+                        })
+                        | Node::Expr(&hir::Expr {
+                            kind: ExprKind::Struct(QPath::Resolved(_, ref path), ..),
+                            ..
+                        })
+                        | Node::TraitRef(&hir::TraitRef { ref path, .. }) => {
+                            let path = &**path;
+
+                            // We have the `path` of the expression containing the generic argument
+                            // (an `AnonConst`). We now find what index (`arg_index`) the generic
+                            // argument is at in the list of generic arguments in the expression.
+                            let arg_index = arg_index_for_segs(hir_id, &path.segments);
+
+                            let generics = match path.res {
+                                Res::Def(DefKind::Ctor(..), def_id) => {
+                                    tcx.generics_of(tcx.parent(def_id).unwrap())
+                                }
+                                Res::Def(_, def_id) => tcx.generics_of(def_id),
+                                Res::Err => return tcx.types.err,
+                                res => {
+                                    tcx.sess.delay_span_bug(
+                                        DUMMY_SP,
+                                        &format!("unexpected const parent path def {:?}", res,),
+                                    );
+                                    return tcx.types.err;
+                                }
+                            };
+
+                            // `generics` are the generic parameters corresponding to the generic
+                            // arguments. We know the `arg_index`th const generic parameter is the
+                            // one corresponding to the argument, so we're going to extract it and
+                            // get its type, which is necessarily also the type of the argument.
+                            generics
+                                .params
+                                .iter()
+                                .filter(|param| {
+                                    if let ty::GenericParamDefKind::Const = param.kind {
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                })
+                                .nth(arg_index)
+                                .map(|param| tcx.type_of(param.def_id))
+                                // This is no generic parameter associated with the argument. This
+                                // is probably from a user mistake, specifying an extra argument
+                                // where one is not needed.
+                                .unwrap_or(tcx.types.err)
+                        }
+
+                        Node::Ty(&hir::Ty {
+                            kind: hir::TyKind::Path(QPath::TypeRelative(ref _qself, ref _seg)),
+                            ..
+                        })
+                        | Node::Expr(&hir::Expr {
+                            kind: ExprKind::Path(QPath::TypeRelative(ref _qself, ref _seg)),
+                            ..
+                        })
+                        | Node::Expr(&hir::Expr {
+                            kind: ExprKind::Struct(QPath::TypeRelative(ref _qself, ref _seg), ..),
+                            ..
+                        }) => {
+                            // FIXME(const_generics)
+
+                            tcx.types.err
+                        }
+
+                        _ => {
+                            tcx.sess.delay_span_bug(
+                                DUMMY_SP,
+                                &format!(
+                                    "cannot extract type of `AnonConst` from parent {:?}",
+                                    parent_node,
+                                ),
+                            );
+                            tcx.types.err
+                        }
                     }
                 }
 
