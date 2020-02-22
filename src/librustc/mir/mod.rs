@@ -10,7 +10,8 @@ use crate::ty::layout::VariantIdx;
 use crate::ty::print::{FmtPrinter, Printer};
 use crate::ty::subst::{Subst, SubstsRef};
 use crate::ty::{
-    self, AdtDef, CanonicalUserTypeAnnotations, List, Region, Ty, TyCtxt, UserTypeAnnotationIndex,
+    self, AdtDef, CanonicalUserTypeAnnotations, Const, List, Region, Ty, TyCtxt,
+    UserTypeAnnotationIndex,
 };
 use rustc_hir as hir;
 use rustc_hir::def::{CtorKind, Namespace};
@@ -2002,7 +2003,7 @@ pub enum Rvalue<'tcx> {
     Use(Operand<'tcx>),
 
     /// [x; 32]
-    Repeat(Operand<'tcx>, u64),
+    Repeat(Operand<'tcx>, &'tcx Const<'tcx>),
 
     /// &x or &mut x
     Ref(Region<'tcx>, BorrowKind, Place<'tcx>),

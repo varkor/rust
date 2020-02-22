@@ -1904,8 +1904,12 @@ impl<'a, 'tcx> TypeChecker<'a, 'tcx> {
                 self.check_aggregate_rvalue(&body, rvalue, ak, ops, location)
             }
 
-            Rvalue::Repeat(operand, len) => {
-                if *len > 1 {
+            Rvalue::Repeat(operand, count) => {
+                let may_need_to_move = match count.try_eval_usize(tcx, self.param_env) {
+                    Some(0) => false,
+                    _ => true,
+                };
+                if may_need_to_move {
                     if let Operand::Move(_) = operand {
                         // While this is located in `nll::typeck` this error is not an NLL error, it's
                         // a required check to make sure that repeated elements implement `Copy`.

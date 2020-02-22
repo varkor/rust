@@ -1527,10 +1527,18 @@ fn type_of(tcx: TyCtxt<'_>, def_id: DefId) -> Ty<'_> {
                     } else {
                         tcx.sess.delay_span_bug(
                             DUMMY_SP,
-                            &format!("unexpected const parent path {:?}", parent_node,),
+                            &format!("unexpected const parent path {:?}", parent_node),
                         );
                         return tcx.types.err;
                     }
+                }
+
+                Node::Expr(&hir::Expr { ref kind, .. }) => {
+                    tcx.sess.delay_span_bug(
+                        DUMMY_SP,
+                        &format!("unexpected const expression in type_of_def_id(): {:?}", kind),
+                    );
+                    tcx.types.err
                 }
 
                 x => {

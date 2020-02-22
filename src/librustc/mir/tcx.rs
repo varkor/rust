@@ -3,11 +3,12 @@
  * building is complete.
  */
 
+use crate::mir::interpret::ErrorHandled;
 use crate::mir::*;
 use crate::ty::layout::VariantIdx;
 use crate::ty::subst::Subst;
 use crate::ty::util::IntTypeExt;
-use crate::ty::{self, Ty, TyCtxt};
+use crate::ty::{self, Const, Ty, TyCtxt};
 use rustc_hir as hir;
 
 #[derive(Copy, Clone, Debug, TypeFoldable)]
@@ -142,6 +143,22 @@ pub enum RvalueInitializationState {
     Deep,
 }
 
+pub fn eval_repeat_count<'tcx>(tcx: TyCtxt<'tcx>, count: &'tcx Const<'tcx>) -> u64 {
+    match count.val {
+        ty::ConstKind::Unevaluated(def_id, substs, promoted) => {
+            match tcx.const_eval_resolve(ty::ParamEnv::reveal_all(), def_id, substs, promoted, None)
+            {
+                Ok(cv) => cv.eval_usize(tcx, ty::ParamEnv::reveal_all()),
+                Err(ErrorHandled::Reported) => 0,
+                Err(ErrorHandled::TooGeneric) => {
+                    bug!("array lengths can't depend on generic parameters")
+                }
+            }
+        }
+        _ => bug!("should be `ConstKind::Unevaluated`"),
+    }
+}
+
 impl<'tcx> Rvalue<'tcx> {
     pub fn ty<D>(&self, local_decls: &D, tcx: TyCtxt<'tcx>) -> Ty<'tcx>
     where
@@ -149,7 +166,9 @@ impl<'tcx> Rvalue<'tcx> {
     {
         match *self {
             Rvalue::Use(ref operand) => operand.ty(local_decls, tcx),
-            Rvalue::Repeat(ref operand, count) => tcx.mk_array(operand.ty(local_decls, tcx), count),
+            Rvalue::Repeat(ref operand, count) => {
+                tcx.mk_ty(ty::Array(operand.ty(local_decls, tcx), count))
+            }
             Rvalue::Ref(reg, bk, ref place) => {
                 let place_ty = place.ty(local_decls, tcx).ty;
                 tcx.mk_ref(reg, ty::TypeAndMut { ty: place_ty, mutbl: bk.to_mutbl_lossy() })

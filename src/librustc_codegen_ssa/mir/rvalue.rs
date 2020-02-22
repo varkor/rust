@@ -9,6 +9,7 @@ use crate::MemFlags;
 
 use rustc::middle::lang_items::ExchangeMallocFnLangItem;
 use rustc::mir;
+use rustc::mir::tcx::eval_repeat_count;
 use rustc::ty::cast::{CastTy, IntTy};
 use rustc::ty::layout::{self, HasTyCtxt, LayoutOf};
 use rustc::ty::{self, adjustment::PointerCast, Instance, Ty, TyCtxt};
@@ -106,6 +107,8 @@ impl<'a, 'tcx, Bx: BuilderMethods<'a, 'tcx>> FunctionCx<'a, 'tcx, Bx> {
                     }
                 }
 
+                let count = self.monomorphize(&count);
+                let count = eval_repeat_count(bx.cx().tcx(), count);
                 bx.write_operand_repeatedly(cg_elem, count, dest)
             }
 
