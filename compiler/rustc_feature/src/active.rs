@@ -586,7 +586,7 @@ declare_features! (
     (active, const_evaluatable_checked, "1.48.0", Some(76560), None),
 
     /// Allows the use of destructuring assignments.
-    (active, destructuring_assignment, "1.48.0", None, None),
+    (active, destructuring_assignment, "1.48.0", Some(372), None),
 
     // -------------------------------------------------------------------------
     // feature-group-end: actual feature gates
