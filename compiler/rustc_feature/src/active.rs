@@ -586,9 +586,7 @@ declare_features! (
     (active, const_evaluatable_checked, "1.48.0", Some(76560), None),
 
     /// Allows the use of destructuring assignments.
-    /// The current issue reference refers to the rust-lang/rfcs issue. This will be changed to a
-    /// valid rust-lang/rust issue when the accompanying RFC is accepted.
-    (active, destructuring_assignment, "1.48.0", Some(372), None),
+    (active, destructuring_assignment, "1.48.0", Some(71126), None),
 
     // -------------------------------------------------------------------------
     // feature-group-end: actual feature gates
