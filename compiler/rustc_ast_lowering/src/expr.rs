@@ -860,7 +860,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
         // Return early in case of an ordinary assignment.
         let is_ordinary = match &lhs.kind {
             ExprKind::Array(..)
-            | ExprKind::Struct(_, _, None)
+            | ExprKind::Struct(..)
             | ExprKind::Tup(..)
             | ExprKind::Underscore => false,
             ExprKind::Call(callee, ..) => {
@@ -968,8 +968,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
                 }
             }
             // structs:
-            // FIXME: support `..` here, requires changes to the parser
-            ExprKind::Struct(path, fields, None) => {
+            ExprKind::Struct(path, fields, base) => {
                 let field_pats = self.arena.alloc_from_iter(fields.iter().map(|f| {
                     let pat = self.destructure_assign(&f.expr, eq_sign_span, assignments);
                     hir::FieldPat {
@@ -987,7 +986,26 @@ impl<'hir> LoweringContext<'_, 'hir> {
                     ParamMode::Optional,
                     ImplTraitContext::disallowed(),
                 );
-                let struct_pat = hir::PatKind::Struct(qpath, field_pats, false);
+                let fields_omitted = match base {
+                    None => false,
+                    Some(e) => {
+                        match e.kind {
+                            ExprKind::Underscore => {}
+                            _ => self
+                                .sess
+                                .struct_span_err(e.span, "base expression not allowed here")
+                                .span_suggestion(
+                                    e.span,
+                                    "consider removing this",
+                                    String::new(),
+                                    rustc_errors::Applicability::MachineApplicable,
+                                )
+                                .emit(),
+                        }
+                        true
+                    }
+                };
+                let struct_pat = hir::PatKind::Struct(qpath, field_pats, fields_omitted);
                 return self.pat(lhs.span, struct_pat);
             }
             // tuples:
