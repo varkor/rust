@@ -1256,7 +1256,9 @@ pub fn noop_visit_expr<T: MutVisitor>(
         ExprKind::Struct(path, fields, expr) => {
             vis.visit_path(path);
             fields.flat_map_in_place(|field| vis.flat_map_field(field));
-            visit_opt(expr, |expr| vis.visit_expr(expr));
+            if let StructRest::Base(expr) = expr {
+                vis.visit_expr(expr);
+            }
         }
         ExprKind::Paren(expr) => {
             vis.visit_expr(expr);
