@@ -1623,7 +1623,7 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
                             // In general, during probe we erase regions.
                             self.tcx.lifetimes.re_erased.into()
                         }
-                        GenericParamDefKind::Type { .. } | GenericParamDefKind::Const => {
+                        GenericParamDefKind::Type { .. } | GenericParamDefKind::Const { .. } => {
                             self.var_for_def(self.span, param)
                         }
                     }

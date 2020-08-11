@@ -1145,6 +1145,17 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                     }
                 }
             }
+            if !self.session.features_untracked().const_generic_defaults {
+                if let GenericParamKind::Const { default: Some(ref default), .. } = param.kind {
+                    let mut err = self.err_handler().struct_span_err(
+                        default.value.span,
+                        "default values for const generic parameters are unstable",
+                    );
+                    err.note("to enable them use #![feature(const_generic_defaults)]");
+                    err.emit();
+                    break;
+                }
+            }
         }
 
         validate_generic_param_order(
@@ -1155,7 +1166,7 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                 let (kind, ident) = match &param.kind {
                     GenericParamKind::Lifetime => (ParamKindOrd::Lifetime, ident),
                     GenericParamKind::Type { default: _ } => (ParamKindOrd::Type, ident),
-                    GenericParamKind::Const { ref ty, kw_span: _ } => {
+                    GenericParamKind::Const { ref ty, kw_span: _, default: _ } => {
                         let ty = pprust::ty_to_string(ty);
                         let unordered = self.session.features_untracked().const_generics;
                         (

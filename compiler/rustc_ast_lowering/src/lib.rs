@@ -2242,13 +2242,15 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
 
                 (hir::ParamName::Plain(param.ident), kind)
             }
-            GenericParamKind::Const { ref ty, kw_span: _ } => {
+            GenericParamKind::Const { ref ty, kw_span: _, ref default } => {
                 let ty = self
                     .with_anonymous_lifetime_mode(AnonymousLifetimeMode::ReportError, |this| {
                         this.lower_ty(&ty, ImplTraitContext::disallowed())
                     });
 
-                (hir::ParamName::Plain(param.ident), hir::GenericParamKind::Const { ty })
+                let default = default.as_ref().map(|def| self.lower_anon_const(def));
+
+                (hir::ParamName::Plain(param.ident), hir::GenericParamKind::Const { ty, default })
             }
         };
 

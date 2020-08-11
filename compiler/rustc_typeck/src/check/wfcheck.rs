@@ -288,7 +288,7 @@ fn check_param_wf(tcx: TyCtxt<'_>, param: &hir::GenericParam<'_>) {
 
         // Const parameters are well formed if their
         // type is structural match.
-        hir::GenericParamKind::Const { ty: hir_ty } => {
+        hir::GenericParamKind::Const { ty: hir_ty, .. } => {
             let ty = tcx.type_of(tcx.hir().local_def_id(param.hir_id));
 
             let err_ty_str;
@@ -725,7 +725,8 @@ fn check_where_clauses<'tcx, 'fcx>(
     let generics = tcx.generics_of(def_id);
 
     let is_our_default = |def: &ty::GenericParamDef| match def.kind {
-        GenericParamDefKind::Type { has_default, .. } => {
+        GenericParamDefKind::Const { has_default }
+        | GenericParamDefKind::Type { has_default, .. } => {
             has_default && def.index >= generics.parent_count as u32
         }
         _ => unreachable!(),
@@ -770,7 +771,7 @@ fn check_where_clauses<'tcx, 'fcx>(
                 fcx.tcx.mk_param_from_def(param)
             }
 
-            GenericParamDefKind::Type { .. } => {
+            GenericParamDefKind::Const { .. } | GenericParamDefKind::Type { .. } => {
                 // If the param has a default, ...
                 if is_our_default(param) {
                     let default_ty = fcx.tcx.type_of(param.def_id);
@@ -781,11 +782,6 @@ fn check_where_clauses<'tcx, 'fcx>(
                     }
                 }
 
-                fcx.tcx.mk_param_from_def(param)
-            }
-
-            GenericParamDefKind::Const => {
-                // FIXME(const_generics:defaults)
                 fcx.tcx.mk_param_from_def(param)
             }
         }

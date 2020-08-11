@@ -1343,9 +1343,10 @@ impl<'tcx> Visitor<'tcx> for DumpVisitor<'tcx> {
                         self.visit_ty(ty);
                     }
                 }
-                hir::GenericParamKind::Const { ref ty } => {
+                hir::GenericParamKind::Const { ref ty, default: _ } => {
                     self.process_bounds(param.bounds);
                     self.visit_ty(ty);
+                    // Don't have to visit default here because it's known to be a const
                 }
             }
         }

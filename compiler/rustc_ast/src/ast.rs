@@ -368,6 +368,7 @@ pub enum GenericParamKind {
         ty: P<Ty>,
         /// Span of the `const` keyword.
         kw_span: Span,
+        default: Option<AnonConst>,
     },
 }
 

@@ -1337,7 +1337,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     (GenericParamDefKind::Type { .. }, GenericArg::Type(ty)) => {
                         self.fcx.to_ty(ty).into()
                     }
-                    (GenericParamDefKind::Const, GenericArg::Const(ct)) => {
+                    (GenericParamDefKind::Const { .. }, GenericArg::Const(ct)) => {
                         self.fcx.const_arg_to_const(&ct.value, param.def_id).into()
                     }
                     _ => unreachable!(),
@@ -1375,10 +1375,13 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                             self.fcx.var_for_def(self.span, param)
                         }
                     }
-                    GenericParamDefKind::Const => {
+                    GenericParamDefKind::Const { has_default, .. } => {
+                        if infer_args || !has_default {
+                            return self.fcx.var_for_def(self.span, param);
+                        }
                         // FIXME(const_generics:defaults)
                         // No const parameters were provided, we have to infer them.
-                        self.fcx.var_for_def(self.span, param)
+                        todo!()
                     }
                 }
             }

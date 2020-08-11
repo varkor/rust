@@ -397,6 +397,10 @@ pub fn eq_use_tree(l: &UseTree, r: &UseTree) -> bool {
     eq_path(&l.prefix, &r.prefix) && eq_use_tree_kind(&l.kind, &r.kind)
 }
 
+pub fn eq_anon_const(l: &AnonConst, r: &AnonConst) -> bool {
+  eq_expr(&l.value, &r.value)
+}
+
 pub fn eq_use_tree_kind(l: &UseTreeKind, r: &UseTreeKind) -> bool {
     use UseTreeKind::*;
     match (l, r) {
@@ -497,7 +501,8 @@ pub fn eq_generic_param(l: &GenericParam, r: &GenericParam) -> bool {
         && match (&l.kind, &r.kind) {
             (Lifetime, Lifetime) => true,
             (Type { default: l }, Type { default: r }) => both(l, r, |l, r| eq_ty(l, r)),
-            (Const { ty: l, kw_span: _ }, Const { ty: r, kw_span: _ }) => eq_ty(l, r),
+            (Const { ty: l, kw_span: _, default: l_d }, Const { ty: r, kw_span: _, default: r_d }) =>
+            eq_ty(l, r) && both(l_d, r_d, |l, r| eq_anon_const(l, r)),
             _ => false,
         }
         && over(&l.attrs, &r.attrs, |l, r| eq_attr(l, r))

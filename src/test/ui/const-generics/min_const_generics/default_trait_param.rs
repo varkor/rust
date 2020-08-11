@@ -1,4 +1,4 @@
-trait Foo<const KIND: bool = true> {}
-                        //~^ ERROR expected one of `!`, `(`, `+`, `,`, `::`, `<`, or `>`, found `=`
+#![crate_type = "lib"]
+#![feature(const_generic_defaults)]
 
-fn main() {}
+trait Foo<const KIND: bool = true> {}

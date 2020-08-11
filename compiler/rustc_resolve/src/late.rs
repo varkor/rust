@@ -586,7 +586,7 @@ impl<'a: 'ast, 'ast> Visitor<'ast> for LateResolutionVisitor<'a, '_, 'ast> {
                     // Allow all following defaults to refer to this type parameter.
                     default_ban_rib.bindings.remove(&Ident::with_dummy_span(param.ident.name));
                 }
-                GenericParamKind::Const { ref ty, kw_span: _ } => {
+                GenericParamKind::Const { ref ty, kw_span: _, default: _ } => {
                     for bound in &param.bounds {
                         self.visit_param_bound(bound);
                     }
@@ -595,6 +595,7 @@ impl<'a: 'ast, 'ast> Visitor<'ast> for LateResolutionVisitor<'a, '_, 'ast> {
                     self.visit_ty(ty);
                     self.ribs[TypeNS].pop().unwrap();
                     self.ribs[ValueNS].pop().unwrap();
+                    // FIXME(const_generics:default) do something with default here?
                 }
             }
         }

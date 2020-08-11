@@ -620,6 +620,9 @@ declare_features! (
     /// Allows arbitrary expressions in key-value attributes at parse time.
     (active, extended_key_value_attributes, "1.50.0", Some(78835), None),
 
+    /// Allows defaults const generics (e.g. `struct Foo<const N: usize = 3>(...);`).
+    (active, const_generic_defaults, "1.51.0", Some(44580), None),
+
     // -------------------------------------------------------------------------
     // feature-group-end: actual feature gates
     // -------------------------------------------------------------------------

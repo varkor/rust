@@ -418,6 +418,7 @@ pub enum GenericParamKind<'hir> {
     },
     Const {
         ty: &'hir Ty<'hir>,
+        default: Option<AnonConst>,
     },
 }
 
