@@ -629,7 +629,7 @@ pub fn check_crate(krate: &ast::Crate, sess: &Session) {
     gate_all!(const_trait_bound_opt_out, "`?const` on trait bounds is experimental");
     gate_all!(const_trait_impl, "const trait impls are experimental");
     gate_all!(half_open_range_patterns, "half-open range patterns are unstable");
-    if parse_sess.span_diagnostic.err_count() == 0 {
+    if sess.parse_sess.span_diagnostic.err_count() == 0 {
         // Errors for `destructuring_assignment` can get quite noisy, especially where `_` is
         // involved, so we only emit errors where there are no other parsing errors.
         gate_all!(destructuring_assignment, "destructuring assignments are unstable");
