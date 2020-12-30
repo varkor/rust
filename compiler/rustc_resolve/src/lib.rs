@@ -214,7 +214,7 @@ enum ResolutionError<'a> {
     /// Error E0530: `X` bindings cannot shadow `Y`s.
     BindingShadowsSomethingUnacceptable(&'static str, Symbol, &'a NameBinding<'a>),
     /// Error E0128: type parameters with a default cannot use forward-declared identifiers.
-    ForwardDeclaredTyParam, // FIXME(const_generics:defaults)
+    ForwardDeclaredGenericParam, // FIXME(const_generic_defaults): we need a test for this
     /// ERROR E0770: the type of const parameters must not depend on other generic parameters.
     ParamInTyOfConstParam(Symbol),
     /// constant values inside of type parameter defaults must not depend on generic parameters.
@@ -2547,13 +2547,13 @@ impl<'a> Resolver<'a> {
         debug!("validate_res_from_ribs({:?})", res);
         let ribs = &all_ribs[rib_index + 1..];
 
-        // An invalid forward use of a type parameter from a previous default.
-        if let ForwardTyParamBanRibKind = all_ribs[rib_index].kind {
+        // An invalid forward use of a generic parameter from a previous default.
+        if let ForwardGenericParamBanRibKind = all_ribs[rib_index].kind {
             if record_used {
                 let res_error = if rib_ident.name == kw::SelfUpper {
                     ResolutionError::SelfInTyParamDefault
                 } else {
-                    ResolutionError::ForwardDeclaredTyParam
+                    ResolutionError::ForwardDeclaredGenericParam
                 };
                 self.report_error(span, res_error);
             }
@@ -2572,7 +2572,7 @@ impl<'a> Resolver<'a> {
                         | ClosureOrAsyncRibKind
                         | ModuleRibKind(..)
                         | MacroDefinition(..)
-                        | ForwardTyParamBanRibKind => {
+                        | ForwardGenericParamBanRibKind => {
                             // Nothing to do. Continue.
                         }
                         ItemRibKind(_) | FnItemRibKind | AssocItemRibKind => {
@@ -2622,7 +2622,9 @@ impl<'a> Resolver<'a> {
 
                         // We only forbid constant items if we are inside of type defaults,
                         // for example `struct Foo<T, U = [u8; std::mem::size_of::<T>()]>`
-                        ForwardTyParamBanRibKind => {
+                        ForwardGenericParamBanRibKind => {
+                            // FIXME(const_generic_defaults): we may need to distinguish between
+                            // being in type parameter defaults and const parameter defaults
                             in_ty_param_default = true;
                             continue;
                         }
@@ -2715,7 +2717,9 @@ impl<'a> Resolver<'a> {
 
                         // We only forbid constant items if we are inside of type defaults,
                         // for example `struct Foo<T, U = [u8; std::mem::size_of::<T>()]>`
-                        ForwardTyParamBanRibKind => {
+                        ForwardGenericParamBanRibKind => {
+                            // FIXME(const_generic_defaults): we may need to distinguish between
+                            // being in type parameter defaults and const parameter defaults
                             in_ty_param_default = true;
                             continue;
                         }

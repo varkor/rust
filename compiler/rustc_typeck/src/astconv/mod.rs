@@ -495,6 +495,7 @@ impl<'o, 'tcx> dyn AstConv<'tcx> + 'o {
                             // We've already errored above about the mismatch.
                             tcx.const_error(ty).into()
                         }
+                        // FIXME(const_generic_defaults)
                         /*
                         if !infer_args && has_default {
                             /*

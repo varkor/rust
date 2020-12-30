@@ -1828,13 +1828,16 @@ impl EncodeContext<'a, 'tcx> {
                         self.encode_stability(def_id.to_def_id());
                     }
                 }
-                GenericParamKind::Const { .. } => {
+                GenericParamKind::Const { ref default, .. } => {
                     self.encode_info_for_generic_param(
                         def_id.to_def_id(),
                         EntryKind::ConstParam,
                         true,
                     );
-                    // FIXME(const_generics:defaults)
+                    if default.is_some() {
+                        self.encode_stability(def_id.to_def_id());
+                    }
+                    // FIXME(const_generic_defaults)
                 }
             }
         }

@@ -1151,7 +1151,7 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                         default.value.span,
                         "default values for const generic parameters are unstable",
                     );
-                    err.note("to enable them use #![feature(const_generic_defaults)]");
+                    err.help("add `#![feature(const_generic_defaults)]` to the crate attributes to enable");
                     err.emit();
                     break;
                 }
@@ -1165,6 +1165,7 @@ impl<'a> Visitor<'a> for AstValidator<'a> {
                 let ident = Some(param.ident.to_string());
                 let (kind, ident) = match &param.kind {
                     GenericParamKind::Lifetime => (ParamKindOrd::Lifetime, ident),
+                    // FIXME: here and below, take `default` into account.
                     GenericParamKind::Type { default: _ } => (ParamKindOrd::Type, ident),
                     GenericParamKind::Const { ref ty, kw_span: _, default: _ } => {
                         let ty = pprust::ty_to_string(ty);
